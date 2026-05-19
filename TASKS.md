@@ -68,4 +68,4 @@ This list tracks completed and upcoming tasks. It is not a full kanban board yet
 - DONE: Refactor `SelectionEditService` so replace and insert actions share one selection validation helper.
 - DONE: Refactor AI Draft Bench panel opening into a shared service so the ribbon icon and editor menu use the same view-opening logic.
 - DONE: Split `AiDraftBenchView` into smaller renderer/helper files now that it handles entries, responses, chat composer, and actions.
-- Keep `styles.css` grouped by UI area and avoid duplicate selectors.
+- DONE: Keep `styles.css` grouped by UI area and avoid duplicate selectors.
