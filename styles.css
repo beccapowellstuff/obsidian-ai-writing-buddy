@@ -1,9 +1,31 @@
+/* ==========================================================================
+   AI Draft Bench: layout
+   ========================================================================== */
+
 .ai-draft-bench-view {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
 	min-height: 0;
 }
+
+.ai-draft-bench-entries {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	padding-right: 4px;
+	padding-bottom: 12px;
+}
+
+.ai-draft-bench-empty {
+	color: var(--text-muted);
+	line-height: 1.45;
+}
+
+
+/* ==========================================================================
+   AI Draft Bench: header
+   ========================================================================== */
 
 .ai-draft-bench-header {
 	flex: 0 0 auto;
@@ -42,18 +64,10 @@
 	line-height: 1.4;
 }
 
-.ai-draft-bench-entries {
-	flex: 1 1 auto;
-	min-height: 0;
-	overflow-y: auto;
-	padding-right: 4px;
-	padding-bottom: 12px;
-}
 
-.ai-draft-bench-empty {
-	color: var(--text-muted);
-	line-height: 1.45;
-}
+/* ==========================================================================
+   AI Draft Bench: entries
+   ========================================================================== */
 
 .ai-draft-bench-entry {
 	position: relative;
@@ -101,6 +115,11 @@
 	margin-bottom: 12px;
 	line-height: 1.45;
 }
+
+
+/* ==========================================================================
+   AI Draft Bench: source and selected text
+   ========================================================================== */
 
 .ai-draft-bench-source {
 	margin-bottom: 18px;
@@ -169,6 +188,11 @@
 	overflow-y: auto;
 }
 
+
+/* ==========================================================================
+   AI Draft Bench: response panel
+   ========================================================================== */
+
 .ai-draft-bench-response-text {
 	position: relative;
 	margin-bottom: 12px;
@@ -181,11 +205,36 @@
 	line-height: 1.5;
 }
 
+.ai-draft-bench-response-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.ai-draft-bench-response-actions-left,
+.ai-draft-bench-response-actions-right {
+	display: flex;
+	gap: 6px;
+	opacity: 0.72;
+	transition: opacity 120ms ease;
+}
+
+.ai-draft-bench-response-text:hover .ai-draft-bench-response-actions-left,
+.ai-draft-bench-response-text:hover .ai-draft-bench-response-actions-right {
+	opacity: 1;
+}
+
 .ai-draft-bench-response-content {
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
 	user-select: text;
 }
+
+
+/* ==========================================================================
+   AI Draft Bench: action buttons
+   ========================================================================== */
 
 .ai-draft-bench-action-button {
 	display: inline-flex;
@@ -220,6 +269,22 @@
 	height: 17px;
 }
 
+
+/* ==========================================================================
+   AI Draft Bench: chat composer
+   ========================================================================== */
+
+.ai-draft-bench-chat-composer {
+	flex: 0 0 auto;
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 8px;
+	padding: 12px 0 0 0;
+	margin-top: 10px;
+	border-top: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+}
+
 .ai-draft-bench-chat-input {
 	flex: 1 1 auto;
 	min-height: 42px;
@@ -235,17 +300,6 @@
 	border-radius: 999px;
 	padding: 8px 14px;
 	font-weight: 700;
-}
-
-.ai-draft-bench-chat-composer {
-	flex: 0 0 auto;
-	display: grid;
-	grid-template-columns: 1fr auto;
-	gap: 8px;
-	padding: 12px 0 0 0;
-	margin-top: 10px;
-	border-top: 1px solid var(--background-modifier-border);
-	background: var(--background-primary);
 }
 
 .ai-draft-bench-reply-context {
@@ -266,24 +320,4 @@
 	border-radius: 999px;
 	padding: 2px 8px;
 	font-size: 0.85em;
-}
-
-.ai-draft-bench-response-toolbar {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 8px;
-}
-
-.ai-draft-bench-response-actions-left,
-.ai-draft-bench-response-actions-right {
-	display: flex;
-	gap: 6px;
-	opacity: 0.72;
-	transition: opacity 120ms ease;
-}
-
-.ai-draft-bench-response-text:hover .ai-draft-bench-response-actions-left,
-.ai-draft-bench-response-text:hover .ai-draft-bench-response-actions-right {
-	opacity: 1;
 }
