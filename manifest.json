@@ -1,0 +1,10 @@
+{
+	"id": "obsidian-ai-draft-bench",
+	"name": "AI Draft Bench",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Ask AI about selected text and review suggestions in a side panel before applying changes.",
+	"author": "Becci",
+	"authorUrl": "",
+	"isDesktopOnly": false
+}
