@@ -6,20 +6,20 @@ This list tracks completed and upcoming tasks. It is not a full kanban board yet
 
 ## 1. AI Integration
 
-- Add real AI integration for chat composer and selection responses.
+- Add real AI integration for chat composer, selection responses, and follow-up replies.
 - Settings screen for API/model configuration.
 - Add prompt presets such as grammar/spelling fix.
 - Ensure grammar/spelling presets return only corrected text with no explanation.
 - When prompt presets are added, show the preset name and user-added instruction separately instead of displaying the full template prompt.
 - Hide full template prompt behind an expandable debug/details section if needed.
 
-## 2. Response History And Panel Flow
+## DONE: 2. Response History And Panel Flow
 
 - DONE: Keep a session history in the side panel instead of replacing the existing panel contents.
 - DONE: Refactor the side panel from a single latest request into a scrolling request/response history.
 - DONE: Make each history entry keep its own source selection metadata.
 - DONE: Add bottom chat composer to the AI Draft Bench panel for general chat without needing selected text. Currently uses mock responses.
-- Add real AI integration for chat composer, selection responses, and follow-up replies.
+- DONE: Add follow-up replies for existing draft entries. Currently uses mock responses.
 
 ## 3. Follow-up Chat Behaviour
 
