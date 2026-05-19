@@ -19,7 +19,7 @@ This list tracks completed and upcoming tasks. It is not a full kanban board yet
 - DONE: Refactor the side panel from a single latest request into a scrolling request/response history.
 - DONE: Make each history entry keep its own source selection metadata.
 - DONE: Add bottom chat composer to the AI Draft Bench panel for general chat without needing selected text. Currently uses mock responses.
-- Add follow-up replies for existing draft entries.
+- Add real AI integration for chat composer, selection responses, and follow-up replies.
 
 ## 3. Follow-up Chat Behaviour
 
@@ -68,3 +68,4 @@ This list tracks completed and upcoming tasks. It is not a full kanban board yet
 - DONE: Refactor `SelectionEditService` so replace and insert actions share one selection validation helper.
 - Refactor AI Draft Bench panel opening into a shared service so the ribbon icon and editor menu use the same view-opening logic.
 - Split `AiDraftBenchView` into smaller renderer/helper files now that it handles entries, responses, chat composer, and actions.
+- Keep `styles.css` grouped by UI area and avoid duplicate selectors.

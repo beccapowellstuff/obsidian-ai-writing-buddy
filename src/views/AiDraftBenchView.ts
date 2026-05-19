@@ -4,16 +4,13 @@ import { ClipboardService } from "../services/ClipboardService";
 import { SelectionEditService } from "../services/SelectionEditService";
 import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { AiDraftBenchResponse } from "../types/AiDraftBenchResponse";
-import {
-	AiDraftBenchChatEntry,
-	AiDraftBenchEntry,
-	AiDraftBenchSelectionEntry,
-} from "../types/AiDraftBenchEntry";
+import { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/AiDraftBenchEntry";
 
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 
 export class AiDraftBenchView extends ItemView {
 	private entries: AiDraftBenchEntry[] = [];
+	private replyToEntryId: string | null = null;
 	private readonly clipboardService = new ClipboardService();
 	private readonly selectionEditService = new SelectionEditService(this.app);
 
@@ -67,8 +64,10 @@ export class AiDraftBenchView extends ItemView {
 			return;
 		}
 
+		const replyToEntryId = this.replyToEntryId;
+
 		const response: AiDraftBenchResponse = {
-			text: `Mock chat response to: ${trimmedMessage}`,
+			text: replyToEntryId ? `Mock follow-up response: ${trimmedMessage}` : `Mock chat response: ${trimmedMessage}`,
 			createdAt: new Date().toISOString(),
 			isPlaceholder: true,
 		};
@@ -79,7 +78,10 @@ export class AiDraftBenchView extends ItemView {
 			message: trimmedMessage,
 			response,
 			createdAt: new Date().toISOString(),
+			replyToEntryId: replyToEntryId ?? undefined,
 		});
+
+		this.replyToEntryId = null;
 
 		this.render();
 		this.scrollToBottom();
@@ -133,10 +135,7 @@ export class AiDraftBenchView extends ItemView {
 		});
 	}
 
-	private renderSelectionEntry(
-		container: HTMLElement,
-		entry: AiDraftBenchSelectionEntry,
-	): void {
+	private renderSelectionEntry(container: HTMLElement, entry: AiDraftBenchSelectionEntry): void {
 		const entryEl = container.createEl("div", {
 			cls: "ai-draft-bench-entry",
 		});
@@ -146,24 +145,21 @@ export class AiDraftBenchView extends ItemView {
 		this.renderResponse(entryEl, entry.response, entry);
 	}
 
-	private renderChatEntry(
-		container: HTMLElement,
-		entry: AiDraftBenchChatEntry,
-	): void {
+	private renderChatEntry(container: HTMLElement, entry: AiDraftBenchChatEntry): void {
 		const entryEl = container.createEl("div", {
 			cls: "ai-draft-bench-entry ai-draft-bench-chat-entry",
 		});
 
-		entryEl.createEl("h3", { text: "Chat" });
+		entryEl.createEl("h3", {
+			text: entry.replyToEntryId ? "Follow-up" : "Chat",
+		});
+
 		entryEl.createEl("p", { text: entry.message });
 
 		this.renderResponse(entryEl, entry.response, entry);
 	}
 
-	private renderSourcePanel(
-		container: HTMLElement,
-		entry: AiDraftBenchSelectionEntry,
-	): void {
+	private renderSourcePanel(container: HTMLElement, entry: AiDraftBenchSelectionEntry): void {
 		const sourceEl = container.createEl("div", {
 			cls: "ai-draft-bench-source",
 		});
@@ -192,19 +188,12 @@ export class AiDraftBenchView extends ItemView {
 		});
 	}
 
-	private renderInstruction(
-		container: HTMLElement,
-		instruction: string,
-	): void {
+	private renderInstruction(container: HTMLElement, instruction: string): void {
 		container.createEl("h3", { text: "Instruction" });
 		container.createEl("p", { text: instruction });
 	}
 
-	private renderResponse(
-		container: HTMLElement,
-		response: AiDraftBenchResponse,
-		entry: AiDraftBenchEntry,
-	): void {
+	private renderResponse(container: HTMLElement, response: AiDraftBenchResponse, entry: AiDraftBenchEntry): void {
 		container.createEl("h3", { text: "Draft response" });
 
 		const responseEl = container.createEl("div", {
@@ -215,43 +204,32 @@ export class AiDraftBenchView extends ItemView {
 			cls: "ai-draft-bench-response-toolbar",
 		});
 
-		const actionsEl = responseToolbarEl.createEl("div", {
-			cls: "ai-draft-bench-response-actions",
+		const replyActionsEl = responseToolbarEl.createEl("div", {
+			cls: "ai-draft-bench-response-actions-left",
 		});
 
-		this.createActionButton(
-			actionsEl,
-			"copy",
-			"Copy response",
-			async () => {
-				await this.clipboardService.copyText(response.text);
-			},
-		);
+		const outputActionsEl = responseToolbarEl.createEl("div", {
+			cls: "ai-draft-bench-response-actions-right",
+		});
+
+		this.createActionButton(replyActionsEl, "reply", "Reply to this entry", async () => {
+			this.replyToEntryId = entry.id;
+			this.render();
+			this.scrollToBottom();
+		});
+
+		this.createActionButton(outputActionsEl, "copy", "Copy response", async () => {
+			await this.clipboardService.copyText(response.text);
+		});
 
 		if (entry.type === "selection") {
-			this.createActionButton(
-				actionsEl,
-				"refresh-cw",
-				"Replace selection",
-				async () => {
-					await this.selectionEditService.replaceSelection(
-						entry.request,
-						response.text,
-					);
-				},
-			);
+			this.createActionButton(outputActionsEl, "refresh-cw", "Replace selection", async () => {
+				await this.selectionEditService.replaceSelection(entry.request, response.text);
+			});
 
-			this.createActionButton(
-				actionsEl,
-				"plus-circle",
-				"Insert after selection",
-				async () => {
-					await this.selectionEditService.insertAfterSelection(
-						entry.request,
-						response.text,
-					);
-				},
-			);
+			this.createActionButton(outputActionsEl, "plus-circle", "Insert after selection", async () => {
+				await this.selectionEditService.insertAfterSelection(entry.request, response.text);
+			});
 		}
 
 		responseEl.createEl("div", {
@@ -264,6 +242,26 @@ export class AiDraftBenchView extends ItemView {
 		const composerEl = container.createEl("div", {
 			cls: "ai-draft-bench-chat-composer",
 		});
+
+		if (this.replyToEntryId) {
+			const replyEl = composerEl.createEl("div", {
+				cls: "ai-draft-bench-reply-context",
+			});
+
+			replyEl.createSpan({
+				text: "Replying to an earlier draft",
+			});
+
+			const cancelButtonEl = replyEl.createEl("button", {
+				text: "Cancel",
+				cls: "ai-draft-bench-reply-cancel",
+			});
+
+			cancelButtonEl.addEventListener("click", () => {
+				this.replyToEntryId = null;
+				this.render();
+			});
+		}
 
 		const inputEl = composerEl.createEl("textarea", {
 			cls: "ai-draft-bench-chat-input",
@@ -290,12 +288,7 @@ export class AiDraftBenchView extends ItemView {
 		});
 	}
 
-	private createActionButton(
-		container: HTMLElement,
-		iconName: string,
-		label: string,
-		onClick: () => Promise<void>,
-	): void {
+	private createActionButton(container: HTMLElement, iconName: string, label: string, onClick: () => Promise<void>): void {
 		const buttonEl = container.createEl("button", {
 			cls: "ai-draft-bench-action-button",
 			attr: {
@@ -317,9 +310,7 @@ export class AiDraftBenchView extends ItemView {
 
 	private scrollToBottom(): void {
 		window.setTimeout(() => {
-			const entriesEl = this.contentEl.querySelector(
-				".ai-draft-bench-entries",
-			);
+			const entriesEl = this.contentEl.querySelector(".ai-draft-bench-entries");
 
 			if (!(entriesEl instanceof HTMLElement)) {
 				return;

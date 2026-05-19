@@ -15,6 +15,7 @@ export type AiDraftBenchChatEntry = {
 	message: string;
 	response: AiDraftBenchResponse;
 	createdAt: string;
+	replyToEntryId?: string;
 };
 
 export type AiDraftBenchEntry =
