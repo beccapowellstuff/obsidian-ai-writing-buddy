@@ -6,6 +6,7 @@ import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { AiDraftBenchResponse } from "../types/AiDraftBenchResponse";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
 import { DraftBenchEntryRenderer } from "../renderers/DraftBenchEntryRenderer";
+import { DraftBenchChatComposerRenderer } from "../renderers/DraftBenchChatComposerRenderer";
 
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 
@@ -19,6 +20,15 @@ export class AiDraftBenchView extends ItemView {
 		this.render();
 		this.scrollToBottom();
 	});
+	private readonly chatComposerRenderer = new DraftBenchChatComposerRenderer(
+		(message) => {
+			this.addChatEntry(message);
+		},
+		() => {
+			this.replyToEntryId = null;
+			this.render();
+		},
+	);
 
 	constructor(leaf: WorkspaceLeaf) {
 		super(leaf);
@@ -115,7 +125,7 @@ export class AiDraftBenchView extends ItemView {
 			this.entryRenderer.renderEntry(entriesEl, entry);
 		}
 
-		this.renderChatComposer(container);
+		this.chatComposerRenderer.render(container, this.replyToEntryId);
 	}
 
 	private renderHeader(container: HTMLElement): void {
@@ -134,56 +144,6 @@ export class AiDraftBenchView extends ItemView {
 
 		headerEl.createEl("p", {
 			text: PLUGIN_DISPLAY.headerDescription,
-		});
-	}
-
-	private renderChatComposer(container: HTMLElement): void {
-		const composerEl = container.createEl("div", {
-			cls: "ai-draft-bench-chat-composer",
-		});
-
-		if (this.replyToEntryId) {
-			const replyEl = composerEl.createEl("div", {
-				cls: "ai-draft-bench-reply-context",
-			});
-
-			replyEl.createSpan({
-				text: "Replying to an earlier draft",
-			});
-
-			const cancelButtonEl = replyEl.createEl("button", {
-				text: "Cancel",
-				cls: "ai-draft-bench-reply-cancel",
-			});
-
-			cancelButtonEl.addEventListener("click", () => {
-				this.replyToEntryId = null;
-				this.render();
-			});
-		}
-
-		const inputEl = composerEl.createEl("textarea", {
-			cls: "ai-draft-bench-chat-input",
-			attr: {
-				placeholder: "Ask about your draft...",
-				rows: "2",
-			},
-		});
-
-		const sendButtonEl = composerEl.createEl("button", {
-			cls: "ai-draft-bench-chat-send",
-			text: "Send",
-		});
-
-		sendButtonEl.addEventListener("click", () => {
-			this.addChatEntry(inputEl.value);
-		});
-
-		inputEl.addEventListener("keydown", (event) => {
-			if (event.key === "Enter" && !event.shiftKey) {
-				event.preventDefault();
-				this.addChatEntry(inputEl.value);
-			}
 		});
 	}
 
