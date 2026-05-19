@@ -66,6 +66,6 @@ This list tracks completed and upcoming tasks. It is not a full kanban board yet
 ## 7. Code Structure And Refactors
 
 - DONE: Refactor `SelectionEditService` so replace and insert actions share one selection validation helper.
-- Refactor AI Draft Bench panel opening into a shared service so the ribbon icon and editor menu use the same view-opening logic.
-- Split `AiDraftBenchView` into smaller renderer/helper files now that it handles entries, responses, chat composer, and actions.
+- DONE: Refactor AI Draft Bench panel opening into a shared service so the ribbon icon and editor menu use the same view-opening logic.
+- DONE: Split `AiDraftBenchView` into smaller renderer/helper files now that it handles entries, responses, chat composer, and actions.
 - Keep `styles.css` grouped by UI area and avoid duplicate selectors.
