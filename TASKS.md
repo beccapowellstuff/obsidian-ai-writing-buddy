@@ -157,9 +157,9 @@ Goal: provide reusable prompt actions without forcing the user to write the same
 - TMP-008 DONE: Ensure grammar/spelling templates can return only corrected text with no explanation.
 - TMP-009 DONE: Add template selector to the selected-text prompt modal.
 - TMP-010 DONE: Let user add optional extra instruction after selecting a template.
-- TMP-011 TODO: Show template name and user-added instruction separately in the side panel.
-- TMP-012 TODO: Do not display the full template prompt by default.
-- TMP-013 TODO: Hide full template prompt behind an expandable debug/details section if needed.
+- TMP-011 DONE: Show template name and user-added instruction separately in the side panel.
+- TMP-012 DONE: Do not display the full template prompt by default.
+- TMP-013 DONE: Hide full template prompt behind an expandable debug/details section if needed.
 - TMP-016 TODO: Add per-template generation settings such as temperature.
 - TMP-017 TODO: Add grouped template submenu to editor right-click menu.
 - TMP-018 TODO: Add template submenu actions to editor right-click menu.
@@ -238,7 +238,7 @@ Goal: make the plugin pleasant and clear without spending too long polishing bef
 - UI-006 TODO: Improve selected-text prompt modal layout.
 - UI-007 TODO: Add template selector to selected-text prompt modal.
 - UI-008 TODO: Add loading/error styling that is distinct from mock styling later.
-- UI-009 TODO: Highlight changed words in replacement-style responses.
+- UI-009 DONE: Highlight changed words in replacement-style responses.
 
 ## 9. Styling, theming, and release readiness
 
