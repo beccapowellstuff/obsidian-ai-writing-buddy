@@ -1,13 +1,9 @@
+import { requestUrl } from "obsidian";
 import { AiDraftBenchSettings } from "../config/defaultSettings";
-import { AiChatRequest } from "./AiResponseService";
 import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { AiDraftBenchResponse } from "../types/AiDraftBenchResponse";
-import { requestUrl } from "obsidian";
-
-type OpenAiChatMessage = {
-	role: "system" | "user" | "assistant";
-	content: string;
-};
+import { AiChatRequest, AiResponseService } from "./AiResponseService";
+import { DraftBenchChatMessage, DraftBenchPromptBuilder } from "./DraftBenchPromptBuilder";
 
 type OpenAiChatCompletionResponse = {
 	choices?: Array<{
@@ -17,57 +13,26 @@ type OpenAiChatCompletionResponse = {
 	}>;
 };
 
-export class OpenAiCompatibleResponseService {
-	constructor(private readonly settings: AiDraftBenchSettings) {}
+export class OpenAiCompatibleResponseService implements AiResponseService {
+	private readonly promptBuilder: DraftBenchPromptBuilder;
+
+	constructor(private readonly settings: AiDraftBenchSettings) {
+		this.promptBuilder = new DraftBenchPromptBuilder(settings);
+	}
 
 	async createSelectionResponse(request: AiDraftBenchRequest): Promise<AiDraftBenchResponse> {
-		const responseText = await this.sendChatCompletion([
-			{
-				role: "system",
-				content: this.settings.selectionSystemPrompt,
-			},
-			{
-				role: "user",
-				content: ["Selected text:", request.selectedText, "", "User instruction:", request.instruction].join("\n"),
-			},
-		]);
+		const responseText = await this.sendChatCompletion(this.promptBuilder.buildSelectionPrompt(request));
 
 		return this.createResponse(responseText);
 	}
 
 	async createChatResponse(request: AiChatRequest): Promise<AiDraftBenchResponse> {
-		const messages: OpenAiChatMessage[] = [
-			{
-				role: "system",
-				content: this.settings.openChatSystemPrompt,
-			},
-		];
-
-		if (this.settings.personalityEnabled && this.settings.personalityPrompt.trim()) {
-			messages.push({
-				role: "system",
-				content: this.settings.personalityPrompt,
-			});
-		}
-
-		if (request.replyToEntry) {
-			messages.push({
-				role: "user",
-				content: ["The user is replying to this previous draft response:", request.replyToEntry.response.text, "", "The user's follow-up message:", request.message].join("\n"),
-			});
-		} else {
-			messages.push({
-				role: "user",
-				content: request.message,
-			});
-		}
-
-		const responseText = await this.sendChatCompletion(messages);
+		const responseText = await this.sendChatCompletion(this.promptBuilder.buildChatPrompt(request));
 
 		return this.createResponse(responseText);
 	}
 
-	private async sendChatCompletion(messages: OpenAiChatMessage[]): Promise<string> {
+	private async sendChatCompletion(messages: DraftBenchChatMessage[]): Promise<string> {
 		const baseUrl = this.settings.baseUrl.replace(/\/$/, "");
 		const url = `${baseUrl}/chat/completions`;
 

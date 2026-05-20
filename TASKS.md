@@ -23,8 +23,11 @@ The current focus is getting the plugin from mock-only behaviour to a configurab
 5. CBF-005 DONE: Add OpenAI-compatible AI response service for chat completions.
 6. CBF-006 DONE: Add AI provider connection test.
 7. CBF-007 DONE: Improve provider error messages in the panel.
-8. CBF-008 TODO: Add prompt builder using settings prompts.
+8. CBF-008 DONE: Add prompt builder using settings prompts.
 9. CBF-009 TODO: Add template system.
+10. CPB-010 TODO: Add prompt/context size guard before sending AI requests.
+11. CBF-010 TODO: Add A Glitter Button that sparys glitter all over the place
+12. CBF-012 TODO: Add a playing fox on the setting page that shows when someone clicks on a little fox icon.
 
 ## MVP scope
 
@@ -104,15 +107,16 @@ Goal: build AI requests from clear prompt parts instead of raw user text only.
 
 ### 3.1 Prompt builder
 
-- PB-001 TODO: Add prompt builder service.
-- PB-002 TODO: Use settings prompts when creating AI requests.
-- PB-003 TODO: Apply open chat system prompt to general chat entries.
-- PB-004 TODO: Apply selected-text system prompt to selected-text requests.
-- PB-005 TODO: Apply personality prompt when enabled.
+- PB-001 DONE: Add prompt builder service.
+- PB-002 DONE: Use settings prompts when creating AI requests.
+- PB-003 DONE: Apply open chat system prompt to general chat entries.
+- PB-004 DONE: Apply selected-text system prompt to selected-text requests.
+- PB-005 DONE: Apply personality prompt when enabled.
 - PB-006 TODO: Keep system prompt, personality prompt, template prompt, selected text, user instruction, and follow-up context separate internally.
 - PB-007 TODO: Build request payloads for general chat.
 - PB-008 TODO: Build request payloads for selected-text requests.
 - PB-009 TODO: Build request payloads for follow-up replies.
+- PB-010 TODO: Add prompt/context size guard before sending AI requests.
 
 ### 3.2 Open chat prompt
 
@@ -179,6 +183,7 @@ Goal: let chat and follow-up requests include the right context without sending 
 - CTX-014 LATER: Let the user choose, drag, or select which note context is attached.
 - CTX-015 LATER: Allow attaching the current note as context.
 - CTX-016 LATER: Allow attaching linked notes or search results as context.
+- CTX-017 TODO: Add context size guard for selected text and follow-up context.
 
 ## 6. Side panel and entry flow
 
