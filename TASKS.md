@@ -160,9 +160,13 @@ Goal: provide reusable prompt actions without forcing the user to write the same
 - TMP-011 TODO: Show template name and user-added instruction separately in the side panel.
 - TMP-012 TODO: Do not display the full template prompt by default.
 - TMP-013 TODO: Hide full template prompt behind an expandable debug/details section if needed.
-- TMP-014 LATER: Allow user-created templates.
-- TMP-015 LATER: Allow editing built-in templates by copying them into user templates.
 - TMP-016 TODO: Add per-template generation settings such as temperature.
+- TMP-017 TODO: Add grouped template submenu to editor right-click menu.
+- TMP-018 TODO: Add template submenu actions to editor right-click menu.
+- TMP-019 TODO: Add run last template action.
+- TMP-014 TODO: Allow user-created templates.
+- TMP-015 TODO: Allow editing built-in templates by copying them into user templates.
+
 
 ## 5. Context system
 
@@ -259,3 +263,10 @@ Goal: keep the codebase maintainable as the real AI, prompt, and context systems
 - CODE-005 TODO: Add settings service or settings helpers if `main.ts` starts carrying too much settings logic.
 - CODE-006 TODO: Add prompt builder service before real AI integration becomes messy.
 - CODE-007 TODO: Add context builder service before follow-up/chat context becomes messy.
+
+## 11. Workflow/Accessibility
+- CMD-001 LATER: Add command palette commands for common AI Draft Bench actions.
+- CMD-002 LATER: Add command palette command to ask about current selection.
+- CMD-003 LATER: Add command palette command to run last template.
+- CMD-004 LATER: Add command palette commands for favourite templates.
+- CMD-005 LATER: Allow users to assign hotkeys to AI Draft Bench commands.
