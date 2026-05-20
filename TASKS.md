@@ -16,6 +16,7 @@ This list tracks completed and upcoming tasks. It is not a full kanban board yet
 - DONE: Add mock AI response service for selection responses, general chat, and follow-up replies.
 - DONE: Add loading placeholder state while AI responses are being generated.
 - DONE: Add fallback error responses when AI response generation fails.
+- DONE: Mock follow-up replies now receive the previous entry context.
 
 ## DONE: 2. Response History And Panel Flow
 
@@ -33,6 +34,7 @@ This list tracks completed and upcoming tasks. It is not a full kanban board yet
 - Let the user choose, drag, or select which note context is attached.
 - For future general chat entries, only show safe actions such as copy unless a target note or selection exists.
 - Keep replace and insert actions only for selection-based entries with saved source metadata.
+- DONE: Refer to a specific previous entry by passing reply context into the AI response service.
 
 ## 4. Note Editing Actions And Safety
 

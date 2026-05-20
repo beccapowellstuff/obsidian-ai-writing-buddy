@@ -18,11 +18,39 @@ export class MockAiResponseService implements AiResponseService {
 	async createChatResponse(request: AiChatRequest): Promise<AiDraftBenchResponse> {
 		await this.waitForMockDelay();
 
+		if (request.replyToEntry) {
+			const replyContext = this.getEntryContext(request.replyToEntry);
+
+			return {
+				text: `Mock follow-up response to "${replyContext}": ${request.message}`,
+				createdAt: new Date().toISOString(),
+				isPlaceholder: true,
+			};
+		}
+
 		return {
-			text: request.replyToEntry ? `Mock follow-up response: ${request.message}` : `Mock chat response: ${request.message}`,
+			text: `Mock chat response: ${request.message}`,
 			createdAt: new Date().toISOString(),
 			isPlaceholder: true,
 		};
+	}
+
+	private getEntryContext(entry: AiChatRequest["replyToEntry"]): string {
+		if (!entry) {
+			return "unknown entry";
+		}
+
+		const text = entry.response.text.replace(/\s+/g, " ").trim();
+
+		if (!text) {
+			return "empty response";
+		}
+
+		if (text.length <= 70) {
+			return text;
+		}
+
+		return `${text.slice(0, 67)}...`;
 	}
 
 	private async waitForMockDelay(): Promise<void> {
