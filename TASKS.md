@@ -12,8 +12,8 @@ The current focus is getting the plugin from mock-only behaviour to a configurab
 2. DONE: Add settings load/save to the plugin.
 3. DONE: Add settings tab UI.
 4. DONE: Wire mock provider selection through settings instead of hardcoded mock service.
-5. DONE: Add OpenAI-compatible AI response service.
-6. TODO: Add AI provider connection test.
+5. DONE: Add OpenAI-compatible AI response service for chat completions.
+6. DONE: Add AI provider connection test.
 7. TODO: Improve provider error messages in the panel.
 8. TODO: Add prompt builder using settings prompts.
 9. TODO: Add template system.
@@ -30,9 +30,11 @@ The MVP should allow the user to:
 - DONE: Replace original selected text safely.
 - DONE: Insert responses after original selected text safely.
 - DONE: Configure provider, model, connection, and prompt settings in Obsidian settings.
-- Use a configured AI provider instead of mock responses.
+- DONE: Use a configured AI provider instead of mock responses.
 - Use system prompts and personality prompt settings when building AI requests.
 - Use a small starter set of reusable prompt templates.
+- DONE: Add provider connection test button.
+- DONE: Add model list loading from configured provider.
 
 The MVP does not need:
 

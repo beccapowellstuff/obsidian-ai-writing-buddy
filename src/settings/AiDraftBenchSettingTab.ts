@@ -1,7 +1,9 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type AiDraftBenchPlugin from "../main";
 
 export class AiDraftBenchSettingTab extends PluginSettingTab {
+	private availableModels: string[] = [];
+
 	constructor(
 		app: App,
 		private readonly plugin: AiDraftBenchPlugin,
@@ -13,6 +15,25 @@ export class AiDraftBenchSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
+		containerEl.addClass("ai-draft-bench-settings");
+
+		const introEl = containerEl.createEl("div", {
+			cls: "ai-draft-bench-settings-hero",
+		});
+
+		introEl.createEl("div", {
+			cls: "ai-draft-bench-settings-kicker",
+			text: "Writing assistant",
+		});
+
+		introEl.createEl("div", {
+			cls: "ai-draft-bench-settings-title",
+			text: "Draft bench",
+		});
+
+		introEl.createEl("p", {
+			text: "Connect your model provider, tune prompt behaviour, and keep draft changes safely under your control.",
+		});
 
 		this.renderConnectionSettings(containerEl);
 		this.renderPromptSettings(containerEl);
@@ -31,7 +52,6 @@ export class AiDraftBenchSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.provider)
 					.onChange(async (value) => {
 						this.plugin.settings.provider = value === "openai-compatible" ? "openai-compatible" : "mock";
-
 						await this.plugin.saveSettings();
 					});
 			});
@@ -48,17 +68,8 @@ export class AiDraftBenchSettingTab extends PluginSettingTab {
 					});
 			});
 
-		new Setting(containerEl)
-			.setName("Model name")
-			.setDesc("The model name to send to the provider.")
-			.addText((text) => {
-				text.setPlaceholder("Model name")
-					.setValue(this.plugin.settings.modelName)
-					.onChange(async (value) => {
-						this.plugin.settings.modelName = value.trim();
-						await this.plugin.saveSettings();
-					});
-			});
+		this.renderModelSetting(containerEl);
+		this.renderAvailableModelsSetting(containerEl);
 
 		new Setting(containerEl)
 			.setName("Secret key")
@@ -90,6 +101,99 @@ export class AiDraftBenchSettingTab extends PluginSettingTab {
 						this.plugin.settings.requestTimeoutMs = parsedValue;
 						await this.plugin.saveSettings();
 					});
+			});
+
+		new Setting(containerEl)
+			.setName("Test connection")
+			.setDesc("Send a small test request using the current provider settings.")
+			.addButton((button) => {
+				button.setButtonText("Test connection").onClick(async () => {
+					button.setDisabled(true);
+					button.setButtonText("Testing...");
+
+					try {
+						const message = await this.plugin.testProviderConnection();
+						new Notice(message);
+					} catch (error) {
+						console.error("AI Draft Bench connection test failed", error);
+
+						const message = error instanceof Error ? error.message : "Connection test failed.";
+						new Notice(`Connection test failed: ${message}`);
+					} finally {
+						button.setDisabled(false);
+						button.setButtonText("Test connection");
+					}
+				});
+			});
+	}
+
+	private renderModelSetting(containerEl: HTMLElement): void {
+		if (this.availableModels.length > 0) {
+			new Setting(containerEl)
+				.setName("Model")
+				.setDesc("Choose a model returned by the provider.")
+				.addDropdown((dropdown) => {
+					for (const modelName of this.availableModels) {
+						dropdown.addOption(modelName, modelName);
+					}
+
+					dropdown.setValue(this.plugin.settings.modelName).onChange(async (value) => {
+						this.plugin.settings.modelName = value;
+						await this.plugin.saveSettings();
+					});
+				});
+
+			return;
+		}
+
+		new Setting(containerEl)
+			.setName("Model")
+			.setDesc("Type a model name manually, or load available models below.")
+			.addText((text) => {
+				text.setPlaceholder("Model name")
+					.setValue(this.plugin.settings.modelName)
+					.onChange(async (value) => {
+						this.plugin.settings.modelName = value.trim();
+						await this.plugin.saveSettings();
+					});
+			});
+	}
+
+	private renderAvailableModelsSetting(containerEl: HTMLElement): void {
+		new Setting(containerEl)
+			.setName("Available models")
+			.setDesc("Load models from the configured provider.")
+			.addButton((button) => {
+				const setIdleButtonText = (): void => {
+					button.setButtonText(this.availableModels.length > 0 ? "Refresh models" : "Load models");
+				};
+
+				setIdleButtonText();
+
+				button.onClick(async () => {
+					button.setDisabled(true);
+					button.setButtonText("Loading");
+
+					try {
+						this.availableModels = await this.plugin.listAvailableModels();
+
+						if (!this.plugin.settings.modelName && this.availableModels[0]) {
+							this.plugin.settings.modelName = this.availableModels[0];
+							await this.plugin.saveSettings();
+						}
+
+						new Notice("Models loaded.");
+						this.display();
+					} catch (error) {
+						console.error("AI Draft Bench model loading failed", error);
+
+						const message = error instanceof Error ? error.message : "Model loading failed.";
+						new Notice(`Model loading failed: ${message}`);
+					} finally {
+						button.setDisabled(false);
+						setIdleButtonText();
+					}
+				});
 			});
 	}
 
