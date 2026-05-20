@@ -1,164 +1,137 @@
-# TASK LIST
+# AI Draft Bench Tasks
 
-This list tracks completed and upcoming tasks for AI Draft Bench.
+This file tracks the build plan for AI Draft Bench.
 
 AI Draft Bench is an Obsidian writing assistant plugin focused on drafting, rewriting, reviewing, and safely applying AI-generated text to notes.
 
-## Next Build Order
+## Current build focus
+
+The current focus is getting the plugin from mock-only behaviour to a configurable MVP.
 
 1. DONE: Add settings model and default settings.
 2. DONE: Add settings load/save to the plugin.
 3. DONE: Add settings tab UI.
-4. Wire Mock provider selection through settings instead of hardcoded mock service.
+4. Wire mock provider selection through settings instead of hardcoded mock service.
 5. Add OpenAI-compatible AI response service.
 6. Add prompt builder using settings prompts.
 7. Add template system.
 
-## 1. MVP Definition
+## MVP scope
 
-MVP goal:
+The MVP should allow the user to:
 
-- DONE: Open an AI Draft Bench side panel.
+- DONE: Open the AI Draft Bench side panel.
 - DONE: Send general chat prompts using mock responses.
 - DONE: Send prompts based on selected note text using mock responses.
-- Use configured AI provider instead of mock responses.
+- DONE: Review responses in the side panel before applying them.
+- DONE: Copy AI responses.
+- DONE: Replace original selected text safely.
+- DONE: Insert responses after original selected text safely.
+- DONE: Configure provider, model, connection, and prompt settings in Obsidian settings.
+- Use a configured AI provider instead of mock responses.
+- Use system prompts and personality prompt settings when building AI requests.
+- Use a small starter set of reusable prompt templates.
 
-- - Add plugin settings model and default settings.
-- - Add settings loading and saving.
-- - Add settings tab in Obsidian.
-- - Let user choose AI provider.
-- - Keep Mock provider as default for development.
-- - Add OpenAI-compatible provider option.
-- - Add base URL setting.
-- - Add model name setting.
-- - Add API key setting.
-- - Add request timeout setting.
-- - Use selected provider when creating AI responses.
-- - Replace hardcoded `new MockAiResponseService()` in `AiDraftBenchView`.
-- - Add real AI call for general chat.
-- - Add real AI call for selected-text prompts.
-- - Add real AI call for follow-up replies.
+The MVP does not need:
 
-### MVP: Settings And AI Configuration
+- Full vault indexing.
+- Drag-and-drop context selection.
+- Diff view.
+- Multiple visual skins.
+- Complex prompt library management.
+- Advanced personality switching.
 
-- Add plugin settings model and default settings.
-- Add settings loading and saving.
+## 1. AI provider and settings
+
+Goal: let the plugin use saved settings instead of hardcoded mock behaviour.
+
+- DONE: Add plugin settings data model.
+- DONE: Add default settings.
+- DONE: Add settings loading and saving.
 - DONE: Add Obsidian settings tab.
 - DONE: Add provider selector.
-- DONE: Add Mock provider option.
+- DONE: Add mock provider option.
 - DONE: Add OpenAI-compatible provider option.
-- DONE: Add base URL setting.
+- DONE: Add server/base URL setting.
 - DONE: Add model name setting.
-- DONE: Add API key setting.
+- DONE: Add API/secret key setting.
 - DONE: Add request timeout setting.
 - DONE: Add basic prompt settings section.
 - DONE: Add open chat system prompt setting.
 - DONE: Add selected-text system prompt setting.
 - DONE: Add personality prompt setting.
 - DONE: Add personality enabled toggle.
-- Later: Add test connection button.
-
-### MVP: Configured AI Provider
-
-- DONE: Mock provider exists for development/testing.
-- DONE: Add plugin settings model and default settings.
-- DONE: Add settings loading and saving.
-- DONE: Add settings tab in Obsidian.
-- DONE: Add provider selector with Mock and OpenAI-compatible options.
-- DONE: Add base URL, model name, API key, and timeout settings.
-- Replace hardcoded mock service with service selected from settings.
-- Add OpenAI-compatible chat completion service.
-- Use real provider for general chat.
-- Use real provider for selected-text requests.
-- Use real provider for follow-up replies.
-
-### MVP: Prompt Control
-
-- Add default open chat system prompt.
-- Add default selected-text system prompt.
-- Add personality prompt setting.
-- Add personality enabled toggle.
-- Build prompts through a prompt builder instead of inside the AI service.
-
-### MVP: Basic Templates
-
-- Add prompt template model.
-- Add built-in templates.
-- Add template selector to selected-text modal.
-- Send selected template through prompt builder.
-
-- DONE: Allow copy, insert, and replace actions safely.
-- Provide a settings page for AI connection and core prompt behaviour.
-- Provide a small starter set of reusable prompt templates.
-- Keep the system simple enough to test and use before adding advanced vault context.
-
-MVP does not need:
-
-- Full vault indexing.
-- Drag-and-drop context selection.
-- Diff view.
-- Multiple visual skins.
-- Complex prompt marketplace/library.
-- Advanced personality switching.
-
-## 2. AI Provider And Settings
-
-- Add plugin settings data model.
-- Add settings loading and saving.
-- Add settings tab in Obsidian.
-- Add provider selector.
-- DONE: Support Mock provider internally for development/testing.
-- Support OpenAI-compatible local provider first, such as LM Studio or Ollama through an OpenAI-compatible endpoint.
-- DONE: Add base URL setting.
-- DONE: Add model name setting.
-- DONE: Add API key setting, optional for local providers.
-- DONE: Add request timeout setting.
+- Wire mock provider selection through settings instead of hardcoded mock service.
+- Keep mock provider available for development/testing.
+- Add OpenAI-compatible local provider support for tools such as LM Studio or Ollama.
 - Add “Test connection” button.
 - Show connection test success/failure clearly.
-- Replace hardcoded `MockAiResponseService` creation with provider selection from settings.
-- Keep mock provider available for testing.
 
-## 3. AI Response Service
+## 2. AI response service
+
+Goal: keep the panel flow independent from the AI provider implementation.
 
 - DONE: Add AI response service interface so mock AI and real AI can use the same view flow.
 - DONE: Add mock AI response service for selection responses, general chat, and follow-up replies.
 - DONE: Add loading placeholder state while AI responses are being generated.
 - DONE: Add fallback error responses when AI response generation fails.
-- DONE: Mock follow-up replies now receive the previous entry context.
-- Add real AI integration for chat composer.
-- Add real AI integration for selection responses.
-- Add real AI integration for follow-up replies.
+- DONE: Pass previous entry context into mock follow-up replies.
+- Add OpenAI-compatible chat completion service.
+- Use real provider for general chat.
+- Use real provider for selected-text requests.
+- Use real provider for follow-up replies.
 - Build request payloads consistently for each request type.
 - Handle provider errors without breaking the panel.
-- Consider later replacing `isPlaceholder` with clearer response states such as loading, mock, ready, and error.
+- Later: replace `isPlaceholder` with clearer response states such as loading, mock, ready, and error.
 
-## 4. Prompt System
+## 3. Prompt system
 
-Prompt system goal:
+Goal: build AI requests from clear prompt parts instead of raw user text only.
 
-AI Draft Bench should not just send raw user text. It should have a clear prompt pipeline made from system prompts, personality prompts, templates, selected text, user instructions, and chat/follow-up context.
+### 3.1 Prompt builder
 
-### 4.1 Open Chat System Prompt
+- Add prompt builder service.
+- Use settings prompts when creating AI requests.
+- Apply open chat system prompt to general chat entries.
+- Apply selected-text system prompt to selected-text requests.
+- Apply personality prompt when enabled.
+- Keep system prompt, personality prompt, template prompt, selected text, user instruction, and follow-up context separate internally.
+- Build request payloads for:
+    - General chat.
+    - Selected-text request.
+    - Follow-up reply.
 
-- Add default open chat system prompt.
-- Let user edit open chat system prompt in settings.
+### 3.2 Open chat prompt
+
+- DONE: Add editable open chat system prompt setting.
 - Add reset-to-default button.
 - Use open chat system prompt for general chat entries.
-- Keep open chat prompt separate from selected-text prompt templates.
+- Keep open chat prompt separate from selected-text templates.
+
+### 3.3 Selected-text prompt
+
 - DONE: Add basic freeform instruction prompt for selected text.
-
-### 4.2 Selection Prompt System
-
-- Add default selected-text system prompt.
+- DONE: Add editable selected-text system prompt setting.
 - Use selected text as explicit source context.
-- Make sure AI understands it must respond to the selected text, not overwrite it automatically.
-- Add clear instruction formatting for selected text requests.
+- Make sure the AI understands it must respond to the selected text, not overwrite it automatically.
+- Add clear instruction formatting for selected-text requests.
 - Keep selected text, user instruction, and template prompt separate in the request model.
 
-### 4.3 Prompt Templates
+### 3.4 Personality prompt
+
+- DONE: Add personality prompt setting.
+- DONE: Add personality enabled toggle.
+- Add reset-to-default button.
+- Apply personality prompt to open chat and drafting requests when enabled.
+- Make personality prompt clearly separate from task templates.
+- Later: add simple personality presets such as Neutral, Friendly editor, Strict editor, and Creative partner.
+
+## 4. Prompt templates
+
+Goal: provide reusable prompt actions without forcing the user to write the same instruction every time.
 
 - Add prompt template type/model.
-- Add built-in prompt templates:
+- Add built-in templates:
     - Fix spelling and grammar.
     - Make clearer.
     - Summarise.
@@ -166,7 +139,7 @@ AI Draft Bench should not just send raw user text. It should have a clear prompt
     - Continue writing.
     - Rewrite in same voice.
 - Ensure grammar/spelling templates can return only corrected text with no explanation.
-- Add template selector to the selection prompt modal.
+- Add template selector to the selected-text prompt modal.
 - Let user add optional extra instruction after selecting a template.
 - Show template name and user-added instruction separately in the side panel.
 - Do not display the full template prompt by default.
@@ -174,37 +147,31 @@ AI Draft Bench should not just send raw user text. It should have a clear prompt
 - Later: allow user-created templates.
 - Later: allow editing built-in templates by copying them into user templates.
 
-### 4.4 Personality Prompt System
+## 5. Context system
 
-- Add personality prompt setting.
-- Let user enable or disable personality prompt.
-- Add default personality prompt.
-- Add reset-to-default button.
-- Apply personality prompt to open chat and drafting requests when enabled.
-- Make personality prompt clearly separate from task templates.
-- Consider simple personality presets later, such as Neutral, Friendly Editor, Strict Editor, Creative Partner.
-
-## 5. Context System
+Goal: let chat and follow-up requests include the right context without sending everything blindly.
 
 - DONE: Keep a session history in the side panel instead of replacing the existing panel contents.
 - DONE: Refactor the side panel from a single latest request into a scrolling request/response history.
 - DONE: Make each history entry keep its own source selection metadata.
-- DONE: Allow general chat without a selected text source. Currently uses mock responses.
+- DONE: Allow general chat without selected text. Currently uses mock responses.
 - DONE: Add follow-up replies for existing draft entries. Currently uses mock responses.
 - DONE: Show reply context snippets when replying to a previous entry.
 - DONE: Refer to a specific previous entry by passing reply context into the AI response service.
 - Continue discussing the last selected text.
 - Decide how much session history to send to the AI.
-- Add simple context builder for:
+- Add context builder service for:
     - General chat.
     - Selected-text request.
     - Follow-up reply.
-- Let follow-up replies include the previous entry text and response.
+- Let follow-up replies include previous entry text and response.
 - Later: let the user choose, drag, or select which note context is attached.
 - Later: allow attaching the current note as context.
 - Later: allow attaching linked notes or search results as context.
 
-## 6. Side Panel And Entry Flow
+## 6. Side panel and entry flow
+
+Goal: keep the draft bench usable while responses are generated and reviewed.
 
 - DONE: Add bottom chat composer UI.
 - DONE: Add fixed bottom chat composer.
@@ -212,13 +179,18 @@ AI Draft Bench should not just send raw user text. It should have a clear prompt
 - DONE: Add general chat entries.
 - DONE: Add follow-up entries.
 - DONE: Add reply action.
+- DONE: Disable empty chat sends and clear the chat box after sending.
+- DONE: Improve disabled chat send button styling and composer spacing.
 - DONE: Hide response action buttons while a response is still generating.
 - For future general chat entries, only show safe actions such as copy unless a target note or selection exists.
 - Keep replace and insert actions only for selection-based entries with saved source metadata.
 - Consider clearer labels for mock responses while development mode is active.
 - Consider a “clear session” action.
+- Add clearer empty-state guidance.
 
-## 7. Note Editing Actions And Safety
+## 7. Note editing actions and safety
+
+Goal: make note changes explicit, reversible in spirit, and safe from stale selections.
 
 - DONE: Copy response.
 - DONE: Replace original selection.
@@ -231,21 +203,22 @@ AI Draft Bench should not just send raw user text. It should have a clear prompt
 - Add diff view.
 - Consider a conflict resolution option when the source text has changed, such as showing the old selection, current text, and proposed replacement before allowing any manual override.
 
-## 8. UI And Interaction Polish
+## 8. UI and interaction polish
+
+Goal: make the plugin pleasant and clear without spending too long polishing before the AI core works.
 
 - DONE: Use compact icon-only response actions with tooltips.
 - DONE: Add ribbon button to open the AI Draft Bench panel.
 - DONE: Add shared plugin display config for name, header text, and icons.
-- DONE: Disable empty chat sends and clear the chat box after sending.
-- DONE: Improve disabled chat send button styling and composer spacing.
 - Review the ribbon/tab icon once the plugin identity is clearer.
 - Test alternative ribbon and tab icons through `pluginDisplay.ts`.
 - Improve selected-text prompt modal layout.
 - Add template selector to selected-text prompt modal.
-- Add clearer empty-state guidance.
 - Add loading/error styling that is distinct from mock styling later.
 
-## 9. Styling, Theming, And Release Readiness
+## 9. Styling, theming, and release readiness
+
+Goal: prepare the plugin for real-world Obsidian use.
 
 - Before release, review CSS for Obsidian community plugin readiness:
     - Scope all selectors under `.ai-draft-bench`.
@@ -253,10 +226,12 @@ AI Draft Bench should not just send raw user text. It should have a clear prompt
     - Use Obsidian theme variables instead of hardcoded colours.
     - Test in light mode, dark mode, and narrow side panels.
 - Add plugin-scoped CSS variables so users can customise AI Draft Bench styling safely.
-- Consider future visual skins such as Default, Soft, Minimal, Paper, and High Contrast.
+- Consider future visual skins such as Default, Soft, Minimal, Paper, and High contrast.
 - Add skin selection later through the settings page.
 
-## 10. Code Structure And Refactors
+## 10. Code structure and refactors
+
+Goal: keep the codebase maintainable as the real AI, prompt, and context systems are added.
 
 - DONE: Refactor `SelectionEditService` so replace and insert actions share one selection validation helper.
 - DONE: Refactor AI Draft Bench panel opening into a shared service so the ribbon icon and editor menu use the same view-opening logic.
