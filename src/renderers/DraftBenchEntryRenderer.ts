@@ -84,7 +84,7 @@ export class DraftBenchEntryRenderer {
 		container.createEl("h3", { text: "Draft response" });
 
 		const responseEl = container.createEl("div", {
-			cls: "ai-draft-bench-response-text",
+			cls: response.isPlaceholder ? "ai-draft-bench-response-text ai-draft-bench-response-text-placeholder" : "ai-draft-bench-response-text",
 		});
 
 		const responseToolbarEl = responseEl.createEl("div", {

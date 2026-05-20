@@ -5,11 +5,11 @@
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
-		"dev": "node esbuild.config.mjs",
-		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint .",
-		"deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy-to-vault.ps1"
+		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy-to-vault.ps1",
+		"dev": "node esbuild.config.mjs",
+		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
 	"keywords": [],
 	"license": "0-BSD",

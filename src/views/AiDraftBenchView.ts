@@ -1,28 +1,34 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
+import { DraftBenchChatComposerRenderer } from "../renderers/DraftBenchChatComposerRenderer";
+import { DraftBenchEntryRenderer } from "../renderers/DraftBenchEntryRenderer";
+import { MockAiResponseService } from "../services/MockAiResponseService";
 import { ClipboardService } from "../services/ClipboardService";
 import { SelectionEditService } from "../services/SelectionEditService";
-import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
-import { AiDraftBenchResponse } from "../types/AiDraftBenchResponse";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
-import { DraftBenchEntryRenderer } from "../renderers/DraftBenchEntryRenderer";
-import { DraftBenchChatComposerRenderer } from "../renderers/DraftBenchChatComposerRenderer";
+import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
+import { createPlaceholderResponse } from "../utils/createPlaceholderResponse";
 
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 
 export class AiDraftBenchView extends ItemView {
 	private entries: AiDraftBenchEntry[] = [];
 	private replyToEntryId: string | null = null;
+	private readonly aiResponseService = new MockAiResponseService();
 	private readonly clipboardService = new ClipboardService();
 	private readonly selectionEditService = new SelectionEditService(this.app);
-	private readonly entryRenderer = new DraftBenchEntryRenderer(this.clipboardService, this.selectionEditService, (entryId) => {
-		this.replyToEntryId = entryId;
-		this.render();
-		this.scrollToBottom();
-	});
+	private readonly entryRenderer = new DraftBenchEntryRenderer(
+		this.clipboardService,
+		this.selectionEditService,
+		(entryId) => {
+			this.replyToEntryId = entryId;
+			this.render();
+			this.scrollToBottom();
+		},
+	);
 	private readonly chatComposerRenderer = new DraftBenchChatComposerRenderer(
 		(message) => {
-			this.addChatEntry(message);
+			void this.addChatEntry(message);
 		},
 		() => {
 			this.replyToEntryId = null;
@@ -55,25 +61,37 @@ export class AiDraftBenchView extends ItemView {
 	}
 
 	setRequest(request: AiDraftBenchRequest): void {
-		const response: AiDraftBenchResponse = {
-			text: `Fake AI response for: ${request.instruction}`,
-			createdAt: new Date().toISOString(),
-			isPlaceholder: true,
-		};
+		void this.addSelectionEntry(request);
+	}
 
-		this.entries.push({
+	private async addSelectionEntry(request: AiDraftBenchRequest): Promise<void> {
+		const entry: AiDraftBenchEntry = {
 			id: crypto.randomUUID(),
 			type: "selection",
 			request,
-			response,
+			response: createPlaceholderResponse("Thinking..."),
 			createdAt: new Date().toISOString(),
-		});
+		};
+
+		this.entries.push(entry);
+		this.render();
+		this.scrollToBottom();
+
+		try {
+			entry.response = await this.aiResponseService.createSelectionResponse(request);
+		} catch (error) {
+			console.error("AI Draft Bench selection response failed", error);
+
+			entry.response = createPlaceholderResponse(
+				"Sorry, AI Draft Bench could not create a response for this selection.",
+			);
+		}
 
 		this.render();
 		this.scrollToBottom();
 	}
 
-	private addChatEntry(message: string): void {
+	private async addChatEntry(message: string): Promise<void> {
 		const trimmedMessage = message.trim();
 
 		if (!trimmedMessage) {
@@ -81,23 +99,36 @@ export class AiDraftBenchView extends ItemView {
 		}
 
 		const replyToEntryId = this.replyToEntryId;
+		const replyToEntry = replyToEntryId
+			? this.entries.find((entry) => entry.id === replyToEntryId)
+			: undefined;
 
-		const response: AiDraftBenchResponse = {
-			text: replyToEntryId ? `Mock follow-up response: ${trimmedMessage}` : `Mock chat response: ${trimmedMessage}`,
-			createdAt: new Date().toISOString(),
-			isPlaceholder: true,
-		};
-
-		this.entries.push({
+		const entry: AiDraftBenchEntry = {
 			id: crypto.randomUUID(),
 			type: "chat",
 			message: trimmedMessage,
-			response,
+			response: createPlaceholderResponse("Thinking..."),
 			createdAt: new Date().toISOString(),
 			replyToEntryId: replyToEntryId ?? undefined,
-		});
+		};
 
+		this.entries.push(entry);
 		this.replyToEntryId = null;
+		this.render();
+		this.scrollToBottom();
+
+		try {
+			entry.response = await this.aiResponseService.createChatResponse({
+				message: trimmedMessage,
+				replyToEntry,
+			});
+		} catch (error) {
+			console.error("AI Draft Bench chat response failed", error);
+
+			entry.response = createPlaceholderResponse(
+				"Sorry, AI Draft Bench could not create a chat response.",
+			);
+		}
 
 		this.render();
 		this.scrollToBottom();

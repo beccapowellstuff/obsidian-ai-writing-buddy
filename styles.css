@@ -231,6 +231,11 @@
 	user-select: text;
 }
 
+.ai-draft-bench-response-text-placeholder {
+	opacity: 0.75;
+	font-style: italic;
+}
+
 
 /* ==========================================================================
    AI Draft Bench: action buttons

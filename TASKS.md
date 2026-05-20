@@ -12,6 +12,10 @@ This list tracks completed and upcoming tasks. It is not a full kanban board yet
 - Ensure grammar/spelling presets return only corrected text with no explanation.
 - When prompt presets are added, show the preset name and user-added instruction separately instead of displaying the full template prompt.
 - Hide full template prompt behind an expandable debug/details section if needed.
+- DONE: Add AI response service interface so mock AI and real AI can use the same view flow.
+- DONE: Add mock AI response service for selection responses, general chat, and follow-up replies.
+- DONE: Add loading placeholder state while AI responses are being generated.
+- DONE: Add fallback error responses when AI response generation fails.
 
 ## DONE: 2. Response History And Panel Flow
 
