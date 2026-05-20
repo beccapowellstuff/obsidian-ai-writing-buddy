@@ -8,13 +8,15 @@ AI Draft Bench is an Obsidian writing assistant plugin focused on drafting, rewr
 
 The current focus is getting the plugin from mock-only behaviour to a configurable MVP.
 
-- DONE: Add settings model and default settings.
-- DONE: Add settings load/save to the plugin.
-- DONE: Add settings tab UI.
-- DONE: Wire mock provider selection through settings instead of hardcoded mock service.
-- Add OpenAI-compatible AI response service.
-- Add prompt builder using settings prompts.
-- Add template system.
+1. DONE: Add settings model and default settings.
+2. DONE: Add settings load/save to the plugin.
+3. DONE: Add settings tab UI.
+4. DONE: Wire mock provider selection through settings instead of hardcoded mock service.
+5. DONE: Add OpenAI-compatible AI response service.
+6. TODO: Add AI provider connection test.
+7. TODO: Improve provider error messages in the panel.
+8. TODO: Add prompt builder using settings prompts.
+9. TODO: Add template system.
 
 ## MVP scope
 
