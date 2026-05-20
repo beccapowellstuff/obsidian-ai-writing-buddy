@@ -7,6 +7,7 @@ export type PromptTemplate = {
 	scope: PromptTemplateScope;
 	prompt: string;
 	returnsReplacementTextOnly: boolean;
+	highlightChanges: boolean;
 	isBuiltIn: boolean;
 	createdAt: string;
 	updatedAt: string;

@@ -77,6 +77,7 @@ export class EditorMenuService {
 			templateName: value.template?.name,
 			templatePrompt: value.template?.prompt,
 			returnsReplacementTextOnly: value.template?.returnsReplacementTextOnly,
+			highlightChanges: value.template?.highlightChanges,
 		});
 	}
 }

@@ -145,7 +145,7 @@ export class DraftBenchEntryRenderer {
 	}
 
 	private shouldHighlightResponseChanges(response: AiDraftBenchResponse, entry: AiDraftBenchEntry): entry is AiDraftBenchSelectionEntry {
-		return entry.type === "selection" && entry.request.returnsReplacementTextOnly === true && !response.isPlaceholder && response.text.trim().length > 0;
+		return entry.type === "selection" && entry.request.highlightChanges === true && !response.isPlaceholder && response.text.trim().length > 0;
 	}
 
 	private renderChangedResponseText(container: HTMLElement, originalText: string, responseText: string): void {

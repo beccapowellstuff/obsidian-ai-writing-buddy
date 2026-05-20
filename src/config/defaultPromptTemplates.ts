@@ -23,6 +23,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		isBuiltIn: true,
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
+		highlightChanges: true,
 	},
 
 	{
@@ -41,6 +42,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		isBuiltIn: true,
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
+		highlightChanges: false,
 	},
 
 	{
@@ -58,6 +60,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		isBuiltIn: true,
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
+		highlightChanges: false,
 	},
 
 	{
@@ -76,7 +79,9 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		isBuiltIn: true,
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
+		highlightChanges: false,
 	},
+
 	{
 		id: "continue-writing",
 		name: "Continue writing",
@@ -94,7 +99,9 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		isBuiltIn: true,
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
+		highlightChanges: false,
 	},
+
 	{
 		id: "rewrite-in-same-voice",
 		name: "Rewrite in same voice",
@@ -110,6 +117,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		isBuiltIn: true,
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
+		highlightChanges: false,
 	},
 
 	{
@@ -129,5 +137,6 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		isBuiltIn: true,
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
+		highlightChanges: false,
 	},
 ];

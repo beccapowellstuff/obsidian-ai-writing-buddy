@@ -11,4 +11,5 @@ export type AiDraftBenchRequest = {
 	templateName?: string;
 	templatePrompt?: string;
 	returnsReplacementTextOnly?: boolean;
+	highlightChanges?: boolean;
 };
