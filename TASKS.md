@@ -6,8 +6,8 @@ AI Draft Bench is an Obsidian writing assistant plugin focused on drafting, rewr
 
 ## Next Build Order
 
-1. Add settings model and default settings.
-2. Add settings load/save to the plugin.
+1. DONE: Add settings model and default settings.
+2. DONE: Add settings load/save to the plugin.
 3. Add settings tab UI.
 4. Wire Mock provider selection through settings instead of hardcoded mock service.
 5. Add OpenAI-compatible AI response service.
