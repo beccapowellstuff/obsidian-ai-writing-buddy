@@ -8,11 +8,11 @@ AI Draft Bench is an Obsidian writing assistant plugin focused on drafting, rewr
 
 MVP goal:
 
-- Open an AI Draft Bench side panel.
-- Send general chat prompts.
-- Send prompts based on selected note text.
+- DONE: Open an AI Draft Bench side panel.
+- DONE: Send general chat prompts using mock responses.
+- DONE: Send prompts based on selected note text using mock responses.
 - Use configured AI provider instead of mock responses.
-- Allow copy, insert, and replace actions safely.
+- DONE: Allow copy, insert, and replace actions safely.
 - Provide a settings page for AI connection and core prompt behaviour.
 - Provide a small starter set of reusable prompt templates.
 - Keep the system simple enough to test and use before adding advanced vault context.
@@ -32,7 +32,7 @@ MVP does not need:
 - Add settings loading and saving.
 - Add settings tab in Obsidian.
 - Add provider selector.
-- Support Mock provider for development/testing.
+- DONE: Support Mock provider internally for development/testing.
 - Support OpenAI-compatible local provider first, such as LM Studio or Ollama through an OpenAI-compatible endpoint.
 - Add base URL setting.
 - Add model name setting.
@@ -70,6 +70,7 @@ AI Draft Bench should not just send raw user text. It should have a clear prompt
 - Add reset-to-default button.
 - Use open chat system prompt for general chat entries.
 - Keep open chat prompt separate from selected-text prompt templates.
+- DONE: Add basic freeform instruction prompt for selected text.
 
 ### 4.2 Selection Prompt System
 
