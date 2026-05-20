@@ -55,6 +55,11 @@ This list tracks completed and upcoming tasks. It is not a full kanban board yet
 - DONE: Add bottom chat composer UI.
 - Review the ribbon/tab icon once the plugin identity is clearer.
 - Test alternative ribbon and tab icons through `pluginDisplay.ts`.
+- DONE: Disable empty chat sends and clear the chat box after sending.
+- DONE: Improve disabled chat send button styling and composer spacing.
+- DONE: Disable empty chat sends and clear the chat box after sending.
+- DONE: Improve disabled chat send button styling and composer spacing.
+- DONE: Hide response action buttons while a response is still generating.
 
 ## 6. Styling, Theming, And Release Readiness
 

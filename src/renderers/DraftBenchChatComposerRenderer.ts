@@ -29,14 +29,35 @@ export class DraftBenchChatComposerRenderer {
 			text: "Send",
 		});
 
+		const updateSendButtonState = (): void => {
+			sendButtonEl.disabled = inputEl.value.trim().length === 0;
+		};
+
+		const sendMessage = (): void => {
+			const message = inputEl.value.trim();
+
+			if (!message) {
+				updateSendButtonState();
+				return;
+			}
+
+			this.onSendChat(message);
+			inputEl.value = "";
+			updateSendButtonState();
+		};
+
+		updateSendButtonState();
+
+		inputEl.addEventListener("input", updateSendButtonState);
+
 		sendButtonEl.addEventListener("click", () => {
-			this.onSendChat(inputEl.value);
+			sendMessage();
 		});
 
 		inputEl.addEventListener("keydown", (event) => {
 			if (event.key === "Enter" && !event.shiftKey) {
 				event.preventDefault();
-				this.onSendChat(inputEl.value);
+				sendMessage();
 			}
 		});
 	}

@@ -83,6 +83,8 @@ export class DraftBenchEntryRenderer {
 	private renderResponse(container: HTMLElement, response: AiDraftBenchResponse, entry: AiDraftBenchEntry): void {
 		container.createEl("h3", { text: "Draft response" });
 
+		const isResponsePending = response.isPlaceholder && response.text === "Thinking...";
+
 		const responseEl = container.createEl("div", {
 			cls: response.isPlaceholder ? "ai-draft-bench-response-text ai-draft-bench-response-text-placeholder" : "ai-draft-bench-response-text",
 		});
@@ -99,22 +101,29 @@ export class DraftBenchEntryRenderer {
 			cls: "ai-draft-bench-response-actions-right",
 		});
 
-		this.createActionButton(replyActionsEl, "reply", "Reply to this entry", async () => {
-			this.onReply(entry.id);
-		});
-
-		this.createActionButton(outputActionsEl, "copy", "Copy response", async () => {
-			await this.clipboardService.copyText(response.text);
-		});
-
-		if (entry.type === "selection") {
-			this.createActionButton(outputActionsEl, "refresh-cw", "Replace selection", async () => {
-				await this.selectionEditService.replaceSelection(entry.request, response.text);
+		if (isResponsePending) {
+			replyActionsEl.createEl("span", {
+				cls: "ai-draft-bench-response-pending-label",
+				text: "Generating response...",
+			});
+		} else {
+			this.createActionButton(replyActionsEl, "reply", "Reply to this entry", async () => {
+				this.onReply(entry.id);
 			});
 
-			this.createActionButton(outputActionsEl, "plus-circle", "Insert after selection", async () => {
-				await this.selectionEditService.insertAfterSelection(entry.request, response.text);
+			this.createActionButton(outputActionsEl, "copy", "Copy response", async () => {
+				await this.clipboardService.copyText(response.text);
 			});
+
+			if (entry.type === "selection") {
+				this.createActionButton(outputActionsEl, "refresh-cw", "Replace selection", async () => {
+					await this.selectionEditService.replaceSelection(entry.request, response.text);
+				});
+
+				this.createActionButton(outputActionsEl, "plus-circle", "Insert after selection", async () => {
+					await this.selectionEditService.insertAfterSelection(entry.request, response.text);
+				});
+			}
 		}
 
 		responseEl.createEl("div", {
@@ -123,7 +132,7 @@ export class DraftBenchEntryRenderer {
 		});
 	}
 
-	private createActionButton(container: HTMLElement, iconName: string, label: string, onClick: () => Promise<void>): void {
+	private createActionButton(container: HTMLElement, iconName: string, label: string, onClick: () => Promise<void>, disabled = false): void {
 		const buttonEl = container.createEl("button", {
 			cls: "ai-draft-bench-action-button",
 			attr: {
@@ -132,6 +141,8 @@ export class DraftBenchEntryRenderer {
 			},
 		});
 
+		buttonEl.disabled = disabled;
+
 		const iconEl = buttonEl.createSpan({
 			cls: "ai-draft-bench-action-icon",
 		});
@@ -139,6 +150,10 @@ export class DraftBenchEntryRenderer {
 		setIcon(iconEl, iconName);
 
 		buttonEl.addEventListener("click", () => {
+			if (buttonEl.disabled) {
+				return;
+			}
+
 			void onClick();
 		});
 	}
