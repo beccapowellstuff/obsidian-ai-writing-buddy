@@ -12,4 +12,5 @@ export type AiDraftBenchRequest = {
 	templatePrompt?: string;
 	returnsReplacementTextOnly?: boolean;
 	highlightChanges?: boolean;
+	promptPreview?: string;
 };

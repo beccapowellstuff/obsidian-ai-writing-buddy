@@ -21,13 +21,13 @@ export class DraftBenchPromptBuilder {
 			{
 				role: "user",
 				content: [
-					request.templatePrompt ? "Template instruction:" : "",
+					request.templatePrompt ? "[TEMPLATE INSTRUCTION]" : "",
 					request.templatePrompt ?? "",
 					request.templatePrompt ? "" : "",
-					"Selected text:",
+					"[SELECTED TEXT]",
 					request.selectedText,
 					"",
-					request.instruction ? "User instruction:" : "",
+					request.instruction ? "[USER INSTRUCTION]" : "",
 					request.instruction,
 				]
 					.filter(Boolean)
@@ -79,5 +79,13 @@ export class DraftBenchPromptBuilder {
 		}
 
 		return messages;
+	}
+
+	formatPromptPreview(messages: DraftBenchChatMessage[]): string {
+		return messages
+			.map((message) => {
+				return [`[${message.role.toUpperCase()}]`, message.content].join("\n");
+			})
+			.join("\n\n---\n\n");
 	}
 }

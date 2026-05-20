@@ -190,7 +190,7 @@
 
 
 /* ==========================================================================
-   AI Draft Bench: response panel
+   AI Draft Bench: response panel / entries
    ========================================================================== */
 
 .ai-draft-bench-response-text {
@@ -203,6 +203,26 @@
 	background: var(--background-primary);
 	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 	line-height: 1.5;
+}
+
+.ai-draft-bench-template-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.ai-draft-bench-template-header h3 {
+	margin: 0;
+}
+
+.ai-draft-bench-prompt-preview-textarea {
+	width: 100%;
+	min-height: 360px;
+	margin-top: 12px;
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
+	line-height: 1.45;
+	resize: vertical;
 }
 
 .ai-draft-bench-response-pending-label {

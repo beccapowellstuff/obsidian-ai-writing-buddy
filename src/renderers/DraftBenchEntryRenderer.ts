@@ -1,13 +1,15 @@
-import { setIcon } from "obsidian";
+import { App, setIcon } from "obsidian";
 import { ClipboardService } from "../services/ClipboardService";
 import { SelectionEditService } from "../services/SelectionEditService";
 import { AiDraftBenchResponse } from "../types/AiDraftBenchResponse";
 import { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/AiDraftBenchEntry";
+import { PromptPreviewModal } from "../modals/PromptPreviewModal";
 
 type ReplyHandler = (entryId: string) => void;
 
 export class DraftBenchEntryRenderer {
 	constructor(
+		private readonly app: App,
 		private readonly clipboardService: ClipboardService,
 		private readonly selectionEditService: SelectionEditService,
 		private readonly onReply: ReplyHandler,
@@ -28,7 +30,7 @@ export class DraftBenchEntryRenderer {
 		});
 
 		this.renderSourcePanel(entryEl, entry);
-		this.renderInstruction(entryEl, entry.request.instruction);
+		this.renderTemplateAndInstruction(entryEl, entry);
 		this.renderResponse(entryEl, entry.response, entry);
 	}
 
@@ -75,9 +77,41 @@ export class DraftBenchEntryRenderer {
 		});
 	}
 
-	private renderInstruction(container: HTMLElement, instruction: string): void {
-		container.createEl("h3", { text: "Instruction" });
-		container.createEl("p", { text: instruction });
+	private renderTemplateAndInstruction(container: HTMLElement, entry: AiDraftBenchSelectionEntry): void {
+		if (entry.request.templateName) {
+			const templateHeaderEl = container.createEl("div", {
+				cls: "ai-draft-bench-template-header",
+			});
+
+			templateHeaderEl.createEl("h3", { text: "Template" });
+
+			if (entry.request.promptPreview) {
+				const promptButtonEl = templateHeaderEl.createEl("button", {
+					cls: "ai-draft-bench-action-button",
+					attr: {
+						"aria-label": "Show full prompt",
+						title: "Show full prompt",
+					},
+				});
+
+				const iconEl = promptButtonEl.createSpan({
+					cls: "ai-draft-bench-action-icon",
+				});
+
+				setIcon(iconEl, "file-text");
+
+				promptButtonEl.addEventListener("click", () => {
+					new PromptPreviewModal(this.app, entry.request.promptPreview ?? "").open();
+				});
+			}
+
+			container.createEl("p", { text: entry.request.templateName });
+		}
+
+		if (entry.request.instruction.trim()) {
+			container.createEl("h3", { text: entry.request.templateName ? "Extra instruction" : "Instruction" });
+			container.createEl("p", { text: entry.request.instruction });
+		}
 	}
 
 	private renderResponse(container: HTMLElement, response: AiDraftBenchResponse, entry: AiDraftBenchEntry): void {

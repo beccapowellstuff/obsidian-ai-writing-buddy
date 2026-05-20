@@ -209,6 +209,7 @@ Goal: keep the draft bench usable while responses are generated and reviewed.
 - PANEL-012 TODO: Consider clearer labels for mock responses while development mode is active.
 - PANEL-013 TODO: Consider a clear session action.
 - PANEL-014 TODO: Add clearer empty-state guidance.
+- PANEL-015 DONE: Preserve panel scroll position while rendering new entries.
 
 ## 7. Note editing actions and safety
 

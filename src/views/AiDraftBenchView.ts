@@ -16,10 +16,9 @@ export class AiDraftBenchView extends ItemView {
 	private replyToEntryId: string | null = null;
 	private readonly clipboardService = new ClipboardService();
 	private readonly selectionEditService = new SelectionEditService(this.app);
-	private readonly entryRenderer = new DraftBenchEntryRenderer(this.clipboardService, this.selectionEditService, (entryId) => {
+	private readonly entryRenderer = new DraftBenchEntryRenderer(this.app, this.clipboardService, this.selectionEditService, (entryId) => {
 		this.replyToEntryId = entryId;
-		this.render();
-		this.scrollToBottom();
+		this.renderPreservingScroll();
 	});
 	private readonly chatComposerRenderer = new DraftBenchChatComposerRenderer(
 		(message) => {
@@ -27,7 +26,7 @@ export class AiDraftBenchView extends ItemView {
 		},
 		() => {
 			this.replyToEntryId = null;
-			this.render();
+			this.renderPreservingScroll();
 		},
 	);
 
@@ -164,6 +163,27 @@ export class AiDraftBenchView extends ItemView {
 		return "Unknown provider error.";
 	}
 
+	private renderPreservingScroll(): void {
+		const entriesEl = this.contentEl.querySelector(".ai-draft-bench-entries");
+		const previousScrollTop = entriesEl instanceof HTMLElement ? entriesEl.scrollTop : null;
+
+		this.render();
+
+		if (previousScrollTop === null) {
+			return;
+		}
+
+		window.setTimeout(() => {
+			const newEntriesEl = this.contentEl.querySelector(".ai-draft-bench-entries");
+
+			if (!(newEntriesEl instanceof HTMLElement)) {
+				return;
+			}
+
+			newEntriesEl.scrollTop = previousScrollTop;
+		}, 0);
+	}
+
 	private render(): void {
 		const container = this.contentEl;
 		container.empty();
@@ -216,10 +236,7 @@ export class AiDraftBenchView extends ItemView {
 				return;
 			}
 
-			entriesEl.scrollTo({
-				top: entriesEl.scrollHeight,
-				behavior: "smooth",
-			});
+			entriesEl.scrollTop = entriesEl.scrollHeight;
 		}, 0);
 	}
 }

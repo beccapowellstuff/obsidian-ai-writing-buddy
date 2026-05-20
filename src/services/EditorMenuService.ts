@@ -1,5 +1,5 @@
 import { App, Editor, EditorPosition, EventRef, MarkdownView, Menu, Notice, Plugin } from "obsidian";
-
+import { DraftBenchPromptBuilder } from "./DraftBenchPromptBuilder";
 import { AiPromptModal, AiPromptModalSubmitValue } from "../modals/AiPromptModal";
 import { AiDraftBenchSettings } from "../config/defaultSettings";
 import { DraftBenchViewService } from "./DraftBenchViewService";
@@ -66,7 +66,7 @@ export class EditorMenuService {
 	private async handlePromptSubmit(value: AiPromptModalSubmitValue, sourcePath: string, selectionStart: EditorPosition, selectionEnd: EditorPosition): Promise<void> {
 		const draftBenchView = await this.draftBenchViewService.openView();
 
-		draftBenchView.setRequest({
+		const request = {
 			instruction: value.instruction,
 			selectedText: value.selectedText,
 			sourcePath,
@@ -78,6 +78,14 @@ export class EditorMenuService {
 			templatePrompt: value.template?.prompt,
 			returnsReplacementTextOnly: value.template?.returnsReplacementTextOnly,
 			highlightChanges: value.template?.highlightChanges,
+		};
+
+		const promptBuilder = new DraftBenchPromptBuilder(this.plugin.settings);
+		const promptPreview = promptBuilder.formatPromptPreview(promptBuilder.buildSelectionPrompt(request));
+
+		draftBenchView.setRequest({
+			...request,
+			promptPreview,
 		});
 	}
 }
