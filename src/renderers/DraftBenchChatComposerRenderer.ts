@@ -7,13 +7,13 @@ export class DraftBenchChatComposerRenderer {
 		private readonly onCancelReply: CancelReplyHandler,
 	) {}
 
-	render(container: HTMLElement, replyToEntryId: string | null): void {
+	render(container: HTMLElement, replyContextText: string | null): void {
 		const composerEl = container.createEl("div", {
 			cls: "ai-draft-bench-chat-composer",
 		});
 
-		if (replyToEntryId) {
-			this.renderReplyContext(composerEl);
+		if (replyContextText) {
+			this.renderReplyContext(composerEl, replyContextText);
 		}
 
 		const inputEl = composerEl.createEl("textarea", {
@@ -62,13 +62,13 @@ export class DraftBenchChatComposerRenderer {
 		});
 	}
 
-	private renderReplyContext(container: HTMLElement): void {
+	private renderReplyContext(container: HTMLElement, replyContextText: string): void {
 		const replyEl = container.createEl("div", {
 			cls: "ai-draft-bench-reply-context",
 		});
 
 		replyEl.createSpan({
-			text: "Replying to an earlier draft",
+			text: replyContextText,
 		});
 
 		const cancelButtonEl = replyEl.createEl("button", {
