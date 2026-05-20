@@ -4,6 +4,16 @@ This list tracks completed and upcoming tasks for AI Draft Bench.
 
 AI Draft Bench is an Obsidian writing assistant plugin focused on drafting, rewriting, reviewing, and safely applying AI-generated text to notes.
 
+## Next Build Order
+
+1. Add settings model and default settings.
+2. Add settings load/save to the plugin.
+3. Add settings tab UI.
+4. Wire Mock provider selection through settings instead of hardcoded mock service.
+5. Add OpenAI-compatible AI response service.
+6. Add prompt builder using settings prompts.
+7. Add template system.
+
 ## 1. MVP Definition
 
 MVP goal:
@@ -28,6 +38,25 @@ MVP goal:
 - - Add real AI call for general chat.
 - - Add real AI call for selected-text prompts.
 - - Add real AI call for follow-up replies.
+
+### MVP: Settings And AI Configuration
+
+- Add plugin settings model and default settings.
+- Add settings loading and saving.
+- Add Obsidian settings tab.
+- Add provider selector.
+- Add Mock provider option.
+- Add OpenAI-compatible provider option.
+- Add base URL setting.
+- Add model name setting.
+- Add API key setting.
+- Add request timeout setting.
+- Add basic prompt settings section.
+- Add open chat system prompt setting.
+- Add selected-text system prompt setting.
+- Add personality prompt setting.
+- Add personality enabled toggle.
+- Later: Add test connection button.
 
 ### MVP: Configured AI Provider
 
