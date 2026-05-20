@@ -156,7 +156,7 @@ Goal: provide reusable prompt actions without forcing the user to write the same
 - TMP-007 DONE: Add built-in template for rewriting in the same voice.
 - TMP-008 DONE: Ensure grammar/spelling templates can return only corrected text with no explanation.
 - TMP-009 DONE: Add template selector to the selected-text prompt modal.
-- TMP-010 TODO: Let user add optional extra instruction after selecting a template.
+- TMP-010 DONE: Let user add optional extra instruction after selecting a template.
 - TMP-011 TODO: Show template name and user-added instruction separately in the side panel.
 - TMP-012 TODO: Do not display the full template prompt by default.
 - TMP-013 TODO: Hide full template prompt behind an expandable debug/details section if needed.
@@ -265,6 +265,7 @@ Goal: keep the codebase maintainable as the real AI, prompt, and context systems
 - CODE-007 TODO: Add context builder service before follow-up/chat context becomes messy.
 
 ## 11. Workflow/Accessibility
+
 - CMD-001 LATER: Add command palette commands for common AI Draft Bench actions.
 - CMD-002 LATER: Add command palette command to ask about current selection.
 - CMD-003 LATER: Add command palette command to run last template.
