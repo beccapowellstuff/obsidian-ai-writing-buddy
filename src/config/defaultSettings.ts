@@ -1,3 +1,5 @@
+import { PromptTemplate } from "../types/PromptTemplate";
+import { DEFAULT_PROMPT_TEMPLATES } from "./defaultPromptTemplates";
 export type AiDraftBenchProvider = "mock" | "openai-compatible";
 
 export type AiDraftBenchSettings = {
@@ -10,6 +12,7 @@ export type AiDraftBenchSettings = {
 	selectionSystemPrompt: string;
 	personalityEnabled: boolean;
 	personalityPrompt: string;
+	promptTemplates: PromptTemplate[];
 };
 
 export const DEFAULT_OPEN_CHAT_SYSTEM_PROMPT = [
@@ -27,7 +30,11 @@ export const DEFAULT_SELECTION_SYSTEM_PROMPT = [
 	"Do not claim you changed the note directly. Only provide the draft response.",
 ].join("\n");
 
-export const DEFAULT_PERSONALITY_PROMPT = ["Be friendly, thoughtful, and practical.", "Give useful writing help without being overly formal.", "Challenge unclear writing when needed, but stay kind."].join("\n");
+export const DEFAULT_PERSONALITY_PROMPT = [
+	"Be friendly, thoughtful, and practical.",
+	"Give useful writing help without being overly formal.",
+	"Challenge unclear writing when needed, but stay kind.",
+].join("\n");
 
 export const DEFAULT_AI_DRAFT_BENCH_SETTINGS: AiDraftBenchSettings = {
 	provider: "mock",
@@ -39,4 +46,5 @@ export const DEFAULT_AI_DRAFT_BENCH_SETTINGS: AiDraftBenchSettings = {
 	selectionSystemPrompt: DEFAULT_SELECTION_SYSTEM_PROMPT,
 	personalityEnabled: false,
 	personalityPrompt: DEFAULT_PERSONALITY_PROMPT,
+	promptTemplates: DEFAULT_PROMPT_TEMPLATES,
 };

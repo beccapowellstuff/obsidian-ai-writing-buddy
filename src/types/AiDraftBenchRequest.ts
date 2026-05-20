@@ -7,4 +7,8 @@ export type AiDraftBenchRequest = {
 	selectionStart: EditorPosition;
 	selectionEnd: EditorPosition;
 	createdAt: string;
+	templateId?: string;
+	templateName?: string;
+	templatePrompt?: string;
+	returnsReplacementTextOnly?: boolean;
 };

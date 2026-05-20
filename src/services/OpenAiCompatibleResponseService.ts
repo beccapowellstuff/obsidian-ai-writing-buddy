@@ -13,6 +13,10 @@ type OpenAiChatCompletionResponse = {
 	}>;
 };
 
+type ChatCompletionOptions = {
+	temperature: number;
+};
+
 export class OpenAiCompatibleResponseService implements AiResponseService {
 	private readonly promptBuilder: DraftBenchPromptBuilder;
 
@@ -21,18 +25,22 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 	}
 
 	async createSelectionResponse(request: AiDraftBenchRequest): Promise<AiDraftBenchResponse> {
-		const responseText = await this.sendChatCompletion(this.promptBuilder.buildSelectionPrompt(request));
+		const responseText = await this.sendChatCompletion(this.promptBuilder.buildSelectionPrompt(request), {
+			temperature: request.returnsReplacementTextOnly ? 0.1 : 0.7,
+		});
 
 		return this.createResponse(responseText);
 	}
 
 	async createChatResponse(request: AiChatRequest): Promise<AiDraftBenchResponse> {
-		const responseText = await this.sendChatCompletion(this.promptBuilder.buildChatPrompt(request));
+		const responseText = await this.sendChatCompletion(this.promptBuilder.buildChatPrompt(request), {
+			temperature: 0.7,
+		});
 
 		return this.createResponse(responseText);
 	}
 
-	private async sendChatCompletion(messages: DraftBenchChatMessage[]): Promise<string> {
+	private async sendChatCompletion(messages: DraftBenchChatMessage[], options: ChatCompletionOptions): Promise<string> {
 		const baseUrl = this.settings.baseUrl.replace(/\/$/, "");
 		const url = `${baseUrl}/chat/completions`;
 
@@ -55,7 +63,7 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 			body: JSON.stringify({
 				model: this.settings.modelName.trim(),
 				messages,
-				temperature: 0.7,
+				temperature: options.temperature,
 				stream: false,
 			}),
 			throw: false,

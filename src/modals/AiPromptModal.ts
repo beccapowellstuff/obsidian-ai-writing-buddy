@@ -1,40 +1,61 @@
 import { App, Modal, Setting } from "obsidian";
+import { PromptTemplate } from "../types/PromptTemplate";
+
+export type AiPromptModalSubmitValue = {
+	instruction: string;
+	selectedText: string;
+	template?: PromptTemplate;
+};
 
 export class AiPromptModal extends Modal {
 	private readonly selectedText: string;
-	private readonly onSubmit: (instruction: string, selectedText: string) => void;
+	private readonly templates: PromptTemplate[];
+	private readonly onSubmit: (value: AiPromptModalSubmitValue) => void;
 
-	constructor(
-		app: App,
-		selectedText: string,
-		onSubmit: (instruction: string, selectedText: string) => void
-	) {
+	constructor(app: App, selectedText: string, templates: PromptTemplate[], onSubmit: (value: AiPromptModalSubmitValue) => void) {
 		super(app);
 		this.selectedText = selectedText;
+		this.templates = templates;
 		this.onSubmit = onSubmit;
 	}
 
-	onOpen() {
+	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
 
 		contentEl.createEl("h2", { text: "Ask AI about selection" });
 
 		contentEl.createEl("p", {
-			text: "Enter what you want the AI to do with the selected text.",
+			text: "Choose a template or enter your own instruction for the selected text.",
 		});
 
 		let instruction = "";
+		let selectedTemplateId = "";
+
+		const selectionTemplates = this.templates.filter((template) => template.scope === "selection");
+
+		new Setting(contentEl)
+			.setName("Template")
+			.setDesc("Optional starting point for the request.")
+			.addDropdown((dropdown) => {
+				dropdown.addOption("", "No template");
+
+				for (const template of selectionTemplates) {
+					dropdown.addOption(template.id, template.name);
+				}
+
+				dropdown.onChange((value) => {
+					selectedTemplateId = value;
+				});
+			});
 
 		new Setting(contentEl)
 			.setName("Instruction")
-			.setDesc("For example: fix grammar, make this clearer, summarise this, critique this.")
+			.setDesc("Add extra direction, or write your own instruction without a template.")
 			.addTextArea((text) => {
-				text
-					.setPlaceholder("What should the AI do?")
-					.onChange((value) => {
-						instruction = value;
-					});
+				text.setPlaceholder("What should the AI do?").onChange((value) => {
+					instruction = value;
+				});
 
 				text.inputEl.rows = 5;
 				text.inputEl.cols = 50;
@@ -45,19 +66,25 @@ export class AiPromptModal extends Modal {
 				.setButtonText("Ask")
 				.setCta()
 				.onClick(() => {
+					const selectedTemplate = selectionTemplates.find((template) => template.id === selectedTemplateId);
 					const trimmedInstruction = instruction.trim();
 
-					if (!trimmedInstruction) {
+					if (!selectedTemplate && !trimmedInstruction) {
 						return;
 					}
 
 					this.close();
-					this.onSubmit(trimmedInstruction, this.selectedText);
+
+					this.onSubmit({
+						instruction: trimmedInstruction,
+						selectedText: this.selectedText,
+						template: selectedTemplate,
+					});
 				});
 		});
 	}
 
-	onClose() {
+	onClose(): void {
 		this.contentEl.empty();
 	}
 }

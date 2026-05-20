@@ -147,21 +147,22 @@ Goal: build AI requests from clear prompt parts instead of raw user text only.
 
 Goal: provide reusable prompt actions without forcing the user to write the same instruction every time.
 
-- TMP-001 TODO: Add prompt template type/model.
-- TMP-002 TODO: Add built-in template for fixing spelling and grammar.
-- TMP-003 TODO: Add built-in template for making text clearer.
-- TMP-004 TODO: Add built-in template for summarising text.
-- TMP-005 TODO: Add built-in template for critique.
-- TMP-006 TODO: Add built-in template for continuing writing.
-- TMP-007 TODO: Add built-in template for rewriting in the same voice.
-- TMP-008 TODO: Ensure grammar/spelling templates can return only corrected text with no explanation.
-- TMP-009 TODO: Add template selector to the selected-text prompt modal.
+- TMP-001 DONE: Add prompt template type/model.
+- TMP-002 DONE: Add built-in template for fixing spelling and grammar.
+- TMP-003 DONE: Add built-in template for making text clearer.
+- TMP-004 DONE: Add built-in template for summarising text.
+- TMP-005 DONE: Add built-in template for critique.
+- TMP-006 DONE: Add built-in template for continuing writing.
+- TMP-007 DONE: Add built-in template for rewriting in the same voice.
+- TMP-008 DONE: Ensure grammar/spelling templates can return only corrected text with no explanation.
+- TMP-009 DONE: Add template selector to the selected-text prompt modal.
 - TMP-010 TODO: Let user add optional extra instruction after selecting a template.
 - TMP-011 TODO: Show template name and user-added instruction separately in the side panel.
 - TMP-012 TODO: Do not display the full template prompt by default.
 - TMP-013 TODO: Hide full template prompt behind an expandable debug/details section if needed.
 - TMP-014 LATER: Allow user-created templates.
 - TMP-015 LATER: Allow editing built-in templates by copying them into user templates.
+- TMP-016 TODO: Add per-template generation settings such as temperature.
 
 ## 5. Context system
 
@@ -181,9 +182,10 @@ Goal: let chat and follow-up requests include the right context without sending 
 - CTX-012 TODO: Add context builder service for follow-up replies.
 - CTX-013 TODO: Let follow-up replies include previous entry text and response.
 - CTX-014 LATER: Let the user choose, drag, or select which note context is attached.
+- CTX-017 TODO: Add context size guard for selected text and follow-up context.
+- CTX-018 TODO: Add surrounding note context for selected-text requests.
 - CTX-015 LATER: Allow attaching the current note as context.
 - CTX-016 LATER: Allow attaching linked notes or search results as context.
-- CTX-017 TODO: Add context size guard for selected text and follow-up context.
 
 ## 6. Side panel and entry flow
 
@@ -231,6 +233,7 @@ Goal: make the plugin pleasant and clear without spending too long polishing bef
 - UI-006 TODO: Improve selected-text prompt modal layout.
 - UI-007 TODO: Add template selector to selected-text prompt modal.
 - UI-008 TODO: Add loading/error styling that is distinct from mock styling later.
+- UI-009 TODO: Highlight changed words in replacement-style responses.
 
 ## 9. Styling, theming, and release readiness
 

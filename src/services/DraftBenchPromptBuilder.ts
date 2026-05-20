@@ -20,7 +20,18 @@ export class DraftBenchPromptBuilder {
 			...this.buildSystemMessages(this.settings.selectionSystemPrompt),
 			{
 				role: "user",
-				content: ["Selected text:", request.selectedText, "", "User instruction:", request.instruction].join("\n"),
+				content: [
+					request.templatePrompt ? "Template instruction:" : "",
+					request.templatePrompt ?? "",
+					request.templatePrompt ? "" : "",
+					"Selected text:",
+					request.selectedText,
+					"",
+					request.instruction ? "User instruction:" : "",
+					request.instruction,
+				]
+					.filter(Boolean)
+					.join("\n"),
 			},
 		];
 	}
