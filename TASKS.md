@@ -29,7 +29,7 @@ This list tracks completed and upcoming tasks. It is not a full kanban board yet
 
 - DONE: Allow general chat without a selected text source. Currently uses mock responses.
 - Continue discussing the last selected text.
-- Refer to a specific previous entry.
+- DONE: Show reply context snippets when replying to a previous entry.
 - Let the user choose, drag, or select which note context is attached.
 - For future general chat entries, only show safe actions such as copy unless a target note or selection exists.
 - Keep replace and insert actions only for selection-based entries with saved source metadata.
