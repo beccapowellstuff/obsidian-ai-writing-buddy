@@ -11,6 +11,7 @@ This list tracks completed and upcoming tasks. It is not a full kanban board yet
 - Add prompt presets such as grammar/spelling fix.
 - Ensure grammar/spelling presets return only corrected text with no explanation.
 - When prompt presets are added, show the preset name and user-added instruction separately instead of displaying the full template prompt.
+- Have a system that allows the user to use "default" prompts already created, but also add their own.
 - Hide full template prompt behind an expandable debug/details section if needed.
 - DONE: Add AI response service interface so mock AI and real AI can use the same view flow.
 - DONE: Add mock AI response service for selection responses, general chat, and follow-up replies.
