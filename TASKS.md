@@ -12,6 +12,52 @@ MVP goal:
 - DONE: Send general chat prompts using mock responses.
 - DONE: Send prompts based on selected note text using mock responses.
 - Use configured AI provider instead of mock responses.
+
+- - Add plugin settings model and default settings.
+- - Add settings loading and saving.
+- - Add settings tab in Obsidian.
+- - Let user choose AI provider.
+- - Keep Mock provider as default for development.
+- - Add OpenAI-compatible provider option.
+- - Add base URL setting.
+- - Add model name setting.
+- - Add API key setting.
+- - Add request timeout setting.
+- - Use selected provider when creating AI responses.
+- - Replace hardcoded `new MockAiResponseService()` in `AiDraftBenchView`.
+- - Add real AI call for general chat.
+- - Add real AI call for selected-text prompts.
+- - Add real AI call for follow-up replies.
+
+### MVP: Configured AI Provider
+
+- DONE: Mock provider exists for development/testing.
+- Add plugin settings model and default settings.
+- Add settings loading and saving.
+- Add settings tab in Obsidian.
+- Add provider selector with Mock and OpenAI-compatible options.
+- Add base URL, model name, API key, and timeout settings.
+- Replace hardcoded mock service with service selected from settings.
+- Add OpenAI-compatible chat completion service.
+- Use real provider for general chat.
+- Use real provider for selected-text requests.
+- Use real provider for follow-up replies.
+
+### MVP: Prompt Control
+
+- Add default open chat system prompt.
+- Add default selected-text system prompt.
+- Add personality prompt setting.
+- Add personality enabled toggle.
+- Build prompts through a prompt builder instead of inside the AI service.
+
+### MVP: Basic Templates
+
+- Add prompt template model.
+- Add built-in templates.
+- Add template selector to selected-text modal.
+- Send selected template through prompt builder.
+
 - DONE: Allow copy, insert, and replace actions safely.
 - Provide a settings page for AI connection and core prompt behaviour.
 - Provide a small starter set of reusable prompt templates.
