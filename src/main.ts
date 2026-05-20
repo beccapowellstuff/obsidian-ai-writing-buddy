@@ -1,22 +1,24 @@
 import { Plugin, requestUrl } from "obsidian";
 import { AiDraftBenchSettings, DEFAULT_AI_DRAFT_BENCH_SETTINGS } from "./config/defaultSettings";
+import { DEFAULT_PROMPT_TEMPLATES } from "./config/defaultPromptTemplates";
 import { PLUGIN_DISPLAY } from "./config/pluginDisplay";
+import { AiDraftBenchSettingTab } from "./settings/AiDraftBenchSettingTab";
+import { createAiResponseService } from "./services/createAiResponseService";
 import { DraftBenchViewService } from "./services/DraftBenchViewService";
 import { EditorMenuService } from "./services/EditorMenuService";
 import { AI_DRAFT_BENCH_VIEW_TYPE, AiDraftBenchView } from "./views/AiDraftBenchView";
-import { AiDraftBenchSettingTab } from "./settings/AiDraftBenchSettingTab";
-import { createAiResponseService } from "./services/createAiResponseService";
 
 type OpenAiModelsResponse = {
 	data?: Array<{
 		id?: string;
 	}>;
 };
+
 export default class AiDraftBenchPlugin extends Plugin {
 	private draftBenchViewService!: DraftBenchViewService;
 	settings!: AiDraftBenchSettings;
 
-	async onload() {
+	async onload(): Promise<void> {
 		console.debug("AI Draft Bench loaded");
 
 		await this.loadSettings();
@@ -37,7 +39,7 @@ export default class AiDraftBenchPlugin extends Plugin {
 		editorMenuService.register();
 	}
 
-	onunload() {
+	onunload(): void {
 		console.debug("AI Draft Bench unloaded");
 	}
 
@@ -47,11 +49,32 @@ export default class AiDraftBenchPlugin extends Plugin {
 		this.settings = {
 			...DEFAULT_AI_DRAFT_BENCH_SETTINGS,
 			...(savedSettings ?? {}),
+			promptTemplates: this.mergePromptTemplates(savedSettings?.promptTemplates ?? []),
 		};
 	}
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
+	}
+
+	private mergePromptTemplates(savedTemplates: AiDraftBenchSettings["promptTemplates"]): AiDraftBenchSettings["promptTemplates"] {
+		const savedUserTemplates = savedTemplates.filter((template) => !template.isBuiltIn);
+		const savedBuiltInTemplates = savedTemplates.filter((template) => template.isBuiltIn);
+
+		const mergedBuiltInTemplates = DEFAULT_PROMPT_TEMPLATES.map((defaultTemplate) => {
+			const savedTemplate = savedBuiltInTemplates.find((template) => template.id === defaultTemplate.id);
+
+			return {
+				...defaultTemplate,
+				...(savedTemplate ?? {}),
+				highlightChanges: defaultTemplate.highlightChanges,
+				prompt: defaultTemplate.prompt,
+				returnsReplacementTextOnly: defaultTemplate.returnsReplacementTextOnly,
+				updatedAt: defaultTemplate.updatedAt,
+			};
+		});
+
+		return [...mergedBuiltInTemplates, ...savedUserTemplates];
 	}
 
 	async listAvailableModels(): Promise<string[]> {
