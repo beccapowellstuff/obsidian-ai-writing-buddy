@@ -8,7 +8,7 @@ AI Draft Bench is an Obsidian writing assistant plugin focused on drafting, rewr
 
 1. DONE: Add settings model and default settings.
 2. DONE: Add settings load/save to the plugin.
-3. Add settings tab UI.
+3. DONE: Add settings tab UI.
 4. Wire Mock provider selection through settings instead of hardcoded mock service.
 5. Add OpenAI-compatible AI response service.
 6. Add prompt builder using settings prompts.
@@ -43,29 +43,29 @@ MVP goal:
 
 - Add plugin settings model and default settings.
 - Add settings loading and saving.
-- Add Obsidian settings tab.
-- Add provider selector.
-- Add Mock provider option.
-- Add OpenAI-compatible provider option.
-- Add base URL setting.
-- Add model name setting.
-- Add API key setting.
-- Add request timeout setting.
-- Add basic prompt settings section.
-- Add open chat system prompt setting.
-- Add selected-text system prompt setting.
-- Add personality prompt setting.
-- Add personality enabled toggle.
+- DONE: Add Obsidian settings tab.
+- DONE: Add provider selector.
+- DONE: Add Mock provider option.
+- DONE: Add OpenAI-compatible provider option.
+- DONE: Add base URL setting.
+- DONE: Add model name setting.
+- DONE: Add API key setting.
+- DONE: Add request timeout setting.
+- DONE: Add basic prompt settings section.
+- DONE: Add open chat system prompt setting.
+- DONE: Add selected-text system prompt setting.
+- DONE: Add personality prompt setting.
+- DONE: Add personality enabled toggle.
 - Later: Add test connection button.
 
 ### MVP: Configured AI Provider
 
 - DONE: Mock provider exists for development/testing.
-- Add plugin settings model and default settings.
-- Add settings loading and saving.
-- Add settings tab in Obsidian.
-- Add provider selector with Mock and OpenAI-compatible options.
-- Add base URL, model name, API key, and timeout settings.
+- DONE: Add plugin settings model and default settings.
+- DONE: Add settings loading and saving.
+- DONE: Add settings tab in Obsidian.
+- DONE: Add provider selector with Mock and OpenAI-compatible options.
+- DONE: Add base URL, model name, API key, and timeout settings.
 - Replace hardcoded mock service with service selected from settings.
 - Add OpenAI-compatible chat completion service.
 - Use real provider for general chat.
@@ -109,10 +109,10 @@ MVP does not need:
 - Add provider selector.
 - DONE: Support Mock provider internally for development/testing.
 - Support OpenAI-compatible local provider first, such as LM Studio or Ollama through an OpenAI-compatible endpoint.
-- Add base URL setting.
-- Add model name setting.
-- Add API key setting, optional for local providers.
-- Add request timeout setting.
+- DONE: Add base URL setting.
+- DONE: Add model name setting.
+- DONE: Add API key setting, optional for local providers.
+- DONE: Add request timeout setting.
 - Add “Test connection” button.
 - Show connection test success/failure clearly.
 - Replace hardcoded `MockAiResponseService` creation with provider selection from settings.
