@@ -5,6 +5,7 @@ import { DraftBenchViewService } from "./services/DraftBenchViewService";
 import { EditorMenuService } from "./services/EditorMenuService";
 import { AI_DRAFT_BENCH_VIEW_TYPE, AiDraftBenchView } from "./views/AiDraftBenchView";
 import { AiDraftBenchSettingTab } from "./settings/AiDraftBenchSettingTab";
+import { createAiResponseService } from "./services/createAiResponseService";
 
 export default class AiDraftBenchPlugin extends Plugin {
 	private draftBenchViewService!: DraftBenchViewService;
@@ -18,7 +19,9 @@ export default class AiDraftBenchPlugin extends Plugin {
 
 		this.draftBenchViewService = new DraftBenchViewService(this.app);
 
-		this.registerView(AI_DRAFT_BENCH_VIEW_TYPE, (leaf) => new AiDraftBenchView(leaf));
+		this.registerView(AI_DRAFT_BENCH_VIEW_TYPE, (leaf) => {
+			return new AiDraftBenchView(leaf, createAiResponseService(this.settings));
+		});
 
 		this.addRibbonIcon(PLUGIN_DISPLAY.ribbonIcon, PLUGIN_DISPLAY.ribbonTooltip, () => {
 			void this.draftBenchViewService.openView();

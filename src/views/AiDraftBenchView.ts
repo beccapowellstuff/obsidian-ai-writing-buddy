@@ -2,7 +2,7 @@ import { ItemView, WorkspaceLeaf } from "obsidian";
 import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
 import { DraftBenchChatComposerRenderer } from "../renderers/DraftBenchChatComposerRenderer";
 import { DraftBenchEntryRenderer } from "../renderers/DraftBenchEntryRenderer";
-import { MockAiResponseService } from "../services/MockAiResponseService";
+import type { AiResponseService } from "../services/AiResponseService";
 import { ClipboardService } from "../services/ClipboardService";
 import { SelectionEditService } from "../services/SelectionEditService";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
@@ -14,7 +14,6 @@ export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 export class AiDraftBenchView extends ItemView {
 	private entries: AiDraftBenchEntry[] = [];
 	private replyToEntryId: string | null = null;
-	private readonly aiResponseService = new MockAiResponseService();
 	private readonly clipboardService = new ClipboardService();
 	private readonly selectionEditService = new SelectionEditService(this.app);
 	private readonly entryRenderer = new DraftBenchEntryRenderer(this.clipboardService, this.selectionEditService, (entryId) => {
@@ -32,7 +31,10 @@ export class AiDraftBenchView extends ItemView {
 		},
 	);
 
-	constructor(leaf: WorkspaceLeaf) {
+	constructor(
+		leaf: WorkspaceLeaf,
+		private readonly aiResponseService: AiResponseService,
+	) {
 		super(leaf);
 	}
 
