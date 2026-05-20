@@ -22,7 +22,7 @@ The current focus is getting the plugin from mock-only behaviour to a configurab
 4. CBF-004 DONE: Wire mock provider selection through settings instead of hardcoded mock service.
 5. CBF-005 DONE: Add OpenAI-compatible AI response service for chat completions.
 6. CBF-006 DONE: Add AI provider connection test.
-7. CBF-007 TODO: Improve provider error messages in the panel.
+7. CBF-007 DONE: Improve provider error messages in the panel.
 8. CBF-008 TODO: Add prompt builder using settings prompts.
 9. CBF-009 TODO: Add template system.
 

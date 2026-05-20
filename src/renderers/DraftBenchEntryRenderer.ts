@@ -84,6 +84,7 @@ export class DraftBenchEntryRenderer {
 		container.createEl("h3", { text: "Draft response" });
 
 		const isResponsePending = response.isPlaceholder && response.text === "Thinking...";
+		const isProviderError = response.isPlaceholder && response.text.startsWith("AI provider error.");
 
 		const responseEl = container.createEl("div", {
 			cls: response.isPlaceholder ? "ai-draft-bench-response-text ai-draft-bench-response-text-placeholder" : "ai-draft-bench-response-text",
@@ -107,22 +108,24 @@ export class DraftBenchEntryRenderer {
 				text: "Generating response...",
 			});
 		} else {
-			this.createActionButton(replyActionsEl, "reply", "Reply to this entry", async () => {
-				this.onReply(entry.id);
-			});
-
 			this.createActionButton(outputActionsEl, "copy", "Copy response", async () => {
 				await this.clipboardService.copyText(response.text);
 			});
 
-			if (entry.type === "selection") {
-				this.createActionButton(outputActionsEl, "refresh-cw", "Replace selection", async () => {
-					await this.selectionEditService.replaceSelection(entry.request, response.text);
+			if (!isProviderError) {
+				this.createActionButton(replyActionsEl, "reply", "Reply to this entry", async () => {
+					this.onReply(entry.id);
 				});
 
-				this.createActionButton(outputActionsEl, "plus-circle", "Insert after selection", async () => {
-					await this.selectionEditService.insertAfterSelection(entry.request, response.text);
-				});
+				if (entry.type === "selection") {
+					this.createActionButton(outputActionsEl, "refresh-cw", "Replace selection", async () => {
+						await this.selectionEditService.replaceSelection(entry.request, response.text);
+					});
+
+					this.createActionButton(outputActionsEl, "plus-circle", "Insert after selection", async () => {
+						await this.selectionEditService.insertAfterSelection(entry.request, response.text);
+					});
+				}
 			}
 		}
 

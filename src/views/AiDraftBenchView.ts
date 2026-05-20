@@ -80,7 +80,7 @@ export class AiDraftBenchView extends ItemView {
 		} catch (error) {
 			console.error("AI Draft Bench selection response failed", error);
 
-			entry.response = createPlaceholderResponse("Sorry, AI Draft Bench could not create a response for this selection.");
+			entry.response = createPlaceholderResponse(["AI provider error.", "", this.getErrorMessage(error), "", "Check your provider settings, server address, and selected model."].join("\n"));
 		}
 
 		this.render();
@@ -121,7 +121,7 @@ export class AiDraftBenchView extends ItemView {
 		} catch (error) {
 			console.error("AI Draft Bench chat response failed", error);
 
-			entry.response = createPlaceholderResponse("Sorry, AI Draft Bench could not create a chat response.");
+			entry.response = createPlaceholderResponse(["AI provider error.", "", this.getErrorMessage(error), "", "Check your provider settings, server address, and selected model."].join("\n"));
 		}
 
 		this.render();
@@ -154,6 +154,14 @@ export class AiDraftBenchView extends ItemView {
 		}
 
 		return `${text.slice(0, 87)}...`;
+	}
+
+	private getErrorMessage(error: unknown): string {
+		if (error instanceof Error && error.message.trim()) {
+			return error.message.trim();
+		}
+
+		return "Unknown provider error.";
 	}
 
 	private render(): void {
