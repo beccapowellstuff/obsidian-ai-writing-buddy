@@ -6,10 +6,13 @@ import { DraftBenchEntryRenderer } from "../renderers/DraftBenchEntryRenderer";
 import type { AiResponseService } from "../services/AiResponseService";
 import { ClipboardService } from "../services/ClipboardService";
 import { SelectionEditService } from "../services/SelectionEditService";
+import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
 import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { DraftBenchSessionController } from "../controllers/DraftBenchSessionController";
 
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
+
+type SessionSaveHandler = (entries: AiDraftBenchEntry[]) => void;
 
 export class AiDraftBenchView extends ItemView {
 	private readonly sessionController: DraftBenchSessionController;
@@ -30,19 +33,26 @@ export class AiDraftBenchView extends ItemView {
 	constructor(
 		leaf: WorkspaceLeaf,
 		private readonly aiResponseService: AiResponseService,
+		initialEntries: AiDraftBenchEntry[],
+		onSaveSession: SessionSaveHandler,
 	) {
 		super(leaf);
 
-		this.sessionController = new DraftBenchSessionController(this.aiResponseService, (scrollToBottom) => {
-			this.render();
+		this.sessionController = new DraftBenchSessionController(
+			this.aiResponseService,
+			(scrollToBottom) => {
+				this.render();
 
-			if (scrollToBottom) {
-				this.scrollToBottom();
-				return;
-			}
+				if (scrollToBottom) {
+					this.scrollToBottom();
+					return;
+				}
 
-			this.renderPreservingScroll();
-		});
+				this.renderPreservingScroll();
+			},
+			onSaveSession,
+			initialEntries,
+		);
 	}
 
 	getViewType(): string {
