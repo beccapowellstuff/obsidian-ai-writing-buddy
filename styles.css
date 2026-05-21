@@ -346,6 +346,12 @@
 	height: 17px;
 }
 
+.ai-draft-bench-modal-button-row {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 18px;
+}
 
 /* ==========================================================================
    AI Draft Bench: chat composer

@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-ai-draft-bench",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "An Obsidian writing assistant for drafting, rewriting, reviewing, and safely applying AI-generated text to notes.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {

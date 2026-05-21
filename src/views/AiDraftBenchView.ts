@@ -1,4 +1,5 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
+import { ConfirmClearSessionModal } from "../modals/ConfirmClearSessionModal";
 import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
 import { DraftBenchChatComposerRenderer } from "../renderers/DraftBenchChatComposerRenderer";
 import { DraftBenchEntryRenderer } from "../renderers/DraftBenchEntryRenderer";
@@ -11,16 +12,7 @@ import { DraftBenchSessionController } from "../controllers/DraftBenchSessionCon
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 
 export class AiDraftBenchView extends ItemView {
-	private readonly sessionController = new DraftBenchSessionController(this.aiResponseService, (scrollToBottom) => {
-		this.render();
-
-		if (scrollToBottom) {
-			this.scrollToBottom();
-			return;
-		}
-
-		this.renderPreservingScroll();
-	});
+	private readonly sessionController: DraftBenchSessionController;
 	private readonly clipboardService = new ClipboardService();
 	private readonly selectionEditService = new SelectionEditService(this.app);
 	private readonly entryRenderer = new DraftBenchEntryRenderer(this.app, this.clipboardService, this.selectionEditService, (entryId) => {
@@ -40,6 +32,17 @@ export class AiDraftBenchView extends ItemView {
 		private readonly aiResponseService: AiResponseService,
 	) {
 		super(leaf);
+
+		this.sessionController = new DraftBenchSessionController(this.aiResponseService, (scrollToBottom) => {
+			this.render();
+
+			if (scrollToBottom) {
+				this.scrollToBottom();
+				return;
+			}
+
+			this.renderPreservingScroll();
+		});
 	}
 
 	getViewType(): string {
@@ -138,10 +141,11 @@ export class AiDraftBenchView extends ItemView {
 
 		const clearButton = headerTopEl.createEl("button", {
 			cls: "ai-draft-bench-clear-session-button",
-			text: "Clear",
+			text: "Clear session",
 		});
+
 		clearButton.type = "button";
-		clearButton.title = "Clear the current AI Draft Bench session";
+		clearButton.title = "Clear the current session";
 		clearButton.disabled = !this.sessionController.hasEntries();
 
 		clearButton.addEventListener("click", () => {
@@ -158,13 +162,9 @@ export class AiDraftBenchView extends ItemView {
 			return;
 		}
 
-		const confirmed = window.confirm("Clear the current AI Draft Bench session? This removes the visible entries from this panel.");
-
-		if (!confirmed) {
-			return;
-		}
-
-		this.sessionController.clearCurrentSession();
+		new ConfirmClearSessionModal(this.app, () => {
+			this.sessionController.clearCurrentSession();
+		}).open();
 	}
 
 	private scrollToBottom(): void {
