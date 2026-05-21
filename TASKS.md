@@ -160,7 +160,7 @@ Goal: provide reusable prompt actions without forcing the user to write the same
 - TMP-013 DONE: Hide full template prompt behind an expandable debug/details section if needed.
 - TMP-014 DONE: Allow user-created templates.
 - TMP-015 DONE: Allow editing built-in templates by copying them into user templates.
-- TMP-016 TODO: Add per-template generation settings such as temperature.
+- TMP-016 DONE: Add per-template generation settings such as temperature.
 - TMP-017 TODO: Add grouped template submenu to editor right-click menu.
 - TMP-018 TODO: Add template submenu actions to editor right-click menu.
 - TMP-019 TODO: Add run last template action.
