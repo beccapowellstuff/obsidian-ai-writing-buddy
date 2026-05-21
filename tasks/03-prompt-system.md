@@ -19,7 +19,7 @@ Goal: build AI requests from clear prompt parts instead of raw user text only.
 
 - OCP-001 DONE: Add editable open chat system prompt setting.
 - OCP-002 TODO: Add reset-to-default button.
-- OCP-003 TODO: Use open chat system prompt for general chat entries.
+- OCP-003 DONE: Use open chat system prompt for general chat entries.
 - OCP-004 TODO: Keep open chat prompt separate from selected-text templates.
 
 ## Selected-text prompt
@@ -36,6 +36,6 @@ Goal: build AI requests from clear prompt parts instead of raw user text only.
 - PER-001 DONE: Add personality prompt setting.
 - PER-002 DONE: Add personality enabled toggle.
 - PER-003 TODO: Add reset-to-default button.
-- PER-004 TODO: Apply personality prompt to open chat and drafting requests when enabled.
+- PER-004 DONE: Apply personality prompt to open chat and drafting requests when enabled.
 - PER-005 TODO: Make personality prompt clearly separate from task templates.
 - PER-006 LATER: Add simple personality presets such as Neutral, Friendly editor, Strict editor, and Creative partner.

@@ -17,7 +17,6 @@ Detailed tasks now live in grouped files under `tasks/` so each area can be edit
 
 ## Task groups
 
-- Current focus and MVP scope: `tasks/00-current-focus.md`
 - AI provider and settings: `tasks/01-provider-settings.md`
 - AI response service: `tasks/02-ai-response-service.md`
 - Prompt system: `tasks/03-prompt-system.md`
@@ -31,20 +30,3 @@ Detailed tasks now live in grouped files under `tasks/` so each area can be edit
 - Workflow and accessibility: `tasks/11-workflow-accessibility.md`
 - Fun and personality ideas: `tasks/12-fun-ideas.md`
 - Settings and documentation: `tasks/13-settings-and-docs.md`
-
-## Recently completed focus
-
-The previous build focus, moving the plugin from mock-only behaviour to a configurable MVP, is now complete.
-
-See `tasks/00-current-focus.md` for the completed focus list.
-
-## Next likely areas
-
-Useful next candidates include:
-
-- `APS-023` Improve provider error messages in the panel.
-- `APS-024` Enforce configured request timeout for OpenAI-compatible requests.
-- `TMP-020` Move template editing and built-in copying into modals.
-- `TMP-021` Show a no-change result for replacement-only templates when the AI output matches the selected text.
-- `CTX-019` Add persistent draft bench sessions.
-- `CODE-014` Move provider model loading out of main plugin class.

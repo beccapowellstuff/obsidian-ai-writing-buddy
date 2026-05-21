@@ -1,0 +1,7 @@
+- Full vault indexing.
+- Drag-and-drop context selection.
+- Diff view.
+- Multiple visual skins.
+- Complex prompt library management.
+- Advanced personality switching.
+- RAG
