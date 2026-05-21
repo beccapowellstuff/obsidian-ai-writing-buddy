@@ -4,6 +4,7 @@ import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { AiDraftBenchResponse } from "../types/AiDraftBenchResponse";
 import { AiChatRequest, AiResponseService } from "./AiResponseService";
 import { DraftBenchChatMessage, DraftBenchPromptBuilder } from "./DraftBenchPromptBuilder";
+import { DraftBenchPromptSizeGuard } from "./DraftBenchPromptSizeGuard";
 
 type OpenAiChatCompletionResponse = {
 	choices?: Array<{
@@ -19,6 +20,7 @@ type ChatCompletionOptions = {
 
 export class OpenAiCompatibleResponseService implements AiResponseService {
 	private readonly promptBuilder: DraftBenchPromptBuilder;
+	private readonly promptSizeGuard = new DraftBenchPromptSizeGuard();
 
 	constructor(private readonly settings: AiDraftBenchSettings) {
 		this.promptBuilder = new DraftBenchPromptBuilder(settings);
@@ -41,6 +43,8 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 	}
 
 	private async sendChatCompletion(messages: DraftBenchChatMessage[], options: ChatCompletionOptions): Promise<string> {
+		this.promptSizeGuard.validate(messages);
+
 		const baseUrl = this.settings.baseUrl.replace(/\/$/, "");
 		const url = `${baseUrl}/chat/completions`;
 
