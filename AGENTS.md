@@ -96,7 +96,7 @@ npm run build
 ## Versioning & releases
 
 - Bump `version` in `manifest.json` (SemVer) and update `versions.json` to map plugin version → minimum app version.
-- Create a GitHub release whose tag exactly matches `manifest.json`'s `version`. Do not use a leading `v`.
+- Create a GitHub release whose tag exactly matches `manifest.json`'s version. Do not use a leading `v`.
 - Attach `manifest.json`, `main.js`, and `styles.css` (if present) to the release as individual assets.
 - After the initial release, follow the process to add/update your plugin in the community catalog as required.
 
@@ -132,8 +132,11 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 
 - TypeScript with `"strict": true` preferred.
 - **Keep `main.ts` minimal**: Focus only on plugin lifecycle (onload, onunload, addCommand calls). Delegate all feature logic to separate modules.
-- **Split large files**: If any file exceeds ~200-300 lines, consider breaking it into smaller, focused modules.
-- **Use clear module boundaries**: Each file should have a single, well-defined responsibility.
+- **Split large files before they become painful**: If a file starts doing more than one clear job, split it while the change is still small. Do not wait until the file becomes a large refactor project.
+- **Avoid multi-activity files**: A file should not own several unrelated activities such as UI rendering, state management, provider calls, persistence, validation, and formatting at the same time.
+- **Use clear module boundaries**: Each file should have a single, well-defined responsibility. If a new feature crosses a boundary, create or reuse a focused service, renderer, controller, modal, utility, or type module instead of expanding the nearest existing file.
+- **Prefer incremental extraction**: When adding behaviour to a file that is already busy, first extract the old or new behaviour into a focused helper rather than adding more weight.
+- **Do not create refactor debt knowingly**: If a change would make a file harder for a human to read or maintain, stop and split the responsibility as part of that task.
 - Bundle everything into `main.js` (no unbundled runtime deps).
 - Avoid Node/Electron APIs if you want mobile compatibility; set `isDesktopOnly` accordingly.
 - Prefer `async/await` over promise chains; handle errors gracefully.
