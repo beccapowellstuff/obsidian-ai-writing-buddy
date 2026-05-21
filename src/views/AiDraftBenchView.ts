@@ -119,18 +119,52 @@ export class AiDraftBenchView extends ItemView {
 			cls: "ai-draft-bench-header",
 		});
 
-		headerEl.createEl("div", {
+		const headerTopEl = headerEl.createEl("div", {
+			cls: "ai-draft-bench-header-top",
+		});
+
+		const titleGroupEl = headerTopEl.createEl("div", {
+			cls: "ai-draft-bench-header-title-group",
+		});
+
+		titleGroupEl.createEl("div", {
 			cls: "ai-draft-bench-header-kicker",
 			text: PLUGIN_DISPLAY.headerKicker,
 		});
 
-		headerEl.createEl("h2", {
+		titleGroupEl.createEl("h2", {
 			text: PLUGIN_DISPLAY.name,
+		});
+
+		const clearButton = headerTopEl.createEl("button", {
+			cls: "ai-draft-bench-clear-session-button",
+			text: "Clear",
+		});
+		clearButton.type = "button";
+		clearButton.title = "Clear the current AI Draft Bench session";
+		clearButton.disabled = !this.sessionController.hasEntries();
+
+		clearButton.addEventListener("click", () => {
+			this.clearCurrentSession();
 		});
 
 		headerEl.createEl("p", {
 			text: PLUGIN_DISPLAY.headerDescription,
 		});
+	}
+
+	private clearCurrentSession(): void {
+		if (!this.sessionController.hasEntries()) {
+			return;
+		}
+
+		const confirmed = window.confirm("Clear the current AI Draft Bench session? This removes the visible entries from this panel.");
+
+		if (!confirmed) {
+			return;
+		}
+
+		this.sessionController.clearCurrentSession();
 	}
 
 	private scrollToBottom(): void {
