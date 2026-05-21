@@ -2,7 +2,7 @@
 
 Goal: Deliver chat/session management and persistent session memory so AI Draft Bench can remember and continue conversations without relying on huge context windows.
 
-1. PANEL-013 TODO: Add clear current session action
+1. PANEL-013 DONE: Add clear current session action
    - Let the user reset the current bench back to an empty/default state without closing Obsidian.
    - Confirm before clearing if the session has entries.
 
