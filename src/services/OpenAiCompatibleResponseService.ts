@@ -20,10 +20,11 @@ type ChatCompletionOptions = {
 
 export class OpenAiCompatibleResponseService implements AiResponseService {
 	private readonly promptBuilder: DraftBenchPromptBuilder;
-	private readonly promptSizeGuard = new DraftBenchPromptSizeGuard();
+	private readonly promptSizeGuard: DraftBenchPromptSizeGuard;
 
 	constructor(private readonly settings: AiDraftBenchSettings) {
 		this.promptBuilder = new DraftBenchPromptBuilder(settings);
+		this.promptSizeGuard = new DraftBenchPromptSizeGuard(settings.maxPromptCharacters);
 	}
 
 	async createSelectionResponse(request: AiDraftBenchRequest): Promise<AiDraftBenchResponse> {

@@ -8,6 +8,7 @@ export type AiDraftBenchSettings = {
 	modelName: string;
 	apiKey: string;
 	requestTimeoutMs: number;
+	maxPromptCharacters: number;
 	openChatSystemPrompt: string;
 	selectionSystemPrompt: string;
 	personalityEnabled: boolean;
@@ -36,12 +37,15 @@ export const DEFAULT_PERSONALITY_PROMPT = [
 	"Challenge unclear writing when needed, but stay kind.",
 ].join("\n");
 
+export const DEFAULT_MAX_PROMPT_CHARACTERS = 120000;
+
 export const DEFAULT_AI_DRAFT_BENCH_SETTINGS: AiDraftBenchSettings = {
 	provider: "mock",
 	baseUrl: "http://localhost:1234/v1",
 	modelName: "",
 	apiKey: "",
 	requestTimeoutMs: 60000,
+	maxPromptCharacters: DEFAULT_MAX_PROMPT_CHARACTERS,
 	openChatSystemPrompt: DEFAULT_OPEN_CHAT_SYSTEM_PROMPT,
 	selectionSystemPrompt: DEFAULT_SELECTION_SYSTEM_PROMPT,
 	personalityEnabled: false,
