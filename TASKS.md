@@ -25,7 +25,7 @@ The current focus is getting the plugin from mock-only behaviour to a configurab
 7. CBF-007 DONE: Improve provider error messages in the panel.
 8. CBF-008 DONE: Add prompt builder using settings prompts.
 9. CBF-009 DONE: Add template system.
-10. CPB-010 TODO: Add prompt/context size guard before sending AI requests.
+10. CPB-010 DONE: Add prompt/context size guard before sending AI requests.
 
 ## MVP scope
 
@@ -82,7 +82,7 @@ Goal: let the plugin use saved settings instead of hardcoded mock behaviour.
 - APS-022 DONE: Add model list loading from configured provider.
 - APS-023 TODO: Improve provider error messages in the panel.
 - APS-024 TODO: Enforce configured request timeout for OpenAI-compatible requests
-- 
+- APS-025 TODO: Move prompt size limit into plugin settings/config
 
 ## 2. AI response service
 
@@ -116,7 +116,7 @@ Goal: build AI requests from clear prompt parts instead of raw user text only.
 - PB-007 TODO: Build request payloads for general chat.
 - PB-008 TODO: Build request payloads for selected-text requests.
 - PB-009 TODO: Build request payloads for follow-up replies.
-- PB-010 TODO: Add prompt/context size guard before sending AI requests.
+- PB-010 DONE: Add prompt/context size guard before sending AI requests.
 
 ### 3.2 Open chat prompt
 
@@ -176,7 +176,10 @@ Goal: provide reusable prompt actions without forcing the user to write the same
 - - Add TemplateEditModal
 - - Add CopyBuiltInTemplateModal
 - - Keep TemplateSettingsRenderer as a compact summary/list
-
+- TMP-021 TODO: Show a no-change result for replacement-only templates when the AI output matches the selected text
+- - For spelling and grammar fixes, if the returned text is effectively identical to the selected text, show a friendly no-change message instead of repeating the full selected text.
+- - Suggested message: “No spelling or grammar changes found.”
+- - Keep the original response available only if needed for debugging later.
 
 ## 5. Context system
 
