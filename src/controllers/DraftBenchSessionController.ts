@@ -4,15 +4,20 @@ import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { createPlaceholderResponse } from "../utils/createPlaceholderResponse";
 
 type SessionChangeHandler = (scrollToBottom: boolean) => void;
+type SessionSaveHandler = (entries: AiDraftBenchEntry[]) => void;
 
 export class DraftBenchSessionController {
-	private entries: AiDraftBenchEntry[] = [];
+	private entries: AiDraftBenchEntry[];
 	private replyToEntryId: string | null = null;
 
 	constructor(
 		private readonly aiResponseService: AiResponseService,
 		private readonly onChange: SessionChangeHandler,
-	) {}
+		private readonly onSave: SessionSaveHandler,
+		initialEntries: AiDraftBenchEntry[] = [],
+	) {
+		this.entries = [...initialEntries];
+	}
 
 	getEntries(): AiDraftBenchEntry[] {
 		return this.entries;
@@ -25,6 +30,7 @@ export class DraftBenchSessionController {
 	clearCurrentSession(): void {
 		this.entries = [];
 		this.replyToEntryId = null;
+		this.saveSession();
 		this.onChange(false);
 	}
 
@@ -62,6 +68,7 @@ export class DraftBenchSessionController {
 		};
 
 		this.entries.push(entry);
+		this.saveSession();
 		this.onChange(true);
 
 		try {
@@ -72,6 +79,7 @@ export class DraftBenchSessionController {
 			entry.response = createPlaceholderResponse(["AI provider error.", "", this.getErrorMessage(error), "", "Check your provider settings, server address, and selected model."].join("\n"));
 		}
 
+		this.saveSession();
 		this.onChange(true);
 	}
 
@@ -98,6 +106,7 @@ export class DraftBenchSessionController {
 
 		this.entries.push(entry);
 		this.replyToEntryId = null;
+		this.saveSession();
 		this.onChange(true);
 
 		try {
@@ -111,7 +120,12 @@ export class DraftBenchSessionController {
 			entry.response = createPlaceholderResponse(["AI provider error.", "", this.getErrorMessage(error), "", "Check your provider settings, server address, and selected model."].join("\n"));
 		}
 
+		this.saveSession();
 		this.onChange(true);
+	}
+
+	private saveSession(): void {
+		this.onSave([...this.entries]);
 	}
 
 	private getEntrySnippet(entry: AiDraftBenchEntry): string {
