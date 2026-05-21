@@ -1,183 +1,211 @@
 # AI Draft Bench
 
-AI Draft Bench is an experimental Obsidian plugin for working with selected text in a safer, side-panel based AI workflow.
+AI Draft Bench is an experimental Obsidian writing assistant plugin for drafting, rewriting, reviewing, and safely applying AI-generated text to notes.
 
-The basic idea is simple:
+The main idea is simple: select text, ask AI to work with it, review the result in a side panel, then choose whether to copy it, insert it, or replace the original selection. The plugin is designed to keep the user in control instead of silently changing note content.
 
-Select text in a note, right click, ask the AI what to do with it, then review the result in a separate panel before deciding whether to use it.
+## Current status
 
-This plugin is currently in early development. At the moment it uses fake placeholder AI responses while the Obsidian workflow, UI structure, and selection handling are being built properly.
+AI Draft Bench is in active development. It now supports both mock responses for development and OpenAI-compatible providers for real AI requests.
 
-## Current Status of tasks
+Current features include:
 
-See TASKS.MD
+- A side panel for reviewing AI responses before using them.
+- General chat from the side panel.
+- Selected-text prompts from the editor right-click menu.
+- Reusable prompt templates for selected text.
+- Built-in templates for common writing tasks.
+- User-created custom templates.
+- Copying built-in templates into editable user templates.
+- Per-template settings such as temperature.
+- Optional personality prompt support.
+- OpenAI-compatible provider support for tools such as LM Studio and Ollama.
+- Model list loading from the configured provider.
+- A provider connection test button.
+- Safe note actions: copy response, replace original selection, and insert after original selection.
+- Selection validation before replacing or inserting, so changed source text is not overwritten blindly.
+- Optional changed-word highlighting for replacement-style responses.
 
-## Why This Exists
+This is still not ready for general release. Some areas are still being refined, especially provider error handling, context limits, command palette support, and the template settings UX.
 
-Most AI workflows in Obsidian either require copying text out to another tool, or they write directly into the note in ways that can feel risky or messy.
+## How it works
 
-AI Draft Bench is intended to be more controlled:
+AI Draft Bench keeps AI output separate from the note until you explicitly choose what to do with it.
 
-1. The user selects text.
-2. The user gives an instruction.
-3. The AI response appears separately in a side panel.
-4. The user decides what to do with it.
-
-The plugin should not silently overwrite note content.
-
-## Current Workflow
+A typical selected-text workflow looks like this:
 
 1. Highlight text in an Obsidian note.
 2. Right click the selected text.
 3. Choose **Ask AI about selection**.
-4. Enter an instruction in the modal.
-5. Press **Ask**.
-6. The AI Draft Bench side panel opens.
-7. The selected text and placeholder response are displayed.
+4. Choose a template, or leave the template blank and write your own instruction.
+5. Add any extra instruction if needed.
+6. Press **Ask**.
+7. Review the response in the AI Draft Bench side panel.
+8. Choose whether to copy the response, reply to it, replace the original selection, or insert the response after the selection.
 
-## Development Setup
+For general chat, open the AI Draft Bench side panel with the ribbon icon and type into the chat box at the bottom of the panel.
+
+## Templates
+
+Templates are reusable instructions for selected text.
+
+Built-in templates currently include:
+
+- Fix spelling and grammar.
+- Make clearer.
+- Summarise.
+- Critique.
+- Continue writing.
+- Rewrite in same voice.
+
+Templates can control whether the response is intended to be replacement text only, whether changed words should be highlighted, and what temperature should be used for the request.
+
+User templates can be created in settings. Built-in templates can also be copied into user templates so they can be edited without changing the built-in source templates.
+
+The current template settings page works, but it is visually large. A future task will move template editing and built-in copying into modals to make the settings page easier to use.
+
+## Provider setup
+
+AI Draft Bench can use either the mock provider or an OpenAI-compatible provider.
+
+To configure a real provider:
+
+1. Open **Settings → AI Draft Bench**.
+2. Set **Provider** to **Compatible provider**.
+3. Set **Server address** to your provider base URL.
+4. Set **Secret key** if your provider requires one.
+5. Press **Load models** to fetch available models.
+6. Choose or enter a model.
+7. Press **Test connection**.
+
+For local tools, the server address depends on the tool and how it is configured. For example, LM Studio commonly uses an OpenAI-compatible local server URL similar to:
+
+```text
+http://localhost:1234/v1
+```
+
+Ollama and other local servers may use different OpenAI-compatible endpoints depending on setup.
+
+The mock provider remains useful while developing UI behaviour because it does not require a running model server.
+
+## Safe note editing
+
+AI Draft Bench should never silently overwrite note content.
+
+When you ask AI about selected text, the plugin stores the source note path, the selected text, and the selection position. Before replacing or inserting later, it checks that the original selected text still matches the note. If the note changed, the edit is cancelled and a warning is shown.
+
+This does not replace proper version control or backups, but it avoids the most obvious stale-selection mistake.
+
+## Prompt behaviour
+
+The plugin has editable prompt settings for:
+
+- Open chat system prompt.
+- Selected-text system prompt.
+- Optional personality prompt.
+
+When personality is enabled, the personality prompt is added as style guidance. Templates, selected text, and user instructions are then combined into the request sent to the configured provider.
+
+A full prompt preview is available from selected-text entries in the side panel, so you can inspect what was sent for that request.
+
+## Current limitations
+
+Known limitations include:
+
+- Provider request timeout is configurable, but timeout enforcement still needs to be completed.
+- Provider error messages need more detail.
+- Context size guarding still needs to be added.
+- Command palette and hotkey support are not complete yet.
+- Template editing currently happens directly in the settings page and is due for UX cleanup.
+- Mobile compatibility has not been fully validated.
+- The plugin is still experimental and should be treated as a work in progress.
+
+See `TASKS.md` for the current build plan.
+
+## Development setup
 
 Install dependencies:
 
-    npm install
+```bash
+npm install
+```
 
 Start the development watcher:
 
-    npm run dev
+```bash
+npm run dev
+```
 
-This rebuilds the plugin when TypeScript files change.
+Create a production build:
 
-## Deploying to Obsidian Vault
+```bash
+npm run build
+```
+
+Run linting:
+
+```bash
+npm run lint
+```
+
+## Deploying to an Obsidian vault
 
 This project includes a deploy script:
 
-    npm run deploy
+```bash
+npm run deploy
+```
 
 The deploy script copies the built plugin files into the configured Obsidian vault plugin folder.
 
-Currently copied files:
+The expected plugin files are:
 
-    main.js
-    manifest.json
-    styles.css
-
-After deploying, Obsidian still needs to reload the plugin.
-
-Usually this means:
-
-1. Disable **AI Draft Bench** in Obsidian Community Plugins.
-2. Enable **AI Draft Bench** again.
-
-Sometimes closing the side panel and reopening it is also needed during development.
-
-## Current Design Principles
-
-- Keep `main.ts` small.
-- Avoid one huge TypeScript file.
-- Split responsibilities into services, views, modals, and types.
-- Do not directly overwrite note content without explicit user action.
-- Capture selection metadata early so later replacement actions can be safer.
-- Build the workflow with fake responses before adding real AI integration.
-- Prefer small, testable milestones over giant feature jumps.
-- Allow for local AI (and future online options)
-
-## Notes
-
-This is an early development plugin. It is not ready for general release yet.
-
-The current priority is getting the Obsidian interaction model right before connecting it to a real AI backend.
-
-## BUILT FROM BELOW PLUGIN
-
----
-
-# Obsidian Sample Plugin
-
-This is a sample plugin for Obsidian (https://obsidian.md).
-
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
-
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
-
-## First time developing plugins?
-
-Quick starting guide for new plugin devs:
-
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
-
-## Releasing new releases
-
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
-
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
-
-## Adding your plugin to the community plugin list
-
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
-
-## How to use
-
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+```text
+main.js
+manifest.json
+styles.css
 ```
 
-If you have multiple URLs, you can also do:
+After deploying, reload the plugin in Obsidian. During development, this usually means disabling and re-enabling **AI Draft Bench** under **Settings → Community plugins**. Sometimes closing and reopening the side panel is also useful after UI changes.
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+## Project structure
+
+The source code lives under `src/` and is split by responsibility:
+
+```text
+src/
+  config/       Default settings, prompt templates, plugin display config
+  modals/       Obsidian modal UI
+  renderers/    Side-panel and response rendering helpers
+  services/     Provider, editor menu, prompt, clipboard, and note editing services
+  settings/     Settings tab renderers
+  types/        Shared TypeScript types
+  utils/        Small helper functions
+  views/        Obsidian view classes
 ```
 
-## API Documentation
+The current architecture aims to keep `main.ts` focused on plugin lifecycle and registration, with feature logic delegated into smaller modules.
 
-See https://docs.obsidian.md
+## Design principles
+
+AI Draft Bench is being built around a few practical rules:
+
+- Keep note edits explicit.
+- Keep AI responses reviewable before applying them.
+- Prefer local/OpenAI-compatible providers where possible.
+- Keep mock mode available for development.
+- Split code into small, readable modules.
+- Avoid giant rewrites when small safe changes will do.
+- Keep the workflow useful before adding too much polish.
+
+## Privacy notes
+
+AI Draft Bench sends selected text, chat messages, prompt settings, and template instructions to the configured provider when you make a request.
+
+If you use a local provider, that data is sent to your local server. If you configure a hosted provider, that data is sent to that external service. The plugin should not send note content unless you explicitly ask it to work with selected text or chat context, but provider behaviour depends on the service you configure.
+
+There is no hidden telemetry in the current project.
+
+## Release status
+
+This plugin is not ready for Obsidian community release yet. Before release, the README, package metadata, CSS scoping, provider error handling, timeout behaviour, and mobile/desktop support should be reviewed again.
