@@ -24,7 +24,7 @@ The current focus is getting the plugin from mock-only behaviour to a configurab
 6. CBF-006 DONE: Add AI provider connection test.
 7. CBF-007 DONE: Improve provider error messages in the panel.
 8. CBF-008 DONE: Add prompt builder using settings prompts.
-9. CBF-009 TODO: Add template system.
+9. CBF-009 DONE: Add template system.
 10. CPB-010 TODO: Add prompt/context size guard before sending AI requests.
 
 ## MVP scope
@@ -196,10 +196,21 @@ Goal: let chat and follow-up requests include the right context without sending 
 - CTX-012 TODO: Add context builder service for follow-up replies.
 - CTX-013 TODO: Let follow-up replies include previous entry text and response.
 - CTX-014 LATER: Let the user choose, drag, or select which note context is attached.
-- CTX-017 TODO: Add context size guard for selected text and follow-up context.
-- CTX-018 TODO: Add surrounding note context for selected-text requests.
 - CTX-015 LATER: Allow attaching the current note as context.
 - CTX-016 LATER: Allow attaching linked notes or search results as context.
+- CTX-017 TODO: Add context size guard for selected text and follow-up context.
+- CTX-018 TODO: Add surrounding note context for selected-text requests.
+- CTX-019 TODO: Add persistent draft bench sessions
+- CTX-020 TODO: Add new session action
+- CTX-021 TODO: Add session history list
+- CTX-022 TODO: Add saved session metadata
+- - id
+- - createdAt
+- - updatedAt
+- - entryCount
+- - optional userTitle
+- CTX-023 TODO: Add delete saved session action
+- CTX-024 TODO: Add rename saved session action
 
 ## 6. Side panel and entry flow
 
