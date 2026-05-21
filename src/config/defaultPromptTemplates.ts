@@ -24,6 +24,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		highlightChanges: true,
+		temperature: 0.1,
 	},
 
 	{
@@ -43,6 +44,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		highlightChanges: false,
+		temperature: 0.4,
 	},
 
 	{
@@ -61,6 +63,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		highlightChanges: false,
+		temperature: 0.4,
 	},
 
 	{
@@ -80,6 +83,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		highlightChanges: false,
+		temperature: 0.4,
 	},
 
 	{
@@ -100,6 +104,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		highlightChanges: false,
+		temperature: 0.7,
 	},
 
 	{
@@ -118,6 +123,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		highlightChanges: false,
+		temperature: 0.7,
 	},
 
 	{
@@ -138,5 +144,6 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
 		highlightChanges: false,
+		temperature: 0.7,
 	},
 ];

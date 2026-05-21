@@ -13,4 +13,5 @@ export type AiDraftBenchRequest = {
 	returnsReplacementTextOnly?: boolean;
 	highlightChanges?: boolean;
 	promptPreview?: string;
+	temperature?: number;
 };

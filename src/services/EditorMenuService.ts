@@ -78,6 +78,7 @@ export class EditorMenuService {
 			templatePrompt: value.template?.prompt,
 			returnsReplacementTextOnly: value.template?.returnsReplacementTextOnly,
 			highlightChanges: value.template?.highlightChanges,
+			temperature: value.template?.temperature,
 		};
 
 		const promptBuilder = new DraftBenchPromptBuilder(this.plugin.settings);

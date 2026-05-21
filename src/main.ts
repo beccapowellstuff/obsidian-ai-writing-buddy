@@ -68,6 +68,7 @@ export default class AiDraftBenchPlugin extends Plugin {
 				...defaultTemplate,
 				...(savedTemplate ?? {}),
 				highlightChanges: defaultTemplate.highlightChanges,
+				temperature: defaultTemplate.temperature,
 				prompt: defaultTemplate.prompt,
 				returnsReplacementTextOnly: defaultTemplate.returnsReplacementTextOnly,
 				updatedAt: defaultTemplate.updatedAt,

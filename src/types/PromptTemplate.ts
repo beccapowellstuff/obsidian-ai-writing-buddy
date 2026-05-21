@@ -8,6 +8,7 @@ export type PromptTemplate = {
 	prompt: string;
 	returnsReplacementTextOnly: boolean;
 	highlightChanges: boolean;
+	temperature: number;
 	isBuiltIn: boolean;
 	createdAt: string;
 	updatedAt: string;

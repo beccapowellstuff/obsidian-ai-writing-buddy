@@ -263,6 +263,7 @@ Goal: keep the codebase maintainable as the real AI, prompt, and context systems
 - CODE-005 TODO: Add settings service or settings helpers if `main.ts` starts carrying too much settings logic.
 - CODE-006 TODO: Add prompt builder service before real AI integration becomes messy.
 - CODE-007 TODO: Add context builder service before follow-up/chat context becomes messy.
+- CODE-008 TODO: Split template settings rendering out of AiDraftBenchSettingTab.
 
 ## 11. Workflow/Accessibility
 

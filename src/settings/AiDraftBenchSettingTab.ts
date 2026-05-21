@@ -255,6 +255,7 @@ export class AiDraftBenchSettingTab extends PluginSettingTab {
 	private renderTemplateSettings(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName("Templates").setHeading();
 
+		const builtInTemplates = this.plugin.settings.promptTemplates.filter((template) => template.isBuiltIn);
 		const userTemplates = this.plugin.settings.promptTemplates.filter((template) => !template.isBuiltIn);
 
 		new Setting(containerEl).setName("User templates").setDesc(userTemplates.length === 0 ? "No user templates yet." : `${userTemplates.length} user templates saved.`);
@@ -277,7 +278,7 @@ export class AiDraftBenchSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl).setName("Built-in templates").setHeading();
 
-		for (const template of this.plugin.settings.promptTemplates.filter((template) => template.isBuiltIn)) {
+		for (const template of builtInTemplates) {
 			new Setting(containerEl)
 				.setName(template.name)
 				.setDesc(template.description)
@@ -357,6 +358,25 @@ export class AiDraftBenchSettingTab extends PluginSettingTab {
 				});
 
 			new Setting(containerEl)
+				.setName("Temperature")
+				.setDesc("Lower is stricter. Higher is more creative.")
+				.addText((text) => {
+					text.setPlaceholder("0.7")
+						.setValue(String(template.temperature ?? 0.7))
+						.onChange(async (value) => {
+							const parsedValue = Number.parseFloat(value);
+
+							if (Number.isNaN(parsedValue)) {
+								return;
+							}
+
+							template.temperature = Math.min(2, Math.max(0, parsedValue));
+							template.updatedAt = new Date().toISOString();
+							await this.plugin.saveSettings();
+						});
+				});
+
+			new Setting(containerEl)
 				.setName("Delete template")
 				.setDesc("Remove this user-created template.")
 				.addButton((button) => {
@@ -386,6 +406,7 @@ export class AiDraftBenchSettingTab extends PluginSettingTab {
 			prompt: "Write your template prompt here.",
 			returnsReplacementTextOnly: false,
 			highlightChanges: false,
+			temperature: 0.7,
 			isBuiltIn: false,
 			createdAt,
 			updatedAt: createdAt,

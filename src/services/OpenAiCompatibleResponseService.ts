@@ -26,7 +26,7 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 
 	async createSelectionResponse(request: AiDraftBenchRequest): Promise<AiDraftBenchResponse> {
 		const responseText = await this.sendChatCompletion(this.promptBuilder.buildSelectionPrompt(request), {
-			temperature: request.returnsReplacementTextOnly ? 0.1 : 0.7,
+			temperature: request.temperature ?? 0.7,
 		});
 
 		return this.createResponse(responseText);
