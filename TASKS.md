@@ -82,7 +82,7 @@ Goal: let the plugin use saved settings instead of hardcoded mock behaviour.
 - APS-022 DONE: Add model list loading from configured provider.
 - APS-023 TODO: Improve provider error messages in the panel.
 - APS-024 TODO: Enforce configured request timeout for OpenAI-compatible requests
-- APS-025 TODO: Move prompt size limit into plugin settings/config
+- APS-025 DONE: Move prompt size limit into plugin settings/config
 
 ## 2. AI response service
 
