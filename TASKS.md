@@ -81,6 +81,8 @@ Goal: let the plugin use saved settings instead of hardcoded mock behaviour.
 - APS-021 DONE: Show connection test success/failure clearly.
 - APS-022 DONE: Add model list loading from configured provider.
 - APS-023 TODO: Improve provider error messages in the panel.
+- APS-024 TODO: Enforce configured request timeout for OpenAI-compatible requests
+- 
 
 ## 2. AI response service
 
@@ -171,6 +173,9 @@ Goal: provide reusable prompt actions without forcing the user to write the same
 - - DraftBenchPromptBuilder.ts
 - - EditorMenuService.ts
 - - AiPromptModal.ts
+- - Add TemplateEditModal
+- - Add CopyBuiltInTemplateModal
+- - Keep TemplateSettingsRenderer as a compact summary/list
 
 
 ## 5. Context system
@@ -257,6 +262,8 @@ Goal: prepare the plugin for real-world Obsidian use.
 - REL-006 TODO: Add plugin-scoped CSS variables so users can customise AI Draft Bench styling safely.
 - REL-007 LATER: Consider future visual skins such as Default, Soft, Minimal, Paper, and High contrast.
 - REL-008 LATER: Add skin selection later through the settings page.
+- REL-009 TODO: Clean package metadata before release
+- REL-010 TODO: Validate mobile compatibility or mark plugin desktop-only
 
 ## 10. Code structure and refactors
 
@@ -280,6 +287,11 @@ Goal: keep the codebase maintainable as the real AI, prompt, and context systems
 - - AiDraftBenchView.ts
 - - DraftBenchSessionController.ts
 - - DraftBenchScrollService.ts
+- CODE-012 TODO: Move side-panel session state into DraftBenchSessionController
+- CODE-013 TODO: Keep AiDraftBenchView focused on layout and rendering orchestration
+- CODE-014 TODO: Move provider model loading out of main plugin class
+- CODE-015 TODO: Add selected-text request factory
+- CODE-016 TODO: Review duplicate built-in continuation templates
 
 ## 11. Workflow/Accessibility
 
@@ -304,3 +316,9 @@ Goal: keep AI Draft Bench practical, but allow a few tiny optional touches that 
     - Keep it lightweight and non-blocking so it does not interfere with real settings work.
     - Possible future idea: the fox occasionally carries a tiny dev note such as “scope your CSS, darling” and then vanishes.
     - This should stay optional in spirit, but not become a whole mascot system before the MVP is stable.
+
+## 13. Settings
+- SET-001 TODO: Debounce settings saves for text inputs
+
+## 14. Documentation
+- DOC-001 TODO: Update README to match current real-provider MVP state
