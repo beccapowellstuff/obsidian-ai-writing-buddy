@@ -271,12 +271,12 @@ Goal: keep the codebase maintainable as the real AI, prompt, and context systems
 - CODE-007 TODO: Add context builder service before follow-up/chat context becomes messy.
 - CODE-008 DONE: Split template settings rendering out of AiDraftBenchSettingTab.
 - CODE-009 DONE: Split provider and prompt settings rendering out of AiDraftBenchSettingTab.
-- CODE-010 TODO: Split DraftBenchEntryRenderer into smaller response/source/diff renderers.
+- CODE-010 DONE: Split DraftBenchEntryRenderer into smaller response/source/diff renderers.
 - - DraftBenchEntryRenderer.ts
 - - DraftBenchSourcePanelRenderer.ts
 - - DraftBenchResponseRenderer.ts
 - - ResponseDiffRenderer.ts
-- CODE-011 TODO: Move side-panel session flow out of AiDraftBenchView.
+- CODE-011 DONE: Move side-panel session flow out of AiDraftBenchView.
 - - AiDraftBenchView.ts
 - - DraftBenchSessionController.ts
 - - DraftBenchScrollService.ts
