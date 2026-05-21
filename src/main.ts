@@ -6,6 +6,8 @@ import { AiDraftBenchSettingTab } from "./settings/AiDraftBenchSettingTab";
 import { createAiResponseService } from "./services/createAiResponseService";
 import { DraftBenchViewService } from "./services/DraftBenchViewService";
 import { EditorMenuService } from "./services/EditorMenuService";
+import { AiDraftBenchEntry } from "./types/AiDraftBenchEntry";
+import { AiDraftBenchCurrentSessionData, AiDraftBenchPluginData } from "./types/AiDraftBenchPluginData";
 import { AI_DRAFT_BENCH_VIEW_TYPE, AiDraftBenchView } from "./views/AiDraftBenchView";
 
 type OpenAiModelsResponse = {
@@ -14,9 +16,18 @@ type OpenAiModelsResponse = {
 	}>;
 };
 
+type LegacyPluginData = Partial<AiDraftBenchSettings>;
+
+type SavedPluginData = Partial<AiDraftBenchPluginData> | LegacyPluginData | null;
+
+const DEFAULT_CURRENT_SESSION: AiDraftBenchCurrentSessionData = {
+	entries: [],
+};
+
 export default class AiDraftBenchPlugin extends Plugin {
 	private draftBenchViewService!: DraftBenchViewService;
 	settings!: AiDraftBenchSettings;
+	currentSession: AiDraftBenchCurrentSessionData = DEFAULT_CURRENT_SESSION;
 
 	async onload(): Promise<void> {
 		console.debug("AI Draft Bench loaded");
@@ -27,7 +38,15 @@ export default class AiDraftBenchPlugin extends Plugin {
 		this.draftBenchViewService = new DraftBenchViewService(this.app);
 
 		this.registerView(AI_DRAFT_BENCH_VIEW_TYPE, (leaf) => {
-			return new AiDraftBenchView(leaf, createAiResponseService(this.settings));
+			return new AiDraftBenchView(
+				leaf,
+				createAiResponseService(this.settings),
+				this.currentSession.entries,
+				(entries) => {
+					this.currentSession = { entries };
+					void this.savePluginData();
+				},
+			);
 		});
 
 		this.addRibbonIcon(PLUGIN_DISPLAY.ribbonIcon, PLUGIN_DISPLAY.ribbonTooltip, () => {
@@ -44,7 +63,10 @@ export default class AiDraftBenchPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		const savedSettings = (await this.loadData()) as Partial<AiDraftBenchSettings> | null;
+		const savedData = (await this.loadData()) as SavedPluginData;
+		const savedSettings = this.getSavedSettings(savedData);
+
+		this.currentSession = this.getSavedCurrentSession(savedData);
 
 		this.settings = {
 			...DEFAULT_AI_DRAFT_BENCH_SETTINGS,
@@ -54,7 +76,38 @@ export default class AiDraftBenchPlugin extends Plugin {
 	}
 
 	async saveSettings(): Promise<void> {
-		await this.saveData(this.settings);
+		await this.savePluginData();
+	}
+
+	private async savePluginData(): Promise<void> {
+		await this.saveData({
+			settings: this.settings,
+			currentSession: this.currentSession,
+		} satisfies AiDraftBenchPluginData);
+	}
+
+	private getSavedSettings(savedData: SavedPluginData): Partial<AiDraftBenchSettings> | null {
+		if (!savedData) {
+			return null;
+		}
+
+		if ("settings" in savedData && savedData.settings) {
+			return savedData.settings;
+		}
+
+		return savedData as LegacyPluginData;
+	}
+
+	private getSavedCurrentSession(savedData: SavedPluginData): AiDraftBenchCurrentSessionData {
+		if (!savedData || !("currentSession" in savedData) || !savedData.currentSession) {
+			return { ...DEFAULT_CURRENT_SESSION };
+		}
+
+		const entries = Array.isArray(savedData.currentSession.entries) ? savedData.currentSession.entries : [];
+
+		return {
+			entries: entries.filter((entry): entry is AiDraftBenchEntry => Boolean(entry && entry.id && entry.type && entry.response)),
+		};
 	}
 
 	private mergePromptTemplates(savedTemplates: AiDraftBenchSettings["promptTemplates"]): AiDraftBenchSettings["promptTemplates"] {
