@@ -20,14 +20,22 @@ type LegacyPluginData = Partial<AiDraftBenchSettings>;
 
 type SavedPluginData = Partial<AiDraftBenchPluginData> | LegacyPluginData | null;
 
-const DEFAULT_CURRENT_SESSION: AiDraftBenchCurrentSessionData = {
-	entries: [],
-};
+function createEmptyCurrentSession(): AiDraftBenchCurrentSessionData {
+	const now = new Date().toISOString();
+
+	return {
+		id: crypto.randomUUID(),
+		createdAt: now,
+		updatedAt: now,
+		entryCount: 0,
+		entries: [],
+	};
+}
 
 export default class AiDraftBenchPlugin extends Plugin {
 	private draftBenchViewService!: DraftBenchViewService;
 	settings!: AiDraftBenchSettings;
-	currentSession: AiDraftBenchCurrentSessionData = DEFAULT_CURRENT_SESSION;
+	currentSession: AiDraftBenchCurrentSessionData = createEmptyCurrentSession();
 
 	async onload(): Promise<void> {
 		console.debug("AI Draft Bench loaded");
@@ -43,7 +51,7 @@ export default class AiDraftBenchPlugin extends Plugin {
 				createAiResponseService(this.settings),
 				this.currentSession.entries,
 				(entries) => {
-					this.currentSession = { entries };
+					this.currentSession = this.withUpdatedCurrentSessionEntries(entries);
 					void this.savePluginData();
 				},
 			);
@@ -86,6 +94,15 @@ export default class AiDraftBenchPlugin extends Plugin {
 		} satisfies AiDraftBenchPluginData);
 	}
 
+	private withUpdatedCurrentSessionEntries(entries: AiDraftBenchEntry[]): AiDraftBenchCurrentSessionData {
+		return {
+			...this.currentSession,
+			updatedAt: new Date().toISOString(),
+			entryCount: entries.length,
+			entries,
+		};
+	}
+
 	private getSavedSettings(savedData: SavedPluginData): Partial<AiDraftBenchSettings> | null {
 		if (!savedData) {
 			return null;
@@ -100,13 +117,26 @@ export default class AiDraftBenchPlugin extends Plugin {
 
 	private getSavedCurrentSession(savedData: SavedPluginData): AiDraftBenchCurrentSessionData {
 		if (!savedData || !("currentSession" in savedData) || !savedData.currentSession) {
-			return { ...DEFAULT_CURRENT_SESSION };
+			return createEmptyCurrentSession();
 		}
 
 		const entries = Array.isArray(savedData.currentSession.entries) ? savedData.currentSession.entries : [];
+		const validEntries = entries.filter((entry): entry is AiDraftBenchEntry => Boolean(entry && entry.id && entry.type && entry.response));
+		const fallbackSession = createEmptyCurrentSession();
 
 		return {
-			entries: entries.filter((entry): entry is AiDraftBenchEntry => Boolean(entry && entry.id && entry.type && entry.response)),
+			id: typeof savedData.currentSession.id === "string" && savedData.currentSession.id.trim() ? savedData.currentSession.id : fallbackSession.id,
+			createdAt:
+				typeof savedData.currentSession.createdAt === "string" && savedData.currentSession.createdAt.trim()
+					? savedData.currentSession.createdAt
+					: fallbackSession.createdAt,
+			updatedAt:
+				typeof savedData.currentSession.updatedAt === "string" && savedData.currentSession.updatedAt.trim()
+					? savedData.currentSession.updatedAt
+					: fallbackSession.updatedAt,
+			entryCount: validEntries.length,
+			userTitle: typeof savedData.currentSession.userTitle === "string" && savedData.currentSession.userTitle.trim() ? savedData.currentSession.userTitle : undefined,
+			entries: validEntries,
 		};
 	}
 
