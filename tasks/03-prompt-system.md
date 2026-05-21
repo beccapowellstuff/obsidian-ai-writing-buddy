@@ -9,7 +9,7 @@ Goal: build AI requests from clear prompt parts instead of raw user text only.
 - PB-003 DONE: Apply open chat system prompt to general chat entries.
 - PB-004 DONE: Apply selected-text system prompt to selected-text requests.
 - PB-005 DONE: Apply personality prompt when enabled.
-- PB-006 TODO: Keep system prompt, personality prompt, template prompt, selected text, user instruction, and follow-up context separate internally.
+- PB-006 TODO: Keep prompt parts structured until provider payload creation
 - PB-007 TODO: Build request payloads for general chat.
 - PB-008 TODO: Build request payloads for selected-text requests.
 - PB-009 TODO: Build request payloads for follow-up replies.

@@ -9,7 +9,7 @@ Goal: let chat and follow-up requests include the right context without sending 
 - CTX-005 DONE: Add follow-up replies for existing draft entries. Currently uses mock responses.
 - CTX-006 DONE: Show reply context snippets when replying to a previous entry.
 - CTX-007 DONE: Refer to a specific previous entry by passing reply context into the AI response service.
-- CTX-008 TODO: Continue discussing the last selected text.
+- CTX-008 TODO: Define active context behaviour for follow-up chat
 - CTX-009 TODO: Decide how much session history to send to the AI.
 - CTX-010 TODO: Add context builder service for general chat.
 - CTX-011 TODO: Add context builder service for selected-text requests.
@@ -21,6 +21,7 @@ Goal: let chat and follow-up requests include the right context without sending 
 - CTX-017 TODO: Add context size guard for selected text and follow-up context.
 - CTX-018 TODO: Add surrounding note context for selected-text requests.
 - CTX-019 TODO: Add persistent draft bench sessions.
+  - persistent local sessions stays important.
 - CTX-020 TODO: Add new session action.
 - CTX-021 TODO: Add session history list.
 - CTX-022 TODO: Add saved session metadata.
@@ -31,3 +32,9 @@ Goal: let chat and follow-up requests include the right context without sending 
   - optional userTitle
 - CTX-023 TODO: Add delete saved session action.
 - CTX-024 TODO: Add rename saved session action.
+- CTX-025 TODO: Add provider-aware conversation memory strategy
+- CTX-026 TODO: Trim session history before sending AI requests
+- CTX-027 TODO: Prioritise explicit reply context over general session history
+- CTX-028 TODO: Add compact session summary for older history
+- CTX-029 TODO: Use provider-side conversation state when supported
+- CTX-030 TODO: Fall back to trimmed local history for generic chat-completions providers

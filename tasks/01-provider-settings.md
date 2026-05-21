@@ -27,3 +27,5 @@ Goal: let the plugin use saved settings instead of hardcoded mock behaviour.
 - APS-023 TODO: Improve provider error messages in the panel.
 - APS-024 TODO: Enforce configured request timeout for OpenAI-compatible requests.
 - APS-025 DONE: Move prompt size limit into plugin settings/config.
+- APS-026 LATER: Add optional OpenAI Responses API provider mode.
+- APS-027 LATER: Support OpenAI conversation IDs for persistent provider-side state.
