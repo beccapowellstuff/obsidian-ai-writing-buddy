@@ -321,4 +321,4 @@ Goal: keep AI Draft Bench practical, but allow a few tiny optional touches that 
 - SET-001 TODO: Debounce settings saves for text inputs
 
 ## 14. Documentation
-- DOC-001 TODO: Update README to match current real-provider MVP state
+- DOC-001 DONE: Update README to match current real-provider MVP state
