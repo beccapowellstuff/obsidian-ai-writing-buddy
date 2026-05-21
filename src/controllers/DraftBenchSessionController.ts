@@ -18,6 +18,16 @@ export class DraftBenchSessionController {
 		return this.entries;
 	}
 
+	hasEntries(): boolean {
+		return this.entries.length > 0;
+	}
+
+	clearCurrentSession(): void {
+		this.entries = [];
+		this.replyToEntryId = null;
+		this.onChange(false);
+	}
+
 	setReplyToEntry(entryId: string): void {
 		this.replyToEntryId = entryId;
 		this.onChange(false);
