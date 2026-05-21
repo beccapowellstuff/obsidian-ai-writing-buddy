@@ -165,6 +165,12 @@ Goal: provide reusable prompt actions without forcing the user to write the same
 - TMP-018 TODO: Add template submenu actions to editor right-click menu.
 - TMP-019 TODO: Add run last template action.
 - TMP-020 TODO: Move template editing and built-in copying into modals
+- - ConnectionSettingsRenderer.ts
+- - PromptSettingsRenderer.ts
+- - OpenAiCompatibleResponseService.ts
+- - DraftBenchPromptBuilder.ts
+- - EditorMenuService.ts
+- - AiPromptModal.ts
 
 
 ## 5. Context system
@@ -264,7 +270,16 @@ Goal: keep the codebase maintainable as the real AI, prompt, and context systems
 - CODE-006 TODO: Add prompt builder service before real AI integration becomes messy.
 - CODE-007 TODO: Add context builder service before follow-up/chat context becomes messy.
 - CODE-008 DONE: Split template settings rendering out of AiDraftBenchSettingTab.
-- CODE-009 TODO: Split provider and prompt settings rendering out of AiDraftBenchSettingTab.
+- CODE-009 DONE: Split provider and prompt settings rendering out of AiDraftBenchSettingTab.
+- CODE-010 TODO: Split DraftBenchEntryRenderer into smaller response/source/diff renderers.
+- - DraftBenchEntryRenderer.ts
+- - DraftBenchSourcePanelRenderer.ts
+- - DraftBenchResponseRenderer.ts
+- - ResponseDiffRenderer.ts
+- CODE-011 TODO: Move side-panel session flow out of AiDraftBenchView.
+- - AiDraftBenchView.ts
+- - DraftBenchSessionController.ts
+- - DraftBenchScrollService.ts
 
 ## 11. Workflow/Accessibility
 
