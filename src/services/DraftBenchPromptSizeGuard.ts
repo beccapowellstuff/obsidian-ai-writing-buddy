@@ -1,9 +1,7 @@
 import { DraftBenchChatMessage } from "./DraftBenchPromptBuilder";
 
-const DEFAULT_MAX_PROMPT_CHARACTERS = 120000;
-
 export class DraftBenchPromptSizeGuard {
-	constructor(private readonly maxPromptCharacters = DEFAULT_MAX_PROMPT_CHARACTERS) {}
+	constructor(private readonly maxPromptCharacters: number) {}
 
 	validate(messages: DraftBenchChatMessage[]): void {
 		const totalCharacters = this.getTotalContentLength(messages);
