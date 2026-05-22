@@ -22,8 +22,8 @@ Goal: let chat and follow-up requests include the right context without sending 
 - CTX-018 TODO: Add surrounding note context for selected-text requests.
 - CTX-019 DONE: Add persistent draft bench sessions.
   - persistent local sessions stays important.
-- CTX-020 TODO: Add new session action.
-- CTX-021 TODO: Add session history list.
+- CTX-020 DONE: Add new session action.
+- CTX-021 DONE: Add session history list.
 - CTX-022 DONE: Add saved session metadata.
   - id
   - createdAt
@@ -38,3 +38,4 @@ Goal: let chat and follow-up requests include the right context without sending 
 - CTX-028 TODO: Add compact session summary for older history
 - CTX-029 TODO: Use provider-side conversation state when supported
 - CTX-030 TODO: Fall back to trimmed local history for generic chat-completions providers
+- 
