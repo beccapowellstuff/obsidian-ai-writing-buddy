@@ -6,13 +6,13 @@ Goal: Deliver chat/session management and persistent session memory so AI Draft 
    - Let the user reset the current bench back to an empty/default state without closing Obsidian.
    - Confirm before clearing if the session has entries.
 
-2. CTX-019 TODO: Add persistent draft bench sessions
+2. CTX-019 DONE: Add persistent draft bench sessions
    - Store sessions properly in plugin data.
 
-3. CTX-022 TODO: Add saved session metadata
+3. CTX-022 DONE: Add saved session metadata
    - Include id, createdAt, updatedAt, entryCount, and optional userTitle.
 
-4. CTX-020 TODO: Add new session action
+4. CTX-020 DONE: Add new session action
    - Allow the user to intentionally start fresh.
 
 5. CTX-021 TODO: Add session history list

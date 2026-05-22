@@ -11,3 +11,4 @@ Goal: make the plugin pleasant and clear without spending too long polishing bef
 - UI-007 TODO: Add template selector to selected-text prompt modal.
 - UI-008 TODO: Add loading/error styling that is distinct from mock styling later.
 - UI-009 DONE: Highlight changed words in replacement-style responses.
+- UI-010 TODO: Replace session text buttons with icon buttons and clearer tooltips

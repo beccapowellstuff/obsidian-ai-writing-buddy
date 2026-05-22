@@ -159,7 +159,7 @@ export class AiDraftBenchView extends ItemView {
 
 		const newSessionButton = actionsEl.createEl("button", {
 			cls: "ai-draft-bench-session-button",
-			text: "New session",
+			text: "Start a new session",
 		});
 		newSessionButton.type = "button";
 		newSessionButton.title = "Start a new session";
@@ -169,7 +169,7 @@ export class AiDraftBenchView extends ItemView {
 
 		const clearButton = actionsEl.createEl("button", {
 			cls: "ai-draft-bench-session-button",
-			text: "Clear session",
+			text: "Clear the current session",
 		});
 		clearButton.type = "button";
 		clearButton.title = "Clear the current session";

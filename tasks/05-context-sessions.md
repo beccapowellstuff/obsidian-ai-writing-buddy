@@ -20,11 +20,11 @@ Goal: let chat and follow-up requests include the right context without sending 
 - CTX-016 LATER: Allow attaching linked notes or search results as context.
 - CTX-017 TODO: Add context size guard for selected text and follow-up context.
 - CTX-018 TODO: Add surrounding note context for selected-text requests.
-- CTX-019 TODO: Add persistent draft bench sessions.
+- CTX-019 DONE: Add persistent draft bench sessions.
   - persistent local sessions stays important.
 - CTX-020 TODO: Add new session action.
 - CTX-021 TODO: Add session history list.
-- CTX-022 TODO: Add saved session metadata.
+- CTX-022 DONE: Add saved session metadata.
   - id
   - createdAt
   - updatedAt
