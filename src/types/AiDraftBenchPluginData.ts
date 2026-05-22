@@ -10,7 +10,16 @@ export type AiDraftBenchCurrentSessionData = {
 	entries: AiDraftBenchEntry[];
 };
 
+export type AiDraftBenchSessionListItem = {
+	id: string;
+	createdAt: string;
+	updatedAt: string;
+	entryCount: number;
+	userTitle?: string;
+};
+
 export type AiDraftBenchPluginData = {
 	settings: AiDraftBenchSettings;
 	currentSession: AiDraftBenchCurrentSessionData;
+	savedSessions: AiDraftBenchCurrentSessionData[];
 };
