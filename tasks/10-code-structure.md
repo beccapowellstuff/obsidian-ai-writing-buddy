@@ -28,3 +28,4 @@ Goal: keep the codebase maintainable as the real AI, prompt, and context systems
 - CODE-017 DONE: Add standing rule to split busy files before they become large refactors.
 - CODE-018 DONE: Split TASKS.md into grouped task files.
 - CODE-019 TODO: Split AiDraftBenchView header/session actions into smaller renderer or controller helpers
+- CODE-020 TODO: Move plugin data persistence and session upgrade logic out of main.ts
