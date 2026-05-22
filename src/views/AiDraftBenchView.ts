@@ -1,15 +1,16 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import { ConfirmClearSessionModal } from "../modals/ConfirmClearSessionModal";
 import { ConfirmNewSessionModal } from "../modals/ConfirmNewSessionModal";
-import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
 import { DraftBenchChatComposerRenderer } from "../renderers/DraftBenchChatComposerRenderer";
 import { DraftBenchEntryRenderer } from "../renderers/DraftBenchEntryRenderer";
+import { DraftBenchHeaderRenderer } from "../renderers/DraftBenchHeaderRenderer";
 import type { AiResponseService } from "../services/AiResponseService";
 import { ClipboardService } from "../services/ClipboardService";
 import { SelectionEditService } from "../services/SelectionEditService";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
 import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { DraftBenchSessionController } from "../controllers/DraftBenchSessionController";
+import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
 
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 
@@ -21,6 +22,7 @@ export class AiDraftBenchView extends ItemView {
 	private readonly clipboardService: ClipboardService;
 	private readonly selectionEditService: SelectionEditService;
 	private readonly entryRenderer: DraftBenchEntryRenderer;
+	private readonly headerRenderer = new DraftBenchHeaderRenderer();
 	private readonly chatComposerRenderer: DraftBenchChatComposerRenderer;
 
 	constructor(
@@ -116,7 +118,15 @@ export class AiDraftBenchView extends ItemView {
 		container.empty();
 		container.addClass("ai-draft-bench-view");
 
-		this.renderHeader(container);
+		this.headerRenderer.render(container, {
+			hasEntries: this.sessionController.hasEntries(),
+			onClearSession: () => {
+				this.clearCurrentSession();
+			},
+			onStartNewSession: () => {
+				this.startNewSession();
+			},
+		});
 
 		const entriesEl = container.createEl("div", {
 			cls: "ai-draft-bench-entries",
@@ -136,58 +146,6 @@ export class AiDraftBenchView extends ItemView {
 		}
 
 		this.chatComposerRenderer.render(container, this.sessionController.getReplyContextText());
-	}
-
-	private renderHeader(container: HTMLElement): void {
-		const headerEl = container.createEl("div", {
-			cls: "ai-draft-bench-header",
-		});
-
-		const headerTopEl = headerEl.createEl("div", {
-			cls: "ai-draft-bench-header-top",
-		});
-
-		const titleGroupEl = headerTopEl.createEl("div", {
-			cls: "ai-draft-bench-header-title-group",
-		});
-
-		titleGroupEl.createEl("div", {
-			cls: "ai-draft-bench-header-kicker",
-			text: PLUGIN_DISPLAY.headerKicker,
-		});
-
-		titleGroupEl.createEl("h2", {
-			text: PLUGIN_DISPLAY.name,
-		});
-
-		const actionsEl = headerTopEl.createEl("div", {
-			cls: "ai-draft-bench-header-actions",
-		});
-
-		const newSessionButton = actionsEl.createEl("button", {
-			cls: "ai-draft-bench-session-button",
-			text: "Start a new session",
-		});
-		newSessionButton.type = "button";
-		newSessionButton.title = "Start a new session";
-		newSessionButton.addEventListener("click", () => {
-			this.startNewSession();
-		});
-
-		const clearButton = actionsEl.createEl("button", {
-			cls: "ai-draft-bench-session-button",
-			text: "Clear the current session",
-		});
-		clearButton.type = "button";
-		clearButton.title = "Clear the current session";
-		clearButton.disabled = !this.sessionController.hasEntries();
-		clearButton.addEventListener("click", () => {
-			this.clearCurrentSession();
-		});
-
-		headerEl.createEl("p", {
-			text: PLUGIN_DISPLAY.headerDescription,
-		});
 	}
 
 	private clearCurrentSession(): void {
