@@ -1,7 +1,7 @@
-import { AiDraftBenchSettings } from "../config/defaultSettings";
-import { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/AiDraftBenchEntry";
-import { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
-import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
+import type { AiDraftBenchSettings } from "../config/defaultSettings";
+import type { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/AiDraftBenchEntry";
+import type { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
+import type { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 
 export type DraftBenchChatMessage = {
 	role: "system" | "user" | "assistant";
@@ -71,7 +71,13 @@ export class DraftBenchPromptBuilder {
 	}
 
 	private formatMemorySummary(summary: AiDraftBenchMemorySummary | undefined): string {
-		if (!summary?.text.trim()) {
+		if (!summary) {
+			return "";
+		}
+
+		const summaryText = summary.text.trim();
+
+		if (!summaryText) {
 			return "";
 		}
 
@@ -79,7 +85,7 @@ export class DraftBenchPromptBuilder {
 			"Older session memory summary:",
 			"Use this as compact background context from earlier in the session. Recent history and explicit reply context are more specific and should take priority.",
 			"",
-			summary.text.trim(),
+			summaryText,
 		].join("\n");
 	}
 
