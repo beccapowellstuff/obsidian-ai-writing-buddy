@@ -15,6 +15,6 @@ Goal: Deliver chat/session management and persistent session memory so AI Draft 
    - Reply target is excluded from generic recent history.
    - Selected-text reply context includes source note, original instruction, selected text, and assistant draft response.
    - Recent session history remains secondary.
-11. CTX-028: Add compact session summary for older history
-12. CTX-008: Define active context behaviour for follow-up chat
-13. CTX-029: Provider-side state later, probably much later
+11. CTX-028: TODO: Add compact session summary for older history
+12. CTX-008: TODO: Define active context behaviour for follow-up chat
+13. CTX-029: TODO: Provider-side state later, probably much later
