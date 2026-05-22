@@ -114,10 +114,11 @@ export class DraftBenchPromptBuilder {
 			return [];
 		}
 
-		return entries.flatMap((entry): DraftBenchChatMessage[] => {
+		const messages: DraftBenchChatMessage[] = [];
+
+		for (const entry of entries) {
 			const userText = this.getEntryUserText(entry).trim();
 			const assistantText = this.getEntryResponseText(entry).trim();
-			const messages: DraftBenchChatMessage[] = [];
 
 			if (userText) {
 				messages.push({
@@ -132,9 +133,9 @@ export class DraftBenchPromptBuilder {
 					content: assistantText,
 				});
 			}
+		}
 
-			return messages;
-		});
+		return messages;
 	}
 
 	private getEntryUserText(entry: AiDraftBenchEntry): string {
