@@ -10,6 +10,7 @@ export type DraftBenchChatMessage = {
 export type DraftBenchChatPromptRequest = {
 	message: string;
 	replyToEntry?: AiDraftBenchEntry;
+	recentEntries?: AiDraftBenchEntry[];
 };
 
 export class DraftBenchPromptBuilder {
@@ -38,22 +39,42 @@ export class DraftBenchPromptBuilder {
 
 	buildChatPrompt(request: DraftBenchChatPromptRequest): DraftBenchChatMessage[] {
 		const messages = this.buildSystemMessages(this.settings.openChatSystemPrompt);
-
-		if (request.replyToEntry) {
-			messages.push({
-				role: "user",
-				content: ["The user is replying to this previous draft response:", request.replyToEntry.response.text, "", "The user's follow-up message:", request.message].join("\n"),
-			});
-
-			return messages;
-		}
+		const userContentSections = [this.formatRecentEntries(request.recentEntries), this.formatReplyContext(request.replyToEntry), "[CURRENT USER MESSAGE]", request.message].filter(Boolean);
 
 		messages.push({
 			role: "user",
-			content: request.message,
+			content: userContentSections.join("\n\n"),
 		});
 
 		return messages;
+	}
+
+	private formatRecentEntries(entries: AiDraftBenchEntry[] | undefined): string {
+		if (!entries || entries.length === 0) {
+			return "";
+		}
+
+		return ["[RECENT SESSION HISTORY]", "Use this only as recent conversation context. The current user message below is the request to answer.", "", ...entries.map((entry) => this.formatRecentEntry(entry))].join("\n");
+	}
+
+	private formatRecentEntry(entry: AiDraftBenchEntry): string {
+		return ["User:", this.getEntryUserText(entry), "", "Assistant:", entry.response.text].filter(Boolean).join("\n");
+	}
+
+	private getEntryUserText(entry: AiDraftBenchEntry): string {
+		if (entry.type === "chat") {
+			return entry.message ?? "";
+		}
+
+		return entry.request?.instruction ?? "";
+	}
+
+	private formatReplyContext(replyToEntry: AiDraftBenchEntry | undefined): string {
+		if (!replyToEntry) {
+			return "";
+		}
+
+		return ["[EXPLICIT REPLY CONTEXT]", "The user is replying to this previous draft response:", replyToEntry.response.text].join("\n");
 	}
 
 	private buildSystemMessages(primarySystemPrompt: string): DraftBenchChatMessage[] {
