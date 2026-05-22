@@ -1,7 +1,8 @@
-import { AiDraftBenchSettings, DEFAULT_AI_DRAFT_BENCH_SETTINGS } from "../config/defaultSettings";
+import type { AiDraftBenchSettings } from "../config/defaultSettings";
+import { DEFAULT_AI_DRAFT_BENCH_SETTINGS } from "../config/defaultSettings";
 import { DEFAULT_PROMPT_TEMPLATES } from "../config/defaultPromptTemplates";
-import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
-import { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary, AiDraftBenchPluginData, AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
+import type { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
+import type { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary, AiDraftBenchPluginData, AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
 
 type LegacyPluginData = Partial<AiDraftBenchSettings>;
 type SavedPluginData = Partial<AiDraftBenchPluginData> | LegacyPluginData | null;
@@ -16,6 +17,8 @@ type SessionSwitchResult = {
 	currentSession: AiDraftBenchCurrentSessionData;
 	savedSessions: AiDraftBenchCurrentSessionData[];
 };
+
+type RawMemorySummary = Partial<AiDraftBenchMemorySummary> | undefined;
 
 export class AiDraftBenchPluginDataService {
 	load(rawData: unknown): LoadedPluginData {
@@ -135,7 +138,7 @@ export class AiDraftBenchPluginDataService {
 		const entries = Array.isArray(session.entries) ? session.entries : [];
 		const validEntries = entries.filter((entry): entry is AiDraftBenchEntry => Boolean(entry && entry.id && entry.type && entry.response));
 		const fallbackSession = this.createEmptyCurrentSession();
-		const memorySummary = this.normaliseMemorySummary(session.memorySummary);
+		const memorySummary = this.normaliseMemorySummary(session.memorySummary as RawMemorySummary);
 
 		return {
 			id: typeof session.id === "string" && session.id.trim() ? session.id : fallbackSession.id,
@@ -148,16 +151,21 @@ export class AiDraftBenchPluginDataService {
 		};
 	}
 
-	private normaliseMemorySummary(summary: AiDraftBenchMemorySummary | undefined): AiDraftBenchMemorySummary | undefined {
+	private normaliseMemorySummary(summary: RawMemorySummary): AiDraftBenchMemorySummary | undefined {
 		if (!summary || typeof summary.text !== "string" || !summary.text.trim()) {
 			return undefined;
 		}
 
+		const text = summary.text;
+		const updatedAt = summary.updatedAt;
+		const sourceEntryId = summary.sourceEntryId;
+		const entryCount = summary.entryCount;
+
 		return {
-			text: summary.text,
-			updatedAt: typeof summary.updatedAt === "string" && summary.updatedAt.trim() ? summary.updatedAt : new Date().toISOString(),
-			sourceEntryId: typeof summary.sourceEntryId === "string" && summary.sourceEntryId.trim() ? summary.sourceEntryId : undefined,
-			entryCount: typeof summary.entryCount === "number" && Number.isFinite(summary.entryCount) ? summary.entryCount : 0,
+			text,
+			updatedAt: typeof updatedAt === "string" && updatedAt.trim() ? updatedAt : new Date().toISOString(),
+			sourceEntryId: typeof sourceEntryId === "string" && sourceEntryId.trim() ? sourceEntryId : undefined,
+			entryCount: typeof entryCount === "number" && Number.isFinite(entryCount) ? entryCount : 0,
 		};
 	}
 
