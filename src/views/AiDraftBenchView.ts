@@ -11,11 +11,14 @@ import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
 import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { DraftBenchSessionController } from "../controllers/DraftBenchSessionController";
 import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
+import { AiDraftBenchCurrentSessionData, AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
 
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 
 type SessionSaveHandler = (entries: AiDraftBenchEntry[]) => void;
 type NewSessionHandler = () => void;
+type SessionListProvider = () => AiDraftBenchSessionListItem[];
+type RestoreSessionHandler = (sessionId: string) => AiDraftBenchCurrentSessionData | null;
 
 export class AiDraftBenchView extends ItemView {
 	private readonly sessionController: DraftBenchSessionController;
@@ -31,6 +34,8 @@ export class AiDraftBenchView extends ItemView {
 		initialEntries: AiDraftBenchEntry[],
 		onSaveSession: SessionSaveHandler,
 		onNewSession: NewSessionHandler,
+		private readonly getSessionListItems: SessionListProvider,
+		private readonly onRestoreSession: RestoreSessionHandler,
 	) {
 		super(leaf);
 
@@ -120,11 +125,15 @@ export class AiDraftBenchView extends ItemView {
 
 		this.headerRenderer.render(container, {
 			hasEntries: this.sessionController.hasEntries(),
+			sessionListItems: this.getSessionListItems(),
 			onClearSession: () => {
 				this.clearCurrentSession();
 			},
 			onStartNewSession: () => {
 				this.startNewSession();
+			},
+			onRestoreSession: (sessionId) => {
+				this.restoreSession(sessionId);
 			},
 		});
 
@@ -167,6 +176,16 @@ export class AiDraftBenchView extends ItemView {
 		new ConfirmNewSessionModal(this.app, () => {
 			this.sessionController.startNewSession();
 		}).open();
+	}
+
+	private restoreSession(sessionId: string): void {
+		const restoredSession = this.onRestoreSession(sessionId);
+
+		if (!restoredSession) {
+			return;
+		}
+
+		this.sessionController.replaceCurrentSessionEntries(restoredSession.entries);
 	}
 
 	private scrollToBottom(): void {

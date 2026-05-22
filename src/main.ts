@@ -20,6 +20,7 @@ export default class AiDraftBenchPlugin extends Plugin {
 	private draftBenchViewService!: DraftBenchViewService;
 	settings!: AiDraftBenchSettings;
 	currentSession: AiDraftBenchCurrentSessionData = this.pluginDataService.createEmptyCurrentSession();
+	savedSessions: AiDraftBenchCurrentSessionData[] = [];
 
 	async onload(): Promise<void> {
 		console.debug("AI Draft Bench loaded");
@@ -39,8 +40,24 @@ export default class AiDraftBenchPlugin extends Plugin {
 					void this.savePluginData();
 				},
 				() => {
-					this.currentSession = this.pluginDataService.createEmptyCurrentSession();
+					const result = this.pluginDataService.startNewSession(this.currentSession, this.savedSessions);
+					this.currentSession = result.currentSession;
+					this.savedSessions = result.savedSessions;
 					void this.savePluginData();
+				},
+				() => this.pluginDataService.getSessionListItems(this.savedSessions),
+				(sessionId) => {
+					const result = this.pluginDataService.restoreSavedSession(sessionId, this.currentSession, this.savedSessions);
+
+					if (!result) {
+						return null;
+					}
+
+					this.currentSession = result.currentSession;
+					this.savedSessions = result.savedSessions;
+					void this.savePluginData();
+
+					return this.currentSession;
 				},
 			);
 		});
@@ -63,6 +80,7 @@ export default class AiDraftBenchPlugin extends Plugin {
 
 		this.settings = loadedData.settings;
 		this.currentSession = loadedData.currentSession;
+		this.savedSessions = loadedData.savedSessions;
 	}
 
 	async saveSettings(): Promise<void> {
@@ -70,7 +88,7 @@ export default class AiDraftBenchPlugin extends Plugin {
 	}
 
 	private async savePluginData(): Promise<void> {
-		await this.saveData(this.pluginDataService.createSaveData(this.settings, this.currentSession));
+		await this.saveData(this.pluginDataService.createSaveData(this.settings, this.currentSession, this.savedSessions));
 	}
 
 	async listAvailableModels(): Promise<string[]> {

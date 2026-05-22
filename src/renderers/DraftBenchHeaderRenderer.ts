@@ -1,9 +1,12 @@
 import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
+import { AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
 
 type DraftBenchHeaderRendererOptions = {
 	hasEntries: boolean;
+	sessionListItems: AiDraftBenchSessionListItem[];
 	onClearSession: () => void;
 	onStartNewSession: () => void;
+	onRestoreSession: (sessionId: string) => void;
 };
 
 export class DraftBenchHeaderRenderer {
@@ -44,6 +47,8 @@ export class DraftBenchHeaderRenderer {
 			cls: "ai-draft-bench-header-actions",
 		});
 
+		this.renderSessionHistory(actionsEl, options);
+
 		const newSessionButton = actionsEl.createEl("button", {
 			cls: "ai-draft-bench-session-button",
 			text: "Start a new session",
@@ -64,5 +69,49 @@ export class DraftBenchHeaderRenderer {
 		clearButton.addEventListener("click", () => {
 			options.onClearSession();
 		});
+	}
+
+	private renderSessionHistory(actionsEl: HTMLElement, options: DraftBenchHeaderRendererOptions): void {
+		if (options.sessionListItems.length === 0) {
+			return;
+		}
+
+		const sessionSelect = actionsEl.createEl("select", {
+			cls: "ai-draft-bench-session-history-select",
+		});
+
+		sessionSelect.createEl("option", {
+			text: "Open a previous session",
+			value: "",
+		});
+
+		for (const session of options.sessionListItems) {
+			sessionSelect.createEl("option", {
+				text: this.getSessionLabel(session),
+				value: session.id,
+			});
+		}
+
+		sessionSelect.addEventListener("change", () => {
+			if (!sessionSelect.value) {
+				return;
+			}
+
+			options.onRestoreSession(sessionSelect.value);
+		});
+	}
+
+	private getSessionLabel(session: AiDraftBenchSessionListItem): string {
+		if (session.userTitle?.trim()) {
+			return session.userTitle.trim();
+		}
+
+		const updatedAt = new Date(session.updatedAt);
+
+		if (Number.isNaN(updatedAt.getTime())) {
+			return `${session.entryCount} entries`;
+		}
+
+		return `${updatedAt.toLocaleString()} · ${session.entryCount} entries`;
 	}
 }

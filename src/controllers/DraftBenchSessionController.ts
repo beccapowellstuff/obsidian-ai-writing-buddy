@@ -43,6 +43,12 @@ export class DraftBenchSessionController {
 		this.onChange(false);
 	}
 
+	replaceCurrentSessionEntries(entries: AiDraftBenchEntry[]): void {
+		this.entries = [...entries];
+		this.replyToEntryId = null;
+		this.onChange(false);
+	}
+
 	setReplyToEntry(entryId: string): void {
 		this.replyToEntryId = entryId;
 		this.onChange(false);

@@ -1,7 +1,7 @@
 import { AiDraftBenchSettings, DEFAULT_AI_DRAFT_BENCH_SETTINGS } from "../config/defaultSettings";
 import { DEFAULT_PROMPT_TEMPLATES } from "../config/defaultPromptTemplates";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
-import { AiDraftBenchCurrentSessionData, AiDraftBenchPluginData } from "../types/AiDraftBenchPluginData";
+import { AiDraftBenchCurrentSessionData, AiDraftBenchPluginData, AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
 
 type LegacyPluginData = Partial<AiDraftBenchSettings>;
 type SavedPluginData = Partial<AiDraftBenchPluginData> | LegacyPluginData | null;
@@ -9,6 +9,12 @@ type SavedPluginData = Partial<AiDraftBenchPluginData> | LegacyPluginData | null
 type LoadedPluginData = {
 	settings: AiDraftBenchSettings;
 	currentSession: AiDraftBenchCurrentSessionData;
+	savedSessions: AiDraftBenchCurrentSessionData[];
+};
+
+type SessionSwitchResult = {
+	currentSession: AiDraftBenchCurrentSessionData;
+	savedSessions: AiDraftBenchCurrentSessionData[];
 };
 
 export class AiDraftBenchPluginDataService {
@@ -23,14 +29,15 @@ export class AiDraftBenchPluginDataService {
 				promptTemplates: this.mergePromptTemplates(savedSettings?.promptTemplates ?? []),
 			},
 			currentSession: this.getSavedCurrentSession(savedData),
+			savedSessions: this.getSavedSessions(savedData),
 		};
 	}
 
-	createSaveData(settings: AiDraftBenchSettings, currentSession: AiDraftBenchCurrentSessionData): AiDraftBenchPluginData {
+	createSaveData(settings: AiDraftBenchSettings, currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[]): AiDraftBenchPluginData {
 		return {
 			settings,
 			currentSession,
-			savedSessions: [],
+			savedSessions,
 		};
 	}
 
@@ -55,6 +62,46 @@ export class AiDraftBenchPluginDataService {
 		};
 	}
 
+	getSessionListItems(savedSessions: AiDraftBenchCurrentSessionData[]): AiDraftBenchSessionListItem[] {
+		return savedSessions.map((session) => ({
+			id: session.id,
+			createdAt: session.createdAt,
+			updatedAt: session.updatedAt,
+			entryCount: session.entryCount,
+			userTitle: session.userTitle,
+		}));
+	}
+
+	startNewSession(currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[]): SessionSwitchResult {
+		return {
+			currentSession: this.createEmptyCurrentSession(),
+			savedSessions: this.archiveSession(currentSession, savedSessions),
+		};
+	}
+
+	restoreSavedSession(sessionId: string, currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[]): SessionSwitchResult | null {
+		const selectedSession = savedSessions.find((session) => session.id === sessionId);
+
+		if (!selectedSession) {
+			return null;
+		}
+
+		const remainingSavedSessions = savedSessions.filter((session) => session.id !== sessionId);
+
+		return {
+			currentSession: selectedSession,
+			savedSessions: this.archiveSession(currentSession, remainingSavedSessions),
+		};
+	}
+
+	private archiveSession(currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[]): AiDraftBenchCurrentSessionData[] {
+		if (currentSession.entryCount === 0 && currentSession.entries.length === 0) {
+			return savedSessions;
+		}
+
+		return [currentSession, ...savedSessions.filter((session) => session.id !== currentSession.id)];
+	}
+
 	private getSavedSettings(savedData: SavedPluginData): Partial<AiDraftBenchSettings> | null {
 		if (!savedData) {
 			return null;
@@ -72,16 +119,28 @@ export class AiDraftBenchPluginDataService {
 			return this.createEmptyCurrentSession();
 		}
 
-		const entries = Array.isArray(savedData.currentSession.entries) ? savedData.currentSession.entries : [];
+		return this.normaliseSession(savedData.currentSession);
+	}
+
+	private getSavedSessions(savedData: SavedPluginData): AiDraftBenchCurrentSessionData[] {
+		if (!savedData || !("savedSessions" in savedData) || !Array.isArray(savedData.savedSessions)) {
+			return [];
+		}
+
+		return savedData.savedSessions.map((session) => this.normaliseSession(session)).filter((session) => session.entryCount > 0 || session.entries.length > 0);
+	}
+
+	private normaliseSession(session: Partial<AiDraftBenchCurrentSessionData>): AiDraftBenchCurrentSessionData {
+		const entries = Array.isArray(session.entries) ? session.entries : [];
 		const validEntries = entries.filter((entry): entry is AiDraftBenchEntry => Boolean(entry && entry.id && entry.type && entry.response));
 		const fallbackSession = this.createEmptyCurrentSession();
 
 		return {
-			id: typeof savedData.currentSession.id === "string" && savedData.currentSession.id.trim() ? savedData.currentSession.id : fallbackSession.id,
-			createdAt: typeof savedData.currentSession.createdAt === "string" && savedData.currentSession.createdAt.trim() ? savedData.currentSession.createdAt : fallbackSession.createdAt,
-			updatedAt: typeof savedData.currentSession.updatedAt === "string" && savedData.currentSession.updatedAt.trim() ? savedData.currentSession.updatedAt : fallbackSession.updatedAt,
+			id: typeof session.id === "string" && session.id.trim() ? session.id : fallbackSession.id,
+			createdAt: typeof session.createdAt === "string" && session.createdAt.trim() ? session.createdAt : fallbackSession.createdAt,
+			updatedAt: typeof session.updatedAt === "string" && session.updatedAt.trim() ? session.updatedAt : fallbackSession.updatedAt,
 			entryCount: validEntries.length,
-			userTitle: typeof savedData.currentSession.userTitle === "string" && savedData.currentSession.userTitle.trim() ? savedData.currentSession.userTitle : undefined,
+			userTitle: typeof session.userTitle === "string" && session.userTitle.trim() ? session.userTitle : undefined,
 			entries: validEntries,
 		};
 	}
