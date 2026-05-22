@@ -39,6 +39,14 @@ export class DraftBenchPromptBuilder {
 
 	buildChatPrompt(request: DraftBenchChatPromptRequest): DraftBenchChatMessage[] {
 		const messages = this.buildSystemMessages(this.settings.openChatSystemPrompt);
+		const recentUserMessageIndex = this.formatRecentUserMessageIndex(request.recentEntries);
+
+		if (recentUserMessageIndex) {
+			messages.push({
+				role: "system",
+				content: recentUserMessageIndex,
+			});
+		}
 
 		messages.push(...this.buildRecentHistoryMessages(request.recentEntries));
 
@@ -50,6 +58,26 @@ export class DraftBenchPromptBuilder {
 		});
 
 		return messages;
+	}
+
+	private formatRecentUserMessageIndex(entries: AiDraftBenchEntry[] | undefined): string {
+		if (!entries || entries.length === 0) {
+			return "";
+		}
+
+		const userMessages = entries.map((entry) => this.getEntryUserText(entry).trim()).filter(Boolean);
+
+		if (userMessages.length === 0) {
+			return "";
+		}
+
+		return [
+			"Recent user message index for recall questions:",
+			"Use this index when the user asks what they previously said, asked, or discussed.",
+			"The messages are listed oldest to newest and do not include the current message.",
+			"",
+			...userMessages.map((message, index) => `${index + 1}. ${message}`),
+		].join("\n");
 	}
 
 	private buildRecentHistoryMessages(entries: AiDraftBenchEntry[] | undefined): DraftBenchChatMessage[] {
