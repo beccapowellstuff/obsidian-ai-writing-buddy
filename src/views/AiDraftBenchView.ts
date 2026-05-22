@@ -1,4 +1,6 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
+import { AiDraftBenchSettings } from "../config/defaultSettings";
+import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
 import { ConfirmClearSessionModal } from "../modals/ConfirmClearSessionModal";
 import { ConfirmNewSessionModal } from "../modals/ConfirmNewSessionModal";
 import { DraftBenchChatComposerRenderer } from "../renderers/DraftBenchChatComposerRenderer";
@@ -8,10 +10,9 @@ import type { AiResponseService } from "../services/AiResponseService";
 import { ClipboardService } from "../services/ClipboardService";
 import { SelectionEditService } from "../services/SelectionEditService";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
+import { AiDraftBenchCurrentSessionData, AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
 import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { DraftBenchSessionController } from "../controllers/DraftBenchSessionController";
-import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
-import { AiDraftBenchCurrentSessionData, AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
 
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 
@@ -31,6 +32,7 @@ export class AiDraftBenchView extends ItemView {
 	constructor(
 		leaf: WorkspaceLeaf,
 		private readonly aiResponseService: AiResponseService,
+		private readonly settings: AiDraftBenchSettings,
 		initialEntries: AiDraftBenchEntry[],
 		onSaveSession: SessionSaveHandler,
 		onNewSession: NewSessionHandler,
@@ -53,6 +55,7 @@ export class AiDraftBenchView extends ItemView {
 			},
 			onSaveSession,
 			onNewSession,
+			this.settings,
 			initialEntries,
 		);
 
