@@ -15,7 +15,7 @@ Goal: Deliver chat/session management and persistent session memory so AI Draft 
 4. CTX-020 DONE: Add new session action
    - Allow the user to intentionally start fresh.
 
-5. CTX-021 TODO: Add session history list
+5. CTX-021 DONE: Add session history list
    - Allow the user to return to previous sessions.
 
 6. CTX-025 TODO: Add provider-aware conversation memory strategy
