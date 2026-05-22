@@ -1,5 +1,6 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import { ConfirmClearSessionModal } from "../modals/ConfirmClearSessionModal";
+import { ConfirmNewSessionModal } from "../modals/ConfirmNewSessionModal";
 import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
 import { DraftBenchChatComposerRenderer } from "../renderers/DraftBenchChatComposerRenderer";
 import { DraftBenchEntryRenderer } from "../renderers/DraftBenchEntryRenderer";
@@ -13,6 +14,7 @@ import { DraftBenchSessionController } from "../controllers/DraftBenchSessionCon
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 
 type SessionSaveHandler = (entries: AiDraftBenchEntry[]) => void;
+type NewSessionHandler = () => void;
 
 export class AiDraftBenchView extends ItemView {
 	private readonly sessionController: DraftBenchSessionController;
@@ -35,6 +37,7 @@ export class AiDraftBenchView extends ItemView {
 		private readonly aiResponseService: AiResponseService,
 		initialEntries: AiDraftBenchEntry[],
 		onSaveSession: SessionSaveHandler,
+		onNewSession: NewSessionHandler,
 	) {
 		super(leaf);
 
@@ -51,6 +54,7 @@ export class AiDraftBenchView extends ItemView {
 				this.renderPreservingScroll();
 			},
 			onSaveSession,
+			onNewSession,
 			initialEntries,
 		);
 	}
@@ -149,15 +153,27 @@ export class AiDraftBenchView extends ItemView {
 			text: PLUGIN_DISPLAY.name,
 		});
 
-		const clearButton = headerTopEl.createEl("button", {
-			cls: "ai-draft-bench-clear-session-button",
-			text: "Clear session",
+		const actionsEl = headerTopEl.createEl("div", {
+			cls: "ai-draft-bench-header-actions",
 		});
 
+		const newSessionButton = actionsEl.createEl("button", {
+			cls: "ai-draft-bench-session-button",
+			text: "New session",
+		});
+		newSessionButton.type = "button";
+		newSessionButton.title = "Start a new session";
+		newSessionButton.addEventListener("click", () => {
+			this.startNewSession();
+		});
+
+		const clearButton = actionsEl.createEl("button", {
+			cls: "ai-draft-bench-session-button",
+			text: "Clear session",
+		});
 		clearButton.type = "button";
 		clearButton.title = "Clear the current session";
 		clearButton.disabled = !this.sessionController.hasEntries();
-
 		clearButton.addEventListener("click", () => {
 			this.clearCurrentSession();
 		});
@@ -174,6 +190,17 @@ export class AiDraftBenchView extends ItemView {
 
 		new ConfirmClearSessionModal(this.app, () => {
 			this.sessionController.clearCurrentSession();
+		}).open();
+	}
+
+	private startNewSession(): void {
+		if (!this.sessionController.hasEntries()) {
+			this.sessionController.startNewSession();
+			return;
+		}
+
+		new ConfirmNewSessionModal(this.app, () => {
+			this.sessionController.startNewSession();
 		}).open();
 	}
 
