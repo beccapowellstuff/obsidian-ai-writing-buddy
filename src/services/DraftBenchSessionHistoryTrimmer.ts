@@ -1,10 +1,14 @@
 import { AiDraftBenchSettings } from "../config/defaultSettings";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
 
+type RecentEntryOptions = {
+	excludeEntryId?: string;
+};
+
 export class DraftBenchSessionHistoryTrimmer {
 	constructor(private readonly settings: AiDraftBenchSettings) {}
 
-	getRecentEntries(entries: AiDraftBenchEntry[]): AiDraftBenchEntry[] {
+	getRecentEntries(entries: AiDraftBenchEntry[], options: RecentEntryOptions = {}): AiDraftBenchEntry[] {
 		if (!this.settings.memoryEnabled) {
 			return [];
 		}
@@ -16,7 +20,7 @@ export class DraftBenchSessionHistoryTrimmer {
 			return [];
 		}
 
-		const completedEntries = entries.filter((entry) => !entry.response.isPlaceholder);
+		const completedEntries = entries.filter((entry) => !entry.response.isPlaceholder && entry.id !== options.excludeEntryId);
 		const selectedEntries: AiDraftBenchEntry[] = [];
 		let usedCharacters = 0;
 
