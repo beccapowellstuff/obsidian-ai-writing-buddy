@@ -1,0 +1,54 @@
+# Memory
+
+Goal: Build a local memory system so AI Draft Bench can act like a writing buddy without sending the whole session or whole chapter to the model on every request.
+
+Memory must be local first. The saved conversation, session history, summaries, decisions, and retrieval index should remain inside the Obsidian plugin data or local plugin storage.
+
+The model should only receive a carefully built context package for each request. Never blindly send the full session by default.
+
+## Design principles
+
+1. The saved session is the source of truth.
+   AI Draft Bench already stores current and previous sessions. This saved data is the raw memory source.
+
+2. Prompt memory is not the same as saved memory.
+   Saved memory can be large. Prompt memory must be small, relevant, and budgeted.
+
+3. Large selected text should reduce history.
+   If the user asks about a whole chapter or a large section, the model should receive less chat history, not overflow the context window.
+
+4. Recent conversation matters, but only within budget.
+   Include recent turns when they fit, but do not send the whole conversation forever.
+
+5. Explicit reply context beats general memory.
+   If the user replies to a specific entry, that entry should outrank older general history.
+
+6. Older history should become summary and retrieval memory.
+   Older conversation should be summarised or retrieved selectively rather than always included raw.
+
+7. Generic local providers need local memory.
+   LM Studio and Ollama use OpenAI compatible chat completions. They need AI Draft Bench to build and inject memory locally.
+
+8. Provider side state is optional.
+   If a provider supports conversation state, use it later. Do not depend on it for local providers.
+
+## Tasks
+
+1. MEM-001 TODO: Add local conversation memory index
+
+   Create a local searchable memory index from saved session entries.
+
+   First version can use simple keyword and text scoring. Do not start with vector embeddings.
+
+   Store memory records with enough metadata to trace them back to the source session and entry.
+
+   Suggested record fields:
+
+   ```ts
+   id: string;
+   sessionId: string;
+   entryId: string;
+   createdAt: string;
+   kind: "user-message" | "assistant-response" | "exchange";
+   text: string;
+   keywords: string[];
