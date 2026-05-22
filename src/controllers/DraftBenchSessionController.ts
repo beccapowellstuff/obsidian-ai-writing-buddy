@@ -1,18 +1,22 @@
 import { AiDraftBenchSettings } from "../config/defaultSettings";
 import type { AiResponseService } from "../services/AiResponseService";
 import { DraftBenchSessionHistoryTrimmer } from "../services/DraftBenchSessionHistoryTrimmer";
+import { DraftBenchSessionSummaryService } from "../services/DraftBenchSessionSummaryService";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
+import { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
 import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { createPlaceholderResponse } from "../utils/createPlaceholderResponse";
 
 type SessionChangeHandler = (scrollToBottom: boolean) => void;
-type SessionSaveHandler = (entries: AiDraftBenchEntry[]) => void;
+type SessionSaveHandler = (entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary) => void;
 type NewSessionHandler = () => void;
 
 export class DraftBenchSessionController {
 	private entries: AiDraftBenchEntry[];
 	private replyToEntryId: string | null = null;
+	private memorySummary: AiDraftBenchMemorySummary | undefined;
 	private readonly sessionHistoryTrimmer: DraftBenchSessionHistoryTrimmer;
+	private readonly sessionSummaryService: DraftBenchSessionSummaryService;
 
 	constructor(
 		private readonly aiResponseService: AiResponseService,
@@ -21,9 +25,12 @@ export class DraftBenchSessionController {
 		private readonly onNewSession: NewSessionHandler,
 		settings: AiDraftBenchSettings,
 		initialEntries: AiDraftBenchEntry[] = [],
+		initialMemorySummary?: AiDraftBenchMemorySummary,
 	) {
 		this.entries = [...initialEntries];
+		this.memorySummary = initialMemorySummary;
 		this.sessionHistoryTrimmer = new DraftBenchSessionHistoryTrimmer(settings);
+		this.sessionSummaryService = new DraftBenchSessionSummaryService(settings);
 	}
 
 	getEntries(): AiDraftBenchEntry[] {
@@ -37,6 +44,7 @@ export class DraftBenchSessionController {
 	clearCurrentSession(): void {
 		this.entries = [];
 		this.replyToEntryId = null;
+		this.memorySummary = undefined;
 		this.saveSession();
 		this.onChange(false);
 	}
@@ -44,13 +52,15 @@ export class DraftBenchSessionController {
 	startNewSession(): void {
 		this.entries = [];
 		this.replyToEntryId = null;
+		this.memorySummary = undefined;
 		this.onNewSession();
 		this.onChange(false);
 	}
 
-	replaceCurrentSessionEntries(entries: AiDraftBenchEntry[]): void {
+	replaceCurrentSessionEntries(entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary): void {
 		this.entries = [...entries];
 		this.replyToEntryId = null;
+		this.memorySummary = memorySummary;
 		this.onChange(false);
 	}
 
@@ -99,6 +109,7 @@ export class DraftBenchSessionController {
 			entry.response = createPlaceholderResponse(["AI provider error.", "", this.getErrorMessage(error), "", "Check your provider settings, server address, and selected model."].join("\n"));
 		}
 
+		this.refreshMemorySummary();
 		this.saveSession();
 		this.onChange(true);
 	}
@@ -137,6 +148,7 @@ export class DraftBenchSessionController {
 				message: trimmedMessage,
 				replyToEntry,
 				recentEntries,
+				memorySummary: this.memorySummary,
 			});
 		} catch (error) {
 			console.error("AI Draft Bench chat response failed", error);
@@ -144,12 +156,17 @@ export class DraftBenchSessionController {
 			entry.response = createPlaceholderResponse(["AI provider error.", "", this.getErrorMessage(error), "", "Check your provider settings, server address, and selected model."].join("\n"));
 		}
 
+		this.refreshMemorySummary();
 		this.saveSession();
 		this.onChange(true);
 	}
 
+	private refreshMemorySummary(): void {
+		this.memorySummary = this.sessionSummaryService.createMemorySummary(this.entries);
+	}
+
 	private saveSession(): void {
-		this.onSave([...this.entries]);
+		this.onSave([...this.entries], this.memorySummary);
 	}
 
 	private getEntrySnippet(entry: AiDraftBenchEntry): string {
