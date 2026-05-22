@@ -5,6 +5,7 @@ import { createPlaceholderResponse } from "../utils/createPlaceholderResponse";
 
 type SessionChangeHandler = (scrollToBottom: boolean) => void;
 type SessionSaveHandler = (entries: AiDraftBenchEntry[]) => void;
+type NewSessionHandler = () => void;
 
 export class DraftBenchSessionController {
 	private entries: AiDraftBenchEntry[];
@@ -14,6 +15,7 @@ export class DraftBenchSessionController {
 		private readonly aiResponseService: AiResponseService,
 		private readonly onChange: SessionChangeHandler,
 		private readonly onSave: SessionSaveHandler,
+		private readonly onNewSession: NewSessionHandler,
 		initialEntries: AiDraftBenchEntry[] = [],
 	) {
 		this.entries = [...initialEntries];
@@ -31,6 +33,13 @@ export class DraftBenchSessionController {
 		this.entries = [];
 		this.replyToEntryId = null;
 		this.saveSession();
+		this.onChange(false);
+	}
+
+	startNewSession(): void {
+		this.entries = [];
+		this.replyToEntryId = null;
+		this.onNewSession();
 		this.onChange(false);
 	}
 
