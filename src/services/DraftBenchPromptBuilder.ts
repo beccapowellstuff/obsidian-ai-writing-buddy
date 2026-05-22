@@ -116,7 +116,7 @@ export class DraftBenchPromptBuilder {
 
 		return entries.flatMap((entry): DraftBenchChatMessage[] => {
 			const userText = this.getEntryUserText(entry).trim();
-			const assistantText = entry.response.text.trim();
+			const assistantText = this.getEntryResponseText(entry).trim();
 			const messages: DraftBenchChatMessage[] = [];
 
 			if (userText) {
@@ -143,6 +143,10 @@ export class DraftBenchPromptBuilder {
 		}
 
 		return entry.request?.instruction ?? "";
+	}
+
+	private getEntryResponseText(entry: AiDraftBenchEntry): string {
+		return entry.response.text ?? "";
 	}
 
 	private formatReplyContext(replyToEntry: AiDraftBenchEntry | undefined): string {
@@ -178,7 +182,7 @@ export class DraftBenchPromptBuilder {
 			request.selectedText,
 			"",
 			"Assistant draft response being replied to:",
-			replyToEntry.response.text,
+			this.getEntryResponseText(replyToEntry),
 			"",
 			"[CURRENT USER MESSAGE]",
 		]
@@ -188,7 +192,7 @@ export class DraftBenchPromptBuilder {
 
 	private formatChatReplyContext(replyToEntry: AiDraftBenchChatEntry): string {
 		const originalUserText = this.getEntryUserText(replyToEntry).trim();
-		const assistantResponseText = replyToEntry.response.text.trim();
+		const assistantResponseText = this.getEntryResponseText(replyToEntry).trim();
 
 		return [
 			"[EXPLICIT REPLY CONTEXT]",
