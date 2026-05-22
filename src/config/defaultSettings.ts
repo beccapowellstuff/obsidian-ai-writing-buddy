@@ -9,6 +9,9 @@ export type AiDraftBenchSettings = {
 	apiKey: string;
 	requestTimeoutMs: number;
 	maxPromptCharacters: number;
+	memoryEnabled: boolean;
+	memoryBudgetCharacters: number;
+	recentHistoryMaxEntries: number;
 	openChatSystemPrompt: string;
 	selectionSystemPrompt: string;
 	personalityEnabled: boolean;
@@ -38,6 +41,8 @@ export const DEFAULT_PERSONALITY_PROMPT = [
 ].join("\n");
 
 export const DEFAULT_MAX_PROMPT_CHARACTERS = 120000;
+export const DEFAULT_MEMORY_BUDGET_CHARACTERS = 6000;
+export const DEFAULT_RECENT_HISTORY_MAX_ENTRIES = 6;
 
 export const DEFAULT_AI_DRAFT_BENCH_SETTINGS: AiDraftBenchSettings = {
 	provider: "mock",
@@ -46,6 +51,9 @@ export const DEFAULT_AI_DRAFT_BENCH_SETTINGS: AiDraftBenchSettings = {
 	apiKey: "",
 	requestTimeoutMs: 60000,
 	maxPromptCharacters: DEFAULT_MAX_PROMPT_CHARACTERS,
+	memoryEnabled: true,
+	memoryBudgetCharacters: DEFAULT_MEMORY_BUDGET_CHARACTERS,
+	recentHistoryMaxEntries: DEFAULT_RECENT_HISTORY_MAX_ENTRIES,
 	openChatSystemPrompt: DEFAULT_OPEN_CHAT_SYSTEM_PROMPT,
 	selectionSystemPrompt: DEFAULT_SELECTION_SYSTEM_PROMPT,
 	personalityEnabled: false,
