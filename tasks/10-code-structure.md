@@ -27,3 +27,4 @@ Goal: keep the codebase maintainable as the real AI, prompt, and context systems
 - CODE-016 TODO: Review duplicate built-in continuation templates.
 - CODE-017 DONE: Add standing rule to split busy files before they become large refactors.
 - CODE-018 DONE: Split TASKS.md into grouped task files.
+- CODE-019 TODO: Split AiDraftBenchView header/session actions into smaller renderer or controller helpers

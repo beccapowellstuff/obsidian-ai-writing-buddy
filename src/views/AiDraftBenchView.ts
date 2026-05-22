@@ -18,19 +18,10 @@ type NewSessionHandler = () => void;
 
 export class AiDraftBenchView extends ItemView {
 	private readonly sessionController: DraftBenchSessionController;
-	private readonly clipboardService = new ClipboardService();
-	private readonly selectionEditService = new SelectionEditService(this.app);
-	private readonly entryRenderer = new DraftBenchEntryRenderer(this.app, this.clipboardService, this.selectionEditService, (entryId) => {
-		this.sessionController.setReplyToEntry(entryId);
-	});
-	private readonly chatComposerRenderer = new DraftBenchChatComposerRenderer(
-		(message) => {
-			void this.sessionController.addChatEntry(message);
-		},
-		() => {
-			this.sessionController.clearReplyToEntry();
-		},
-	);
+	private readonly clipboardService: ClipboardService;
+	private readonly selectionEditService: SelectionEditService;
+	private readonly entryRenderer: DraftBenchEntryRenderer;
+	private readonly chatComposerRenderer: DraftBenchChatComposerRenderer;
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -56,6 +47,22 @@ export class AiDraftBenchView extends ItemView {
 			onSaveSession,
 			onNewSession,
 			initialEntries,
+		);
+
+		this.clipboardService = new ClipboardService();
+		this.selectionEditService = new SelectionEditService(this.app);
+
+		this.entryRenderer = new DraftBenchEntryRenderer(this.app, this.clipboardService, this.selectionEditService, (entryId) => {
+			this.sessionController.setReplyToEntry(entryId);
+		});
+
+		this.chatComposerRenderer = new DraftBenchChatComposerRenderer(
+			(message) => {
+				void this.sessionController.addChatEntry(message);
+			},
+			() => {
+				this.sessionController.clearReplyToEntry();
+			},
 		);
 	}
 
