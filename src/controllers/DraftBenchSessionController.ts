@@ -1,4 +1,5 @@
 import type { AiResponseService } from "../services/AiResponseService";
+import { DraftBenchSessionHistoryTrimmer } from "../services/DraftBenchSessionHistoryTrimmer";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
 import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { createPlaceholderResponse } from "../utils/createPlaceholderResponse";
@@ -10,6 +11,7 @@ type NewSessionHandler = () => void;
 export class DraftBenchSessionController {
 	private entries: AiDraftBenchEntry[];
 	private replyToEntryId: string | null = null;
+	private readonly sessionHistoryTrimmer: DraftBenchSessionHistoryTrimmer;
 
 	constructor(
 		private readonly aiResponseService: AiResponseService,
@@ -19,6 +21,7 @@ export class DraftBenchSessionController {
 		initialEntries: AiDraftBenchEntry[] = [],
 	) {
 		this.entries = [...initialEntries];
+		this.sessionHistoryTrimmer = new DraftBenchSessionHistoryTrimmer(this.aiResponseService.getSettings());
 	}
 
 	getEntries(): AiDraftBenchEntry[] {
@@ -108,6 +111,7 @@ export class DraftBenchSessionController {
 		const replyToEntryId = this.replyToEntryId;
 		const replyToEntry = replyToEntryId ? this.entries.find((entry) => entry.id === replyToEntryId) : undefined;
 		const replyToSnippet = replyToEntry ? this.getEntrySnippet(replyToEntry) : undefined;
+		const recentEntries = this.sessionHistoryTrimmer.getRecentEntries(this.entries);
 
 		const entry: AiDraftBenchEntry = {
 			id: crypto.randomUUID(),
@@ -128,6 +132,7 @@ export class DraftBenchSessionController {
 			entry.response = await this.aiResponseService.createChatResponse({
 				message: trimmedMessage,
 				replyToEntry,
+				recentEntries,
 			});
 		} catch (error) {
 			console.error("AI Draft Bench chat response failed", error);
