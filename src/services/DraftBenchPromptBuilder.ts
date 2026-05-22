@@ -121,14 +121,51 @@ export class DraftBenchPromptBuilder {
 			return "";
 		}
 
+		if (replyToEntry.type === "selection") {
+			return this.formatSelectionReplyContext(replyToEntry);
+		}
+
+		return this.formatChatReplyContext(replyToEntry);
+	}
+
+	private formatSelectionReplyContext(replyToEntry: AiDraftBenchEntry): string {
+		const request = replyToEntry.request;
+
+		return [
+			"[EXPLICIT REPLY CONTEXT]",
+			"The user explicitly clicked Reply on this earlier selected-text draft entry. Treat this entry as the main context for the current request. Recent session history is secondary.",
+			"If the user asks why corrections, edits, or changes were made, explain the proposed draft response below. Do not say the note was physically changed.",
+			"",
+			"Source note:",
+			request.sourcePath,
+			"",
+			request.templateName ? "Template used:" : "",
+			request.templateName ?? "",
+			request.templateName ? "" : "",
+			request.instruction ? "Original user instruction:" : "",
+			request.instruction,
+			request.instruction ? "" : "",
+			"Original selected text:",
+			request.selectedText,
+			"",
+			"Assistant draft response being replied to:",
+			replyToEntry.response.text,
+			"",
+			"[CURRENT USER MESSAGE]",
+		]
+			.filter(Boolean)
+			.join("\n");
+	}
+
+	private formatChatReplyContext(replyToEntry: AiDraftBenchEntry): string {
 		const originalUserText = this.getEntryUserText(replyToEntry).trim();
 		const assistantResponseText = replyToEntry.response.text.trim();
 
 		return [
 			"[EXPLICIT REPLY CONTEXT]",
-			"The user explicitly clicked Reply on this earlier entry. Treat this entry as the main context for the current request. Recent session history is secondary.",
+			"The user explicitly clicked Reply on this earlier chat entry. Treat this entry as the main context for the current request. Recent session history is secondary.",
 			"",
-			originalUserText ? "Original user message or instruction:" : "",
+			originalUserText ? "Original user message:" : "",
 			originalUserText,
 			originalUserText ? "" : "",
 			"Assistant response being replied to:",
