@@ -30,6 +30,7 @@ export class AiDraftBenchPluginDataService {
 		return {
 			settings,
 			currentSession,
+			savedSessions: [],
 		};
 	}
 
@@ -77,14 +78,8 @@ export class AiDraftBenchPluginDataService {
 
 		return {
 			id: typeof savedData.currentSession.id === "string" && savedData.currentSession.id.trim() ? savedData.currentSession.id : fallbackSession.id,
-			createdAt:
-				typeof savedData.currentSession.createdAt === "string" && savedData.currentSession.createdAt.trim()
-					? savedData.currentSession.createdAt
-					: fallbackSession.createdAt,
-			updatedAt:
-				typeof savedData.currentSession.updatedAt === "string" && savedData.currentSession.updatedAt.trim()
-					? savedData.currentSession.updatedAt
-					: fallbackSession.updatedAt,
+			createdAt: typeof savedData.currentSession.createdAt === "string" && savedData.currentSession.createdAt.trim() ? savedData.currentSession.createdAt : fallbackSession.createdAt,
+			updatedAt: typeof savedData.currentSession.updatedAt === "string" && savedData.currentSession.updatedAt.trim() ? savedData.currentSession.updatedAt : fallbackSession.updatedAt,
 			entryCount: validEntries.length,
 			userTitle: typeof savedData.currentSession.userTitle === "string" && savedData.currentSession.userTitle.trim() ? savedData.currentSession.userTitle : undefined,
 			entries: validEntries,
