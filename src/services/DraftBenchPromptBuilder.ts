@@ -1,5 +1,5 @@
 import { AiDraftBenchSettings } from "../config/defaultSettings";
-import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
+import { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/AiDraftBenchEntry";
 import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 
 export type DraftBenchChatMessage = {
@@ -128,7 +128,7 @@ export class DraftBenchPromptBuilder {
 		return this.formatChatReplyContext(replyToEntry);
 	}
 
-	private formatSelectionReplyContext(replyToEntry: AiDraftBenchEntry): string {
+	private formatSelectionReplyContext(replyToEntry: AiDraftBenchSelectionEntry): string {
 		const request = replyToEntry.request;
 
 		return [
@@ -157,7 +157,7 @@ export class DraftBenchPromptBuilder {
 			.join("\n");
 	}
 
-	private formatChatReplyContext(replyToEntry: AiDraftBenchEntry): string {
+	private formatChatReplyContext(replyToEntry: AiDraftBenchChatEntry): string {
 		const originalUserText = this.getEntryUserText(replyToEntry).trim();
 		const assistantResponseText = replyToEntry.response.text.trim();
 
