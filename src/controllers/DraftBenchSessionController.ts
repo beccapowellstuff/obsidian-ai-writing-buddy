@@ -1,10 +1,10 @@
-import { AiDraftBenchSettings } from "../config/defaultSettings";
+import type { AiDraftBenchSettings } from "../config/defaultSettings";
 import type { AiResponseService } from "../services/AiResponseService";
 import { DraftBenchSessionHistoryTrimmer } from "../services/DraftBenchSessionHistoryTrimmer";
 import { DraftBenchSessionSummaryService } from "../services/DraftBenchSessionSummaryService";
-import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
-import { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
-import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
+import type { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
+import type { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
+import type { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { createPlaceholderResponse } from "../utils/createPlaceholderResponse";
 
 type SessionChangeHandler = (scrollToBottom: boolean) => void;
