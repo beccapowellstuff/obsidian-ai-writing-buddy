@@ -1,13 +1,12 @@
 import { Plugin, requestUrl } from "obsidian";
-import { AiDraftBenchSettings, DEFAULT_AI_DRAFT_BENCH_SETTINGS } from "./config/defaultSettings";
-import { DEFAULT_PROMPT_TEMPLATES } from "./config/defaultPromptTemplates";
+import { AiDraftBenchSettings } from "./config/defaultSettings";
 import { PLUGIN_DISPLAY } from "./config/pluginDisplay";
 import { AiDraftBenchSettingTab } from "./settings/AiDraftBenchSettingTab";
+import { AiDraftBenchPluginDataService } from "./services/AiDraftBenchPluginDataService";
 import { createAiResponseService } from "./services/createAiResponseService";
 import { DraftBenchViewService } from "./services/DraftBenchViewService";
 import { EditorMenuService } from "./services/EditorMenuService";
-import { AiDraftBenchEntry } from "./types/AiDraftBenchEntry";
-import { AiDraftBenchCurrentSessionData, AiDraftBenchPluginData } from "./types/AiDraftBenchPluginData";
+import { AiDraftBenchCurrentSessionData } from "./types/AiDraftBenchPluginData";
 import { AI_DRAFT_BENCH_VIEW_TYPE, AiDraftBenchView } from "./views/AiDraftBenchView";
 
 type OpenAiModelsResponse = {
@@ -16,26 +15,11 @@ type OpenAiModelsResponse = {
 	}>;
 };
 
-type LegacyPluginData = Partial<AiDraftBenchSettings>;
-
-type SavedPluginData = Partial<AiDraftBenchPluginData> | LegacyPluginData | null;
-
-function createEmptyCurrentSession(): AiDraftBenchCurrentSessionData {
-	const now = new Date().toISOString();
-
-	return {
-		id: crypto.randomUUID(),
-		createdAt: now,
-		updatedAt: now,
-		entryCount: 0,
-		entries: [],
-	};
-}
-
 export default class AiDraftBenchPlugin extends Plugin {
+	private readonly pluginDataService = new AiDraftBenchPluginDataService();
 	private draftBenchViewService!: DraftBenchViewService;
 	settings!: AiDraftBenchSettings;
-	currentSession: AiDraftBenchCurrentSessionData = createEmptyCurrentSession();
+	currentSession: AiDraftBenchCurrentSessionData = this.pluginDataService.createEmptyCurrentSession();
 
 	async onload(): Promise<void> {
 		console.debug("AI Draft Bench loaded");
@@ -51,11 +35,11 @@ export default class AiDraftBenchPlugin extends Plugin {
 				createAiResponseService(this.settings),
 				this.currentSession.entries,
 				(entries) => {
-					this.currentSession = this.withUpdatedCurrentSessionEntries(entries);
+					this.currentSession = this.pluginDataService.withUpdatedCurrentSessionEntries(this.currentSession, entries);
 					void this.savePluginData();
 				},
 				() => {
-					this.currentSession = createEmptyCurrentSession();
+					this.currentSession = this.pluginDataService.createEmptyCurrentSession();
 					void this.savePluginData();
 				},
 			);
@@ -75,16 +59,10 @@ export default class AiDraftBenchPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		const savedData = (await this.loadData()) as SavedPluginData;
-		const savedSettings = this.getSavedSettings(savedData);
+		const loadedData = this.pluginDataService.load(await this.loadData());
 
-		this.currentSession = this.getSavedCurrentSession(savedData);
-
-		this.settings = {
-			...DEFAULT_AI_DRAFT_BENCH_SETTINGS,
-			...(savedSettings ?? {}),
-			promptTemplates: this.mergePromptTemplates(savedSettings?.promptTemplates ?? []),
-		};
+		this.settings = loadedData.settings;
+		this.currentSession = loadedData.currentSession;
 	}
 
 	async saveSettings(): Promise<void> {
@@ -92,77 +70,7 @@ export default class AiDraftBenchPlugin extends Plugin {
 	}
 
 	private async savePluginData(): Promise<void> {
-		await this.saveData({
-			settings: this.settings,
-			currentSession: this.currentSession,
-		} satisfies AiDraftBenchPluginData);
-	}
-
-	private withUpdatedCurrentSessionEntries(entries: AiDraftBenchEntry[]): AiDraftBenchCurrentSessionData {
-		return {
-			...this.currentSession,
-			updatedAt: new Date().toISOString(),
-			entryCount: entries.length,
-			entries,
-		};
-	}
-
-	private getSavedSettings(savedData: SavedPluginData): Partial<AiDraftBenchSettings> | null {
-		if (!savedData) {
-			return null;
-		}
-
-		if ("settings" in savedData && savedData.settings) {
-			return savedData.settings;
-		}
-
-		return savedData as LegacyPluginData;
-	}
-
-	private getSavedCurrentSession(savedData: SavedPluginData): AiDraftBenchCurrentSessionData {
-		if (!savedData || !("currentSession" in savedData) || !savedData.currentSession) {
-			return createEmptyCurrentSession();
-		}
-
-		const entries = Array.isArray(savedData.currentSession.entries) ? savedData.currentSession.entries : [];
-		const validEntries = entries.filter((entry): entry is AiDraftBenchEntry => Boolean(entry && entry.id && entry.type && entry.response));
-		const fallbackSession = createEmptyCurrentSession();
-
-		return {
-			id: typeof savedData.currentSession.id === "string" && savedData.currentSession.id.trim() ? savedData.currentSession.id : fallbackSession.id,
-			createdAt:
-				typeof savedData.currentSession.createdAt === "string" && savedData.currentSession.createdAt.trim()
-					? savedData.currentSession.createdAt
-					: fallbackSession.createdAt,
-			updatedAt:
-				typeof savedData.currentSession.updatedAt === "string" && savedData.currentSession.updatedAt.trim()
-					? savedData.currentSession.updatedAt
-					: fallbackSession.updatedAt,
-			entryCount: validEntries.length,
-			userTitle: typeof savedData.currentSession.userTitle === "string" && savedData.currentSession.userTitle.trim() ? savedData.currentSession.userTitle : undefined,
-			entries: validEntries,
-		};
-	}
-
-	private mergePromptTemplates(savedTemplates: AiDraftBenchSettings["promptTemplates"]): AiDraftBenchSettings["promptTemplates"] {
-		const savedUserTemplates = savedTemplates.filter((template) => !template.isBuiltIn);
-		const savedBuiltInTemplates = savedTemplates.filter((template) => template.isBuiltIn);
-
-		const mergedBuiltInTemplates = DEFAULT_PROMPT_TEMPLATES.map((defaultTemplate) => {
-			const savedTemplate = savedBuiltInTemplates.find((template) => template.id === defaultTemplate.id);
-
-			return {
-				...defaultTemplate,
-				...(savedTemplate ?? {}),
-				highlightChanges: defaultTemplate.highlightChanges,
-				temperature: defaultTemplate.temperature,
-				prompt: defaultTemplate.prompt,
-				returnsReplacementTextOnly: defaultTemplate.returnsReplacementTextOnly,
-				updatedAt: defaultTemplate.updatedAt,
-			};
-		});
-
-		return [...mergedBuiltInTemplates, ...savedUserTemplates];
+		await this.saveData(this.pluginDataService.createSaveData(this.settings, this.currentSession));
 	}
 
 	async listAvailableModels(): Promise<string[]> {
