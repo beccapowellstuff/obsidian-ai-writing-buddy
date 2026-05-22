@@ -39,7 +39,10 @@ export class DraftBenchPromptBuilder {
 
 	buildChatPrompt(request: DraftBenchChatPromptRequest): DraftBenchChatMessage[] {
 		const messages = this.buildSystemMessages(this.settings.openChatSystemPrompt);
-		const userContentSections = [this.formatRecentEntries(request.recentEntries), this.formatReplyContext(request.replyToEntry), "[CURRENT USER MESSAGE]", request.message].filter(Boolean);
+
+		messages.push(...this.buildRecentHistoryMessages(request.recentEntries));
+
+		const userContentSections = [this.formatReplyContext(request.replyToEntry), request.message].filter(Boolean);
 
 		messages.push({
 			role: "user",
@@ -49,16 +52,32 @@ export class DraftBenchPromptBuilder {
 		return messages;
 	}
 
-	private formatRecentEntries(entries: AiDraftBenchEntry[] | undefined): string {
+	private buildRecentHistoryMessages(entries: AiDraftBenchEntry[] | undefined): DraftBenchChatMessage[] {
 		if (!entries || entries.length === 0) {
-			return "";
+			return [];
 		}
 
-		return ["[RECENT SESSION HISTORY]", "Use this only as recent conversation context. The current user message below is the request to answer.", "", ...entries.map((entry) => this.formatRecentEntry(entry))].join("\n");
-	}
+		return entries.flatMap((entry): DraftBenchChatMessage[] => {
+			const userText = this.getEntryUserText(entry).trim();
+			const assistantText = entry.response.text.trim();
+			const messages: DraftBenchChatMessage[] = [];
 
-	private formatRecentEntry(entry: AiDraftBenchEntry): string {
-		return ["User:", this.getEntryUserText(entry), "", "Assistant:", entry.response.text].filter(Boolean).join("\n");
+			if (userText) {
+				messages.push({
+					role: "user",
+					content: userText,
+				});
+			}
+
+			if (assistantText) {
+				messages.push({
+					role: "assistant",
+					content: assistantText,
+				});
+			}
+
+			return messages;
+		});
 	}
 
 	private getEntryUserText(entry: AiDraftBenchEntry): string {
@@ -74,7 +93,7 @@ export class DraftBenchPromptBuilder {
 			return "";
 		}
 
-		return ["[EXPLICIT REPLY CONTEXT]", "The user is replying to this previous draft response:", replyToEntry.response.text].join("\n");
+		return ["[EXPLICIT REPLY CONTEXT]", "The user is replying to this previous draft response:", replyToEntry.response.text, "", "[CURRENT USER MESSAGE]"].join("\n");
 	}
 
 	private buildSystemMessages(primarySystemPrompt: string): DraftBenchChatMessage[] {
