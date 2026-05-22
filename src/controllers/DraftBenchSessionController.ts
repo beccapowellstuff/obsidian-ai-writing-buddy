@@ -113,7 +113,9 @@ export class DraftBenchSessionController {
 		const replyToEntryId = this.replyToEntryId;
 		const replyToEntry = replyToEntryId ? this.entries.find((entry) => entry.id === replyToEntryId) : undefined;
 		const replyToSnippet = replyToEntry ? this.getEntrySnippet(replyToEntry) : undefined;
-		const recentEntries = this.sessionHistoryTrimmer.getRecentEntries(this.entries);
+		const recentEntries = this.sessionHistoryTrimmer.getRecentEntries(this.entries, {
+			excludeEntryId: replyToEntryId ?? undefined,
+		});
 
 		const entry: AiDraftBenchEntry = {
 			id: crypto.randomUUID(),
