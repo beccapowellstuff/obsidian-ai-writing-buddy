@@ -11,5 +11,11 @@ Goal: make the plugin pleasant and clear without spending too long polishing bef
 - UI-007 TODO: Add template selector to selected-text prompt modal.
 - UI-008 TODO: Add loading/error styling that is distinct from mock styling later.
 - UI-009 DONE: Highlight changed words in replacement-style responses.
-- UI-010 TODO: Replace session text buttons with icon buttons and clearer tooltips
-- UI-011 TODO: Improve session controls with compact icons, clearer labels, and tooltips.
+- UI-010 TODO: Improve session controls with compact icons, clearer labels, and tooltips.
+   - Replace session text buttons with icon buttons where sensible.
+   - Add clear tooltips for new session, clear current session, and previous sessions.
+   - Make the header feel less crowded.
+- UI-011 TODO: Add faster selected-text send actions.
+   - Add or improve right-click and command palette actions for sending selected text into AI Draft Bench.
+   - Consider a later floating “Ask AI” selection button if Obsidian selection handling proves reliable.
+   - Keep the first version simple and Obsidian-native.

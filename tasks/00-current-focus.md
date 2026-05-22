@@ -26,15 +26,17 @@ Goal: Deliver chat/session management and persistent session memory so AI Draft 
 
 8. CTX-030 TODO: Fall back to trimmed local history for generic chat-completions providers
    - Keep LM Studio, Ollama, and other compatible providers working.
+    
+9. CTX-026 DONE: Trim session history before sending AI requests
+   - Includes recent current-session history using proper chat roles.
+   - Includes a recent user-message index for recall questions.
+   - Capped by memory budget and recent history settings.
 
-9. CTX-026 TODO: Trim session history before sending AI requests
-   - Avoid burning context on unnecessary older messages.
-
-10. CTX-028 TODO: Add compact session summary for older history
+1.  CTX-028 TODO: Add compact session summary for older history
    - Keep older context useful without sending the full transcript.
 
-11. CTX-027 TODO: Prioritise explicit reply context over general session history
+2.  CTX-027 TODO: Prioritise explicit reply context over general session history
    - If the user clicks reply, that specific entry matters most.
 
-12. CTX-008 TODO: Define active context behaviour for follow-up chat
+3.  CTX-008 TODO: Define active context behaviour for follow-up chat
    - Decide what general chat should treat as the active context.
