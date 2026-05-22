@@ -5,6 +5,7 @@ import { AiDraftBenchResponse } from "../types/AiDraftBenchResponse";
 export type AiChatRequest = {
 	message: string;
 	replyToEntry?: AiDraftBenchEntry;
+	recentEntries?: AiDraftBenchEntry[];
 };
 
 export interface AiResponseService {
