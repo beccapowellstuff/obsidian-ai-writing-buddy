@@ -10,13 +10,13 @@ import type { AiResponseService } from "../services/AiResponseService";
 import { ClipboardService } from "../services/ClipboardService";
 import { SelectionEditService } from "../services/SelectionEditService";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
-import { AiDraftBenchCurrentSessionData, AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
+import { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary, AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
 import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 import { DraftBenchSessionController } from "../controllers/DraftBenchSessionController";
 
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 
-type SessionSaveHandler = (entries: AiDraftBenchEntry[]) => void;
+type SessionSaveHandler = (entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary) => void;
 type NewSessionHandler = () => void;
 type SessionListProvider = () => AiDraftBenchSessionListItem[];
 type RestoreSessionHandler = (sessionId: string) => AiDraftBenchCurrentSessionData | null;
@@ -34,6 +34,7 @@ export class AiDraftBenchView extends ItemView {
 		private readonly aiResponseService: AiResponseService,
 		private readonly settings: AiDraftBenchSettings,
 		initialEntries: AiDraftBenchEntry[],
+		initialMemorySummary: AiDraftBenchMemorySummary | undefined,
 		onSaveSession: SessionSaveHandler,
 		onNewSession: NewSessionHandler,
 		private readonly getSessionListItems: SessionListProvider,
@@ -57,6 +58,7 @@ export class AiDraftBenchView extends ItemView {
 			onNewSession,
 			this.settings,
 			initialEntries,
+			initialMemorySummary,
 		);
 
 		this.clipboardService = new ClipboardService();
@@ -188,7 +190,7 @@ export class AiDraftBenchView extends ItemView {
 			return;
 		}
 
-		this.sessionController.replaceCurrentSessionEntries(restoredSession.entries);
+		this.sessionController.replaceCurrentSessionEntries(restoredSession.entries, restoredSession.memorySummary);
 	}
 
 	private scrollToBottom(): void {
