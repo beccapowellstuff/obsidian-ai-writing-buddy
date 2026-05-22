@@ -1,6 +1,6 @@
-import { AiDraftBenchSettings } from "../config/defaultSettings";
-import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
-import { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
+import type { AiDraftBenchSettings } from "../config/defaultSettings";
+import type { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
+import type { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
 
 export class DraftBenchSessionSummaryService {
 	constructor(private readonly settings: AiDraftBenchSettings) {}
