@@ -121,7 +121,23 @@ export class DraftBenchPromptBuilder {
 			return "";
 		}
 
-		return ["[EXPLICIT REPLY CONTEXT]", "The user is replying to this previous draft response:", replyToEntry.response.text, "", "[CURRENT USER MESSAGE]"].join("\n");
+		const originalUserText = this.getEntryUserText(replyToEntry).trim();
+		const assistantResponseText = replyToEntry.response.text.trim();
+
+		return [
+			"[EXPLICIT REPLY CONTEXT]",
+			"The user explicitly clicked Reply on this earlier entry. Treat this entry as the main context for the current request. Recent session history is secondary.",
+			"",
+			originalUserText ? "Original user message or instruction:" : "",
+			originalUserText,
+			originalUserText ? "" : "",
+			"Assistant response being replied to:",
+			assistantResponseText,
+			"",
+			"[CURRENT USER MESSAGE]",
+		]
+			.filter(Boolean)
+			.join("\n");
 	}
 
 	private buildSystemMessages(primarySystemPrompt: string): DraftBenchChatMessage[] {
