@@ -34,6 +34,7 @@ export default class AiDraftBenchPlugin extends Plugin {
 			return new AiDraftBenchView(
 				leaf,
 				createAiResponseService(this.settings),
+				this.settings,
 				this.currentSession.entries,
 				(entries) => {
 					this.currentSession = this.pluginDataService.withUpdatedCurrentSessionEntries(this.currentSession, entries);
