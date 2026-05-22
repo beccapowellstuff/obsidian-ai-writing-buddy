@@ -1,0 +1,16 @@
+# Editing operations
+
+Goal: make draft responses safely actionable without replacing more text than the user intends.
+
+- EDIT-001 TODO: Track source-to-replacement change mappings
+   - Store enough diff metadata to map each highlighted change back to the original selected text.
+   - Include original text, replacement text, selected-text offsets, and source selection metadata.
+
+- EDIT-002 TODO: Add per-change copy actions
+   - Let users click a highlighted changed word or phrase.
+   - Allow copying the replacement text without modifying the note.
+
+- EDIT-003 TODO: Add per-change replace action
+   - Let users replace one highlighted correction at a time.
+   - Only enable when the mapping is unambiguous.
+   - If the note text no longer matches the expected original text, warn instead of replacing.

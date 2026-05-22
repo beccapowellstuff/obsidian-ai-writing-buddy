@@ -19,3 +19,11 @@ Goal: make the plugin pleasant and clear without spending too long polishing bef
    - Add or improve right-click and command palette actions for sending selected text into AI Draft Bench.
    - Consider a later floating “Ask AI” selection button if Obsidian selection handling proves reliable.
    - Keep the first version simple and Obsidian-native.
+- UI-012 TODO: Add faster selected-text send actions
+   - Add or improve right-click and command palette actions for sending selected text into AI Draft Bench.
+   - Consider a later floating “Ask AI” selection button if Obsidian selection handling proves reliable.
+   - Keep the first version simple and Obsidian-native.
+- UI-013 TODO: Add per-change copy actions for highlighted replacement words
+   - Let users click a highlighted changed word or phrase in a replacement-style response.
+   - Show a small action menu with Copy change.
+   - First version should not edit the note.
