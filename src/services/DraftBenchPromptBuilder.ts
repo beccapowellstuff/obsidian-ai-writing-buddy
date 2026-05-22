@@ -1,5 +1,6 @@
 import { AiDraftBenchSettings } from "../config/defaultSettings";
 import { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/AiDraftBenchEntry";
+import { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
 import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
 
 export type DraftBenchChatMessage = {
@@ -11,6 +12,7 @@ export type DraftBenchChatPromptRequest = {
 	message: string;
 	replyToEntry?: AiDraftBenchEntry;
 	recentEntries?: AiDraftBenchEntry[];
+	memorySummary?: AiDraftBenchMemorySummary;
 };
 
 export class DraftBenchPromptBuilder {
@@ -39,7 +41,15 @@ export class DraftBenchPromptBuilder {
 
 	buildChatPrompt(request: DraftBenchChatPromptRequest): DraftBenchChatMessage[] {
 		const messages = this.buildSystemMessages(this.settings.openChatSystemPrompt);
+		const memorySummary = this.formatMemorySummary(request.memorySummary);
 		const recentUserMessageIndex = this.formatRecentUserMessageIndex(request.recentEntries);
+
+		if (memorySummary) {
+			messages.push({
+				role: "system",
+				content: memorySummary,
+			});
+		}
 
 		if (recentUserMessageIndex) {
 			messages.push({
@@ -58,6 +68,19 @@ export class DraftBenchPromptBuilder {
 		});
 
 		return messages;
+	}
+
+	private formatMemorySummary(summary: AiDraftBenchMemorySummary | undefined): string {
+		if (!summary?.text.trim()) {
+			return "";
+		}
+
+		return [
+			"Older session memory summary:",
+			"Use this as compact background context from earlier in the session. Recent history and explicit reply context are more specific and should take priority.",
+			"",
+			summary.text.trim(),
+		].join("\n");
 	}
 
 	private formatRecentUserMessageIndex(entries: AiDraftBenchEntry[] | undefined): string {
