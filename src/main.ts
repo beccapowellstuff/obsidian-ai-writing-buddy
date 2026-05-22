@@ -6,7 +6,7 @@ import { AiDraftBenchPluginDataService } from "./services/AiDraftBenchPluginData
 import { createAiResponseService } from "./services/createAiResponseService";
 import { DraftBenchViewService } from "./services/DraftBenchViewService";
 import { EditorMenuService } from "./services/EditorMenuService";
-import { AiDraftBenchCurrentSessionData } from "./types/AiDraftBenchPluginData";
+import { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary } from "./types/AiDraftBenchPluginData";
 import { AI_DRAFT_BENCH_VIEW_TYPE, AiDraftBenchView } from "./views/AiDraftBenchView";
 
 type OpenAiModelsResponse = {
@@ -36,8 +36,9 @@ export default class AiDraftBenchPlugin extends Plugin {
 				createAiResponseService(this.settings),
 				this.settings,
 				this.currentSession.entries,
-				(entries) => {
-					this.currentSession = this.pluginDataService.withUpdatedCurrentSessionEntries(this.currentSession, entries);
+				this.currentSession.memorySummary,
+				(entries, memorySummary) => {
+					this.currentSession = this.pluginDataService.withUpdatedCurrentSessionEntries(this.currentSession, entries, memorySummary);
 					void this.savePluginData();
 				},
 				() => {
