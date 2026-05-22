@@ -54,6 +54,10 @@ export default class AiDraftBenchPlugin extends Plugin {
 					this.currentSession = this.withUpdatedCurrentSessionEntries(entries);
 					void this.savePluginData();
 				},
+				() => {
+					this.currentSession = createEmptyCurrentSession();
+					void this.savePluginData();
+				},
 			);
 		});
 
