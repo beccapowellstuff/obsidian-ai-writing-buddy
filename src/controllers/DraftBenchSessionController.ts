@@ -1,3 +1,4 @@
+import { AiDraftBenchSettings } from "../config/defaultSettings";
 import type { AiResponseService } from "../services/AiResponseService";
 import { DraftBenchSessionHistoryTrimmer } from "../services/DraftBenchSessionHistoryTrimmer";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
@@ -18,10 +19,11 @@ export class DraftBenchSessionController {
 		private readonly onChange: SessionChangeHandler,
 		private readonly onSave: SessionSaveHandler,
 		private readonly onNewSession: NewSessionHandler,
+		settings: AiDraftBenchSettings,
 		initialEntries: AiDraftBenchEntry[] = [],
 	) {
 		this.entries = [...initialEntries];
-		this.sessionHistoryTrimmer = new DraftBenchSessionHistoryTrimmer(this.aiResponseService.getSettings());
+		this.sessionHistoryTrimmer = new DraftBenchSessionHistoryTrimmer(settings);
 	}
 
 	getEntries(): AiDraftBenchEntry[] {
