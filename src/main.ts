@@ -6,7 +6,7 @@ import { AiDraftBenchPluginDataService } from "./services/AiDraftBenchPluginData
 import { createAiResponseService } from "./services/createAiResponseService";
 import { DraftBenchViewService } from "./services/DraftBenchViewService";
 import { EditorMenuService } from "./services/EditorMenuService";
-import { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary } from "./types/AiDraftBenchPluginData";
+import { AiDraftBenchCurrentSessionData } from "./types/AiDraftBenchPluginData";
 import { AI_DRAFT_BENCH_VIEW_TYPE, AiDraftBenchView } from "./views/AiDraftBenchView";
 
 type OpenAiModelsResponse = {
