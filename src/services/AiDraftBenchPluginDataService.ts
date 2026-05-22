@@ -1,7 +1,7 @@
 import { AiDraftBenchSettings, DEFAULT_AI_DRAFT_BENCH_SETTINGS } from "../config/defaultSettings";
 import { DEFAULT_PROMPT_TEMPLATES } from "../config/defaultPromptTemplates";
 import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
-import { AiDraftBenchCurrentSessionData, AiDraftBenchPluginData, AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
+import { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary, AiDraftBenchPluginData, AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
 
 type LegacyPluginData = Partial<AiDraftBenchSettings>;
 type SavedPluginData = Partial<AiDraftBenchPluginData> | LegacyPluginData | null;
@@ -53,11 +53,12 @@ export class AiDraftBenchPluginDataService {
 		};
 	}
 
-	withUpdatedCurrentSessionEntries(currentSession: AiDraftBenchCurrentSessionData, entries: AiDraftBenchEntry[]): AiDraftBenchCurrentSessionData {
+	withUpdatedCurrentSessionEntries(currentSession: AiDraftBenchCurrentSessionData, entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary): AiDraftBenchCurrentSessionData {
 		return {
 			...currentSession,
 			updatedAt: new Date().toISOString(),
 			entryCount: entries.length,
+			memorySummary,
 			entries,
 		};
 	}
@@ -134,6 +135,7 @@ export class AiDraftBenchPluginDataService {
 		const entries = Array.isArray(session.entries) ? session.entries : [];
 		const validEntries = entries.filter((entry): entry is AiDraftBenchEntry => Boolean(entry && entry.id && entry.type && entry.response));
 		const fallbackSession = this.createEmptyCurrentSession();
+		const memorySummary = this.normaliseMemorySummary(session.memorySummary);
 
 		return {
 			id: typeof session.id === "string" && session.id.trim() ? session.id : fallbackSession.id,
@@ -141,7 +143,21 @@ export class AiDraftBenchPluginDataService {
 			updatedAt: typeof session.updatedAt === "string" && session.updatedAt.trim() ? session.updatedAt : fallbackSession.updatedAt,
 			entryCount: validEntries.length,
 			userTitle: typeof session.userTitle === "string" && session.userTitle.trim() ? session.userTitle : undefined,
+			memorySummary,
 			entries: validEntries,
+		};
+	}
+
+	private normaliseMemorySummary(summary: AiDraftBenchMemorySummary | undefined): AiDraftBenchMemorySummary | undefined {
+		if (!summary || typeof summary.text !== "string" || !summary.text.trim()) {
+			return undefined;
+		}
+
+		return {
+			text: summary.text,
+			updatedAt: typeof summary.updatedAt === "string" && summary.updatedAt.trim() ? summary.updatedAt : new Date().toISOString(),
+			sourceEntryId: typeof summary.sourceEntryId === "string" && summary.sourceEntryId.trim() ? summary.sourceEntryId : undefined,
+			entryCount: typeof summary.entryCount === "number" && Number.isFinite(summary.entryCount) ? summary.entryCount : 0,
 		};
 	}
 
