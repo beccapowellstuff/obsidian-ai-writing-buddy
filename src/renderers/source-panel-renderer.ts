@@ -1,4 +1,4 @@
-import { AiDraftBenchSelectionEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import { AiDraftBenchSelectionEntry } from "../types/ai-writing-buddy-entry";
 
 export class DraftBenchSourcePanelRenderer {
 	render(container: HTMLElement, entry: AiDraftBenchSelectionEntry): void {

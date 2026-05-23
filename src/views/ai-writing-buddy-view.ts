@@ -9,7 +9,7 @@ import { DraftBenchHeaderRenderer } from "../renderers/header-renderer";
 import type { AiResponseService } from "../services/ai-response-service";
 import { ClipboardService } from "../services/clipboard-service";
 import { SelectionEditService } from "../services/selection-edit-service";
-import { AiDraftBenchEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
 import { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary, AiDraftBenchSessionListItem } from "../types/ai-writing-buddy-plugin-data";
 import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
 import { DraftBenchSessionController } from "../controllers/session-controller";

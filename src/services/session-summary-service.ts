@@ -1,5 +1,5 @@
 import type { AiDraftBenchSettings } from "../config/default-settings";
-import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
 import type { AiDraftBenchMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 
 export class DraftBenchSessionSummaryService {

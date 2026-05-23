@@ -4,7 +4,7 @@ import { PLUGIN_DISPLAY } from "./config/plugin-display";
 import { AiDraftBenchSettingTab } from "./settings/ai-writing-buddy-setting-tab";
 import { AiDraftBenchPluginDataService } from "./services/ai-writing-buddy-plugin-data-service";
 import { createAiResponseService } from "./services/create-ai-response-service";
-import { DraftBenchViewService } from "./services/draft-bench-view-service";
+import { DraftBenchViewService } from "./services/view-service";
 import { EditorMenuService } from "./services/editor-menu-service";
 import { AiDraftBenchCurrentSessionData } from "./types/ai-writing-buddy-plugin-data";
 import { AI_DRAFT_BENCH_VIEW_TYPE, AiDraftBenchView } from "./views/ai-writing-buddy-view";

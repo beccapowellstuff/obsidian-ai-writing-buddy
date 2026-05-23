@@ -1,5 +1,5 @@
 import { AiDraftBenchRequest } from "./ai-writing-buddy-request";
-import { AiDraftBenchResponse } from "./ai-writing-buddy-Response";
+import { AiDraftBenchResponse } from "./ai-writing-buddy-response";
 
 export type AiDraftBenchSelectionEntry = {
 	id: string;

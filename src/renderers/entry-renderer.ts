@@ -1,7 +1,7 @@
 import { App, setIcon } from "obsidian";
 import { ClipboardService } from "../services/clipboard-service";
 import { SelectionEditService } from "../services/selection-edit-service";
-import { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/ai-writing-buddy-entry";
 import { PromptPreviewModal } from "../modals/prompt-preview-modal";
 import { DraftBenchSourcePanelRenderer } from "./source-panel-renderer";
 import { DraftBenchResponseRenderer } from "./response-renderer";

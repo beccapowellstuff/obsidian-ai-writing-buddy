@@ -1,4 +1,4 @@
-import { AiDraftBenchResponse } from "../types/ai-writing-buddy-Response";
+import { AiDraftBenchResponse } from "../types/ai-writing-buddy-response";
 
 export function createPlaceholderResponse(text: string): AiDraftBenchResponse {
 	return {

@@ -1,5 +1,5 @@
 import { AiDraftBenchSettings } from "../config/default-settings";
-import { AiDraftBenchEntry } from "./ai-writing-buddy-draft-bench-entry";
+import { AiDraftBenchEntry } from "./ai-writing-buddy-entry";
 
 export type AiDraftBenchMemorySummary = {
 	text: string;

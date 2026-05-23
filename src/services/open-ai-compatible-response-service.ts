@@ -1,7 +1,7 @@
 import { requestUrl } from "obsidian";
 import { AiDraftBenchSettings } from "../config/default-settings";
 import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
-import { AiDraftBenchResponse } from "../types/ai-writing-buddy-Response";
+import { AiDraftBenchResponse } from "../types/ai-writing-buddy-response";
 import { ConversationMemoryStrategy } from "../types/conversation-memory-strategy";
 import { AiChatRequest, AiResponseService } from "./ai-response-service";
 import { ConversationMemoryStrategyService } from "./conversation-memory-strategy-service";

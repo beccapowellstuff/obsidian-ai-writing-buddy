@@ -2,7 +2,7 @@ import type { AiDraftBenchSettings } from "../config/default-settings";
 import type { AiResponseService } from "../services/ai-response-service";
 import { DraftBenchSessionHistoryTrimmer } from "../services/session-history-trimmer";
 import { DraftBenchSessionSummaryService } from "../services/session-summary-service";
-import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
 import type { AiDraftBenchMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 import type { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
 import { createPlaceholderResponse } from "../utils/create-placeholder-response";

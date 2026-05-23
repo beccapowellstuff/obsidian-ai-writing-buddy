@@ -2,7 +2,7 @@ import { App, Editor, EditorPosition, EventRef, MarkdownView, Menu, Notice, Plug
 import { DraftBenchPromptBuilder } from "./prompt-builder";
 import { AiPromptModal, AiPromptModalSubmitValue } from "../modals/ai-prompt-modal";
 import { AiDraftBenchSettings } from "../config/default-settings";
-import { DraftBenchViewService } from "./draft-bench-view-service";
+import { DraftBenchViewService } from "./view-service";
 
 type EditorMenuWorkspace = {
 	on(name: "editor-menu", callback: (menu: Menu, editor: Editor, view: MarkdownView) => void): EventRef;

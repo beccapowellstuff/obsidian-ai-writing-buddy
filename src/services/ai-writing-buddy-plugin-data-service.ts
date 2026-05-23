@@ -1,7 +1,7 @@
 import type { AiDraftBenchSettings } from "../config/default-settings";
 import { DEFAULT_AI_DRAFT_BENCH_SETTINGS } from "../config/default-settings";
 import { DEFAULT_PROMPT_TEMPLATES } from "../config/default-prompt-templates";
-import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
 import type { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary, AiDraftBenchPluginData, AiDraftBenchSessionListItem } from "../types/ai-writing-buddy-plugin-data";
 
 type LegacyPluginData = Partial<AiDraftBenchSettings>;
