@@ -1,0 +1,56 @@
+/* AI Draft Bench: reusable action controls */
+
+.ai-draft-bench-action-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	padding: 0;
+	color: var(--text-muted);
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.ai-draft-bench-action-button:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+	transform: translateY(-1px);
+}
+
+.ai-draft-bench-action-button:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
+	color: var(--text-faint);
+	background: var(--background-secondary);
+	box-shadow: none;
+	transform: none;
+}
+
+.ai-draft-bench-action-button:disabled:hover {
+	color: var(--text-faint);
+	background: var(--background-secondary);
+	transform: none;
+}
+
+.ai-draft-bench-action-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 17px;
+	height: 17px;
+}
+
+.ai-draft-bench-action-icon svg {
+	width: 17px;
+	height: 17px;
+}
+
+.ai-draft-bench-modal-button-row {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 18px;
+}

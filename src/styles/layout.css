@@ -1,0 +1,62 @@
+/* AI Draft Bench: panel layout */
+
+.ai-draft-bench-view {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+}
+
+.ai-draft-bench-entries {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	padding-right: 4px;
+	padding-bottom: 12px;
+}
+
+.ai-draft-bench-empty {
+	color: var(--text-muted);
+	line-height: 1.45;
+}
+
+.ai-draft-bench-scroll-bottom-button {
+	position: absolute;
+	left: 50%;
+	bottom: 150px;
+	z-index: 5;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	padding: 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 999px;
+	color: var(--text-muted);
+	background: var(--background-primary);
+	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+	opacity: 0;
+	pointer-events: none;
+	transform: translate(-50%, 6px);
+	transition:
+		opacity 120ms ease,
+		transform 120ms ease;
+}
+
+.ai-draft-bench-scroll-bottom-button.is-visible {
+	opacity: 0.95;
+	pointer-events: auto;
+	transform: translate(-50%, 0);
+}
+
+.ai-draft-bench-scroll-bottom-button:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.ai-draft-bench-scroll-bottom-button svg {
+	width: 16px;
+	height: 16px;
+}

@@ -166,6 +166,8 @@ manifest.json
 styles.css
 ```
 
+The build generates both `main.js` and `styles.css` at the plugin root. Project stylesheet changes belong in `src/styles/`. The generated `styles.css` is intentionally left readable so an installed copy can be locally adjusted in a vault; running the build or redeploying replaces those local output-file edits.
+
 After deploying, reload the plugin in Obsidian. During development, this usually means disabling and re-enabling **AI Writing Buddy** under **Settings → Community plugins**. Sometimes closing and reopening the side panel is also useful after UI changes.
 
 ## Project structure
@@ -179,6 +181,7 @@ src/
   renderers/    Side-panel and response rendering helpers
   services/     Provider, editor menu, prompt, clipboard, and note editing services
   settings/     Settings tab renderers
+  styles/       Modular CSS sources bundled into root styles.css
   types/        Shared TypeScript types
   utils/        Small helper functions
   views/        Obsidian view classes

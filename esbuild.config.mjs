@@ -9,13 +9,19 @@ if you want to view the source, please visit the github repository of this plugi
 */
 `;
 
+const styleBanner =
+`/* Generated file. Do not edit directly. Edit files in src/styles instead. This file will be overwritten upon each build. */
+`;
+
 const prod = (process.argv[2] === "production");
 
-const context = await esbuild.context({
+const scriptContext = await esbuild.context({
 	banner: {
 		js: banner,
 	},
-	entryPoints: ["src/main.ts"],
+	entryPoints: {
+		main: "src/main.ts",
+	},
 	bundle: true,
 	external: [
 		"obsidian",
@@ -37,13 +43,31 @@ const context = await esbuild.context({
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
-	outfile: "main.js",
+	outdir: ".",
+	entryNames: "[name]",
 	minify: prod,
 });
 
+const styleContext = await esbuild.context({
+	banner: {
+		css: styleBanner,
+	},
+	entryPoints: {
+		styles: "src/styles/index.css",
+	},
+	bundle: true,
+	target: "es2018",
+	logLevel: "info",
+	sourcemap: prod ? false : "inline",
+	outdir: ".",
+	entryNames: "[name]",
+	minify: false,
+});
+
 if (prod) {
-	await context.rebuild();
+	await Promise.all([scriptContext.rebuild(), styleContext.rebuild()]);
+	await Promise.all([scriptContext.dispose(), styleContext.dispose()]);
 	process.exit(0);
 } else {
-	await context.watch();
+	await Promise.all([scriptContext.watch(), styleContext.watch()]);
 }
