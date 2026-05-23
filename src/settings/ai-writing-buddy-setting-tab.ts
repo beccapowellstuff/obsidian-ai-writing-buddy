@@ -31,7 +31,7 @@ export class AiDraftBenchSettingTab extends PluginSettingTab {
 
 		introEl.createEl("div", {
 			cls: "ai-draft-bench-settings-title",
-			text: "Draft bench",
+			text: "AI writing buddy",
 		});
 
 		introEl.createEl("p", {
