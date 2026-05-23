@@ -1,9 +1,9 @@
 import { App, PluginSettingTab } from "obsidian";
 import type AiDraftBenchPlugin from "../main";
+import { PLUGIN_DISPLAY } from "../config/plugin-display";
 import { TemplateSettingsRenderer } from "./template-settings-renderer";
 import { ConnectionSettingsRenderer } from "./connection-settings-renderer";
 import { PromptSettingsRenderer } from "./prompt-settings-renderer";
-import { PLUGIN_DISPLAY } from "../config/plugin-display";
 
 export class AiDraftBenchSettingTab extends PluginSettingTab {
 	private availableModels: string[] = [];
@@ -26,17 +26,12 @@ export class AiDraftBenchSettingTab extends PluginSettingTab {
 		});
 
 		introEl.createEl("div", {
-			cls: "ai-draft-bench-settings-kicker",
-			text: "Writing assistant",
-		});
-
-		introEl.createEl("div", {
 			cls: "ai-draft-bench-settings-title",
 			text: PLUGIN_DISPLAY.name,
 		});
 
 		introEl.createEl("p", {
-			text: "Connect your model provider, tune prompt behaviour, and keep draft changes safely under your control.",
+			text: `Connect your model provider and tune how ${PLUGIN_DISPLAY.name} helps with your notes.`,
 		});
 
 		new ConnectionSettingsRenderer(this.plugin, this.availableModels, () => this.display()).render(containerEl);

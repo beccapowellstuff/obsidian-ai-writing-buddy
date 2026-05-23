@@ -429,18 +429,12 @@
 }
 
 .ai-draft-bench-settings-hero {
-	margin: 0 0 22px 0;
-	padding: 22px 24px;
+	margin: 0 0 14px 0;
+	padding: 12px 14px;
 	border: 1px solid var(--background-modifier-border);
-	border-radius: 22px;
-	background:
-		radial-gradient(circle at top left,
-			rgba(155, 120, 255, 0.24),
-			transparent 36%),
-		linear-gradient(135deg,
-			var(--background-primary-alt),
-			var(--background-secondary));
-	box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+	border-radius: 14px;
+	background: var(--background-primary-alt);
+	box-shadow: none;
 }
 
 .ai-draft-bench-settings-kicker {
@@ -454,16 +448,17 @@
 
 .ai-draft-bench-settings-title {
 	margin: 0;
-	font-size: 1.7em;
+	font-size: 1.2em;
 	font-weight: 800;
-	letter-spacing: -0.03em;
+	letter-spacing: -0.02em;
 }
 
 .ai-draft-bench-settings-hero p {
 	max-width: 720px;
-	margin: 8px 0 0 0;
+	margin: 4px 0 0 0;
 	color: var(--text-muted);
-	line-height: 1.45;
+	font-size: 0.9em;
+	line-height: 1.35;
 }
 
 .ai-draft-bench-settings .setting-item-heading {
