@@ -1,4 +1,4 @@
-import { App, setIcon } from "obsidian";
+import { App, setIcon, setTooltip } from "obsidian";
 import { ClipboardService } from "../services/clipboard-service";
 import { SelectionEditService } from "../services/selection-edit-service";
 import { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/ai-writing-buddy-entry";
@@ -55,19 +55,32 @@ export class DraftBenchEntryRenderer {
 	private renderTemplateAndInstruction(container: HTMLElement, entry: AiDraftBenchSelectionEntry): void {
 		if (entry.request.templateName) {
 			const templateHeaderEl = container.createEl("div", {
-				cls: "ai-draft-bench-template-header",
+				cls: "ai-draft-bench-template-summary",
 			});
 
-			templateHeaderEl.createEl("h3", { text: "Template" });
+			const templateTextEl = templateHeaderEl.createEl("div", {
+				cls: "ai-draft-bench-template-summary-text",
+			});
+
+			templateTextEl.createEl("span", {
+				cls: "ai-draft-bench-template-summary-label",
+				text: "Template:",
+			});
+
+			templateTextEl.createEl("span", {
+				cls: "ai-draft-bench-template-summary-name",
+				text: entry.request.templateName,
+			});
 
 			if (entry.request.promptPreview) {
 				const promptButtonEl = templateHeaderEl.createEl("button", {
 					cls: "ai-draft-bench-action-button",
 					attr: {
 						"aria-label": "Show full prompt",
-						title: "Show full prompt",
 					},
 				});
+
+				setTooltip(promptButtonEl, "Show full prompt");
 
 				const iconEl = promptButtonEl.createSpan({
 					cls: "ai-draft-bench-action-icon",
@@ -79,8 +92,6 @@ export class DraftBenchEntryRenderer {
 					new PromptPreviewModal(this.app, entry.request.promptPreview ?? "").open();
 				});
 			}
-
-			container.createEl("p", { text: entry.request.templateName });
 		}
 
 		if (entry.request.instruction.trim()) {

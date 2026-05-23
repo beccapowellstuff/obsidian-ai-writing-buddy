@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf } from "obsidian";
+import { ItemView, setIcon, setTooltip, WorkspaceLeaf } from "obsidian";
 import { AiDraftBenchSettings } from "../config/default-settings";
 import { PLUGIN_DISPLAY } from "../config/plugin-display";
 import { ConfirmClearSessionModal } from "../modals/confirm-clear-session-modal";
@@ -13,6 +13,7 @@ import { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
 import { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary, AiDraftBenchSessionListItem } from "../types/ai-writing-buddy-plugin-data";
 import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
 import { DraftBenchSessionController } from "../controllers/session-controller";
+import { SavedSessionsModal } from "../modals/saved-sessions-modal";
 
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 
@@ -20,6 +21,8 @@ type SessionSaveHandler = (entries: AiDraftBenchEntry[], memorySummary?: AiDraft
 type NewSessionHandler = () => void;
 type SessionListProvider = () => AiDraftBenchSessionListItem[];
 type RestoreSessionHandler = (sessionId: string) => AiDraftBenchCurrentSessionData | null;
+type DeleteSavedSessionHandler = (sessionId: string) => AiDraftBenchSessionListItem[];
+type SavedSessionsProvider = () => AiDraftBenchCurrentSessionData[];
 
 export class AiDraftBenchView extends ItemView {
 	private readonly sessionController: DraftBenchSessionController;
@@ -28,6 +31,7 @@ export class AiDraftBenchView extends ItemView {
 	private readonly entryRenderer: DraftBenchEntryRenderer;
 	private readonly headerRenderer = new DraftBenchHeaderRenderer();
 	private readonly chatComposerRenderer: DraftBenchChatComposerRenderer;
+	private scrollButtonEl: HTMLButtonElement | null = null;
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -39,6 +43,8 @@ export class AiDraftBenchView extends ItemView {
 		onNewSession: NewSessionHandler,
 		private readonly getSessionListItems: SessionListProvider,
 		private readonly onRestoreSession: RestoreSessionHandler,
+		private readonly onDeleteSavedSession: DeleteSavedSessionHandler,
+		private readonly onGetSavedSessions: SavedSessionsProvider,
 	) {
 		super(leaf);
 
@@ -66,6 +72,8 @@ export class AiDraftBenchView extends ItemView {
 
 		this.entryRenderer = new DraftBenchEntryRenderer(this.app, this.clipboardService, this.selectionEditService, (entryId) => {
 			this.sessionController.setReplyToEntry(entryId);
+			this.chatComposerRenderer.requestFocusOnNextRender();
+			this.render();
 		});
 
 		this.chatComposerRenderer = new DraftBenchChatComposerRenderer(
@@ -140,6 +148,9 @@ export class AiDraftBenchView extends ItemView {
 			onRestoreSession: (sessionId) => {
 				this.restoreSession(sessionId);
 			},
+			onManageSavedSessions: () => {
+				this.manageSavedSessions();
+			},
 		});
 
 		const entriesEl = container.createEl("div", {
@@ -159,7 +170,13 @@ export class AiDraftBenchView extends ItemView {
 			this.entryRenderer.renderEntry(entriesEl, entry);
 		}
 
+		this.renderScrollToBottomButton(container, entriesEl);
+
 		this.chatComposerRenderer.render(container, this.sessionController.getReplyContextText());
+
+		window.setTimeout(() => {
+			this.updateScrollToBottomButton(entriesEl);
+		}, 0);
 	}
 
 	private clearCurrentSession(): void {
@@ -193,6 +210,53 @@ export class AiDraftBenchView extends ItemView {
 		this.sessionController.replaceCurrentSessionEntries(restoredSession.entries, restoredSession.memorySummary);
 	}
 
+	private manageSavedSessions(): void {
+		new SavedSessionsModal(this.app, {
+			sessions: this.onGetSavedSessions(),
+			onOpenSession: (sessionId) => {
+				this.restoreSession(sessionId);
+			},
+			onDeleteSession: (sessionId) => {
+				this.onDeleteSavedSession(sessionId);
+				return this.onGetSavedSessions();
+			},
+		}).open();
+	}
+
+	private renderScrollToBottomButton(container: HTMLElement, entriesEl: HTMLElement): void {
+		const scrollButtonEl = container.createEl("button", {
+			cls: "ai-draft-bench-scroll-bottom-button",
+			attr: {
+				"aria-label": "Scroll to latest response",
+			},
+		});
+
+		setIcon(scrollButtonEl, "arrow-down");
+		setTooltip(scrollButtonEl, "Scroll to latest response");
+
+		scrollButtonEl.addEventListener("click", () => {
+			this.scrollToBottom();
+		});
+
+		entriesEl.addEventListener("scroll", () => {
+			this.updateScrollToBottomButton(entriesEl);
+		});
+
+		this.scrollButtonEl = scrollButtonEl;
+	}
+
+	private updateScrollToBottomButton(entriesEl: HTMLElement): void {
+		if (!this.scrollButtonEl) {
+			return;
+		}
+
+		const distanceFromBottom = entriesEl.scrollHeight - entriesEl.scrollTop - entriesEl.clientHeight;
+		const isScrollable = entriesEl.scrollHeight > entriesEl.clientHeight + 8;
+		const isNearBottom = distanceFromBottom < 48;
+
+		this.scrollButtonEl.toggleClass("is-visible", isScrollable && !isNearBottom);
+	}
+
 	private scrollToBottom(): void {
 		window.setTimeout(() => {
 			const entriesEl = this.contentEl.querySelector(".ai-draft-bench-entries");
@@ -201,7 +265,12 @@ export class AiDraftBenchView extends ItemView {
 				return;
 			}
 
-			entriesEl.scrollTop = entriesEl.scrollHeight;
+			entriesEl.scrollTo({
+				top: entriesEl.scrollHeight,
+				behavior: "smooth",
+			});
+
+			this.updateScrollToBottomButton(entriesEl);
 		}, 0);
 	}
 }

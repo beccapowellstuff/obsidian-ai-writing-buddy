@@ -6,7 +6,7 @@ import { AiDraftBenchPluginDataService } from "./services/ai-writing-buddy-plugi
 import { createAiResponseService } from "./services/create-ai-response-service";
 import { DraftBenchViewService } from "./services/view-service";
 import { EditorMenuService } from "./services/editor-menu-service";
-import { AiDraftBenchCurrentSessionData } from "./types/ai-writing-buddy-plugin-data";
+import { AiDraftBenchCurrentSessionData, AiDraftBenchSessionListItem } from "./types/ai-writing-buddy-plugin-data";
 import { AI_DRAFT_BENCH_VIEW_TYPE, AiDraftBenchView } from "./views/ai-writing-buddy-view";
 
 type OpenAiModelsResponse = {
@@ -61,6 +61,13 @@ export default class AiDraftBenchPlugin extends Plugin {
 
 					return this.currentSession;
 				},
+				(sessionId): AiDraftBenchSessionListItem[] => {
+					this.savedSessions = this.pluginDataService.deleteSavedSession(sessionId, this.savedSessions);
+					void this.savePluginData();
+
+					return this.pluginDataService.getSessionListItems(this.savedSessions);
+				},
+				() => this.savedSessions,
 			);
 		});
 

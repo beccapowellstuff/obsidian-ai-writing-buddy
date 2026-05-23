@@ -2,10 +2,16 @@ type SendChatHandler = (message: string) => void;
 type CancelReplyHandler = () => void;
 
 export class DraftBenchChatComposerRenderer {
+	private shouldFocusOnNextRender = false;
+
 	constructor(
 		private readonly onSendChat: SendChatHandler,
 		private readonly onCancelReply: CancelReplyHandler,
 	) {}
+
+	requestFocusOnNextRender(): void {
+		this.shouldFocusOnNextRender = true;
+	}
 
 	render(container: HTMLElement, replyContextText: string | null): void {
 		const composerEl = container.createEl("div", {
@@ -38,9 +44,11 @@ export class DraftBenchChatComposerRenderer {
 
 			if (!message) {
 				updateSendButtonState();
+				inputEl.focus();
 				return;
 			}
 
+			this.shouldFocusOnNextRender = true;
 			this.onSendChat(message);
 			inputEl.value = "";
 			updateSendButtonState();
@@ -60,6 +68,14 @@ export class DraftBenchChatComposerRenderer {
 				sendMessage();
 			}
 		});
+
+		if (this.shouldFocusOnNextRender) {
+			this.shouldFocusOnNextRender = false;
+
+			window.setTimeout(() => {
+				inputEl.focus();
+			}, 0);
+		}
 	}
 
 	private renderReplyContext(container: HTMLElement, replyContextText: string): void {

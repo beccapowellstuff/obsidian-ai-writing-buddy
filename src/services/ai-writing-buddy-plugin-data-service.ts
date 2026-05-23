@@ -98,6 +98,10 @@ export class AiDraftBenchPluginDataService {
 		};
 	}
 
+	deleteSavedSession(sessionId: string, savedSessions: AiDraftBenchCurrentSessionData[]): AiDraftBenchCurrentSessionData[] {
+		return savedSessions.filter((session) => session.id !== sessionId);
+	}
+
 	private archiveSession(currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[]): AiDraftBenchCurrentSessionData[] {
 		if (currentSession.entryCount === 0 && currentSession.entries.length === 0) {
 			return savedSessions;
