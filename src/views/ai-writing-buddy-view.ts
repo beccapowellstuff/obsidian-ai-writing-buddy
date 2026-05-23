@@ -25,6 +25,9 @@ type DeleteSavedSessionHandler = (sessionId: string) => AiDraftBenchSessionListI
 type SavedSessionsProvider = () => AiDraftBenchCurrentSessionData[];
 type CurrentSessionTitleProvider = () => string | undefined;
 type RenameSavedSessionHandler = (sessionId: string, title: string) => AiDraftBenchCurrentSessionData[];
+type CurrentSessionProvider = () => AiDraftBenchCurrentSessionData | null;
+type RenameCurrentSessionHandler = (title: string) => AiDraftBenchCurrentSessionData;
+type DeleteCurrentSessionHandler = () => AiDraftBenchCurrentSessionData;
 
 export class AiDraftBenchView extends ItemView {
 	private readonly sessionController: DraftBenchSessionController;
@@ -49,6 +52,9 @@ export class AiDraftBenchView extends ItemView {
 		private readonly onGetSavedSessions: SavedSessionsProvider,
 		private readonly onRenameSavedSession: RenameSavedSessionHandler,
 		private readonly getCurrentSessionTitle: CurrentSessionTitleProvider,
+		private readonly onGetCurrentSession: CurrentSessionProvider,
+		private readonly onRenameCurrentSession: RenameCurrentSessionHandler,
+		private readonly onDeleteCurrentSession: DeleteCurrentSessionHandler,
 	) {
 		super(leaf);
 
@@ -227,16 +233,25 @@ export class AiDraftBenchView extends ItemView {
 
 	private manageSavedSessions(): void {
 		new SavedSessionsModal(this.app, {
-			sessions: this.onGetSavedSessions(),
+			currentSession: this.onGetCurrentSession(),
+			savedSessions: this.onGetSavedSessions(),
 			onOpenSession: (sessionId) => {
 				this.restoreSession(sessionId);
 			},
-			onDeleteSession: (sessionId) => {
+			onDeleteSavedSession: (sessionId) => {
 				this.onDeleteSavedSession(sessionId);
 				return this.onGetSavedSessions();
 			},
-			onRenameSession: (sessionId, title) => {
+			onRenameSavedSession: (sessionId, title) => {
 				return this.onRenameSavedSession(sessionId, title);
+			},
+			onRenameCurrentSession: (title) => {
+				return this.onRenameCurrentSession(title);
+			},
+			onDeleteCurrentSession: () => {
+				const newSession = this.onDeleteCurrentSession();
+				this.sessionController.replaceCurrentSessionEntries(newSession.entries, newSession.memorySummary);
+				return newSession.entryCount > 0 || newSession.entries.length > 0 ? newSession : null;
 			},
 		}).open();
 	}

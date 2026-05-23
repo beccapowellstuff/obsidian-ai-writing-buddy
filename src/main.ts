@@ -75,6 +75,19 @@ export default class AiDraftBenchPlugin extends Plugin {
 					return this.savedSessions;
 				},
 				() => this.currentSession.userTitle,
+				() => (this.currentSession.entryCount > 0 || this.currentSession.entries.length > 0 ? this.currentSession : null),
+				(title: string): AiDraftBenchCurrentSessionData => {
+					this.currentSession = this.pluginDataService.renameCurrentSession(title, this.currentSession);
+					void this.savePluginData();
+
+					return this.currentSession;
+				},
+				(): AiDraftBenchCurrentSessionData => {
+					this.currentSession = this.pluginDataService.createEmptyCurrentSession();
+					void this.savePluginData();
+
+					return this.currentSession;
+				},
 			);
 		});
 

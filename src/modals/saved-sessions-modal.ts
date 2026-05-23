@@ -1,25 +1,32 @@
 import { App, Modal } from "obsidian";
 import { AiDraftBenchCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
-import { ConfirmDeleteSavedSessionModal } from "./confirm-delete-saved-session-modal";
 import { SavedSessionPreviewModal } from "./saved-session-preview-modal";
 
 type SavedSessionsModalOptions = {
-	sessions: AiDraftBenchCurrentSessionData[];
+	currentSession: AiDraftBenchCurrentSessionData | null;
+	savedSessions: AiDraftBenchCurrentSessionData[];
 	onOpenSession: (sessionId: string) => void;
-	onDeleteSession: (sessionId: string) => AiDraftBenchCurrentSessionData[];
-	onRenameSession: (sessionId: string, title: string) => AiDraftBenchCurrentSessionData[];
+	onDeleteSavedSession: (sessionId: string) => AiDraftBenchCurrentSessionData[];
+	onRenameSavedSession: (sessionId: string, title: string) => AiDraftBenchCurrentSessionData[];
+	onRenameCurrentSession: (title: string) => AiDraftBenchCurrentSessionData;
+	onDeleteCurrentSession: () => AiDraftBenchCurrentSessionData | null;
 };
 
+type SessionRowKind = "current" | "saved";
+
 export class SavedSessionsModal extends Modal {
-	private sessions: AiDraftBenchCurrentSessionData[];
+	private currentSession: AiDraftBenchCurrentSessionData | null;
+	private savedSessions: AiDraftBenchCurrentSessionData[];
 	private editingSessionId: string | null = null;
+	private deletingSessionId: string | null = null;
 
 	constructor(
 		app: App,
 		private readonly options: SavedSessionsModalOptions,
 	) {
 		super(app);
-		this.sessions = options.sessions;
+		this.currentSession = options.currentSession;
+		this.savedSessions = options.savedSessions;
 	}
 
 	onOpen(): void {
@@ -35,128 +42,113 @@ export class SavedSessionsModal extends Modal {
 		contentEl.empty();
 
 		contentEl.createEl("h2", {
-			text: "Saved sessions",
+			text: "Session manager",
 		});
 
-		if (this.sessions.length === 0) {
+		if (!this.currentSession && this.savedSessions.length === 0) {
 			contentEl.createEl("p", {
-				text: "There are no saved sessions yet.",
+				text: "There are no sessions yet.",
 			});
 			return;
 		}
 
-		const listEl = contentEl.createEl("div", {
-			cls: "ai-draft-bench-saved-sessions-list",
+		if (this.currentSession) {
+			contentEl.createEl("h3", {
+				cls: "ai-draft-bench-session-manager-section-title",
+				text: "Current session",
+			});
+
+			const currentListEl = contentEl.createEl("div", {
+				cls: "ai-draft-bench-saved-sessions-list",
+			});
+
+			this.renderSessionRow(currentListEl, this.currentSession, "current");
+		}
+
+		if (this.savedSessions.length > 0) {
+			contentEl.createEl("h3", {
+				cls: "ai-draft-bench-session-manager-section-title",
+				text: "Saved sessions",
+			});
+
+			const savedListEl = contentEl.createEl("div", {
+				cls: "ai-draft-bench-saved-sessions-list",
+			});
+
+			for (const session of this.savedSessions) {
+				this.renderSessionRow(savedListEl, session, "saved");
+			}
+		}
+	}
+
+	private renderSessionRow(container: HTMLElement, session: AiDraftBenchCurrentSessionData, kind: SessionRowKind): void {
+		const rowEl = container.createEl("div", {
+			cls: "ai-draft-bench-saved-session-row",
 		});
 
-		for (const session of this.sessions) {
-			const rowEl = listEl.createEl("div", {
-				cls: "ai-draft-bench-saved-session-row",
-			});
+		if (this.deletingSessionId === session.id) {
+			this.renderDeleteConfirmationRow(rowEl, session, kind);
+			return;
+		}
 
-			if (this.editingSessionId === session.id) {
-				const inputEl = rowEl.createEl("input", {
-					type: "text",
-					value: session.userTitle ?? "",
-					cls: "ai-draft-bench-saved-session-rename-input",
-				});
+		if (this.editingSessionId === session.id) {
+			this.renderRenameRow(rowEl, session, kind);
+			return;
+		}
 
-				inputEl.maxLength = 25;
+		rowEl.createEl("div", {
+			cls: "ai-draft-bench-saved-session-label",
+			text: this.getSessionLabel(session),
+		});
 
-				const actionsEl = rowEl.createEl("div", {
-					cls: "ai-draft-bench-saved-session-actions",
-				});
+		const actionsEl = rowEl.createEl("div", {
+			cls: "ai-draft-bench-saved-session-actions",
+		});
 
-				const saveButton = actionsEl.createEl("button", {
-					text: "Save",
-					cls: "mod-cta",
-				});
+		const renameButton = actionsEl.createEl("button", {
+			text: "Rename",
+		});
 
-				saveButton.type = "button";
-				saveButton.addEventListener("click", () => {
-					this.sessions = this.options.onRenameSession(session.id, inputEl.value);
-					this.editingSessionId = null;
-					this.renderContent();
-				});
+		renameButton.type = "button";
+		renameButton.addEventListener("click", () => {
+			this.editingSessionId = session.id;
+			this.deletingSessionId = null;
+			this.renderContent();
+		});
 
-				const cancelButton = actionsEl.createEl("button", {
-					text: "Cancel",
-				});
+		const previewButton = actionsEl.createEl("button", {
+			text: "Preview",
+		});
 
-				cancelButton.type = "button";
-				cancelButton.addEventListener("click", () => {
-					this.editingSessionId = null;
-					this.renderContent();
-				});
+		previewButton.type = "button";
+		previewButton.addEventListener("click", () => {
+			this.close();
 
-				inputEl.addEventListener("keydown", (event) => {
-					if (event.key === "Enter") {
-						event.preventDefault();
-						this.sessions = this.options.onRenameSession(session.id, inputEl.value);
-						this.editingSessionId = null;
-						this.renderContent();
+			new SavedSessionPreviewModal(this.app, {
+				session,
+				sessionLabel: this.getSessionLabel(session),
+				onOpenSession: (sessionId) => {
+					this.options.onOpenSession(sessionId);
+				},
+				onDeleteSession: (sessionId) => {
+					if (kind === "current") {
+						this.currentSession = this.options.onDeleteCurrentSession();
+						return;
 					}
 
-					if (event.key === "Escape") {
-						event.preventDefault();
-						this.editingSessionId = null;
-						this.renderContent();
-					}
-				});
+					this.savedSessions = this.options.onDeleteSavedSession(sessionId);
+				},
+				onClosePreview: () => {
+					new SavedSessionsModal(this.app, {
+						...this.options,
+						currentSession: this.currentSession,
+						savedSessions: this.savedSessions,
+					}).open();
+				},
+			}).open();
+		});
 
-				window.setTimeout(() => {
-					inputEl.focus();
-					inputEl.select();
-				}, 0);
-
-				continue;
-			}
-
-			rowEl.createEl("div", {
-				cls: "ai-draft-bench-saved-session-label",
-				text: this.getSessionLabel(session),
-			});
-
-			const actionsEl = rowEl.createEl("div", {
-				cls: "ai-draft-bench-saved-session-actions",
-			});
-
-			const renameButton = actionsEl.createEl("button", {
-				text: "Rename",
-			});
-
-			renameButton.type = "button";
-			renameButton.addEventListener("click", () => {
-				this.editingSessionId = session.id;
-				this.renderContent();
-			});
-
-			const previewButton = actionsEl.createEl("button", {
-				text: "Preview",
-			});
-
-			previewButton.type = "button";
-			previewButton.addEventListener("click", () => {
-				this.close();
-
-				new SavedSessionPreviewModal(this.app, {
-					session,
-					sessionLabel: this.getSessionLabel(session),
-					onOpenSession: (sessionId) => {
-						this.options.onOpenSession(sessionId);
-					},
-					onDeleteSession: (sessionId) => {
-						this.sessions = this.options.onDeleteSession(sessionId);
-					},
-					onClosePreview: () => {
-						new SavedSessionsModal(this.app, {
-							...this.options,
-							sessions: this.sessions,
-						}).open();
-					},
-				}).open();
-			});
-
+		if (kind === "saved") {
 			const openButton = actionsEl.createEl("button", {
 				text: "Open",
 			});
@@ -166,20 +158,118 @@ export class SavedSessionsModal extends Modal {
 				this.options.onOpenSession(session.id);
 				this.close();
 			});
-
-			const deleteButton = actionsEl.createEl("button", {
-				text: "Delete",
-				cls: "mod-warning",
-			});
-
-			deleteButton.type = "button";
-			deleteButton.addEventListener("click", () => {
-				new ConfirmDeleteSavedSessionModal(this.app, this.getSessionLabel(session), () => {
-					this.sessions = this.options.onDeleteSession(session.id);
-					this.renderContent();
-				}).open();
-			});
 		}
+
+		const deleteButton = actionsEl.createEl("button", {
+			text: "Delete",
+			cls: "mod-warning",
+		});
+
+		deleteButton.type = "button";
+		deleteButton.addEventListener("click", () => {
+			this.deletingSessionId = session.id;
+			this.editingSessionId = null;
+			this.renderContent();
+		});
+	}
+
+	private renderRenameRow(rowEl: HTMLElement, session: AiDraftBenchCurrentSessionData, kind: SessionRowKind): void {
+		const inputEl = rowEl.createEl("input", {
+			type: "text",
+			value: session.userTitle ?? "",
+			cls: "ai-draft-bench-saved-session-rename-input",
+		});
+
+		inputEl.maxLength = 25;
+
+		const actionsEl = rowEl.createEl("div", {
+			cls: "ai-draft-bench-saved-session-actions",
+		});
+
+		const saveButton = actionsEl.createEl("button", {
+			text: "Save",
+			cls: "mod-cta",
+		});
+
+		const saveRename = (): void => {
+			if (kind === "current") {
+				this.currentSession = this.options.onRenameCurrentSession(inputEl.value);
+			} else {
+				this.savedSessions = this.options.onRenameSavedSession(session.id, inputEl.value);
+			}
+
+			this.editingSessionId = null;
+			this.renderContent();
+		};
+
+		saveButton.type = "button";
+		saveButton.addEventListener("click", saveRename);
+
+		const cancelButton = actionsEl.createEl("button", {
+			text: "Cancel",
+		});
+
+		cancelButton.type = "button";
+		cancelButton.addEventListener("click", () => {
+			this.editingSessionId = null;
+			this.renderContent();
+		});
+
+		inputEl.addEventListener("keydown", (event) => {
+			if (event.key === "Enter") {
+				event.preventDefault();
+				saveRename();
+			}
+
+			if (event.key === "Escape") {
+				event.preventDefault();
+				this.editingSessionId = null;
+				this.renderContent();
+			}
+		});
+
+		window.setTimeout(() => {
+			inputEl.focus();
+			inputEl.select();
+		}, 0);
+	}
+
+	private renderDeleteConfirmationRow(rowEl: HTMLElement, session: AiDraftBenchCurrentSessionData, kind: SessionRowKind): void {
+		rowEl.createEl("div", {
+			cls: "ai-draft-bench-saved-session-label ai-draft-bench-session-delete-warning",
+			text: kind === "current" ? "Delete current session and start a new one?" : "Delete saved session?",
+		});
+
+		const actionsEl = rowEl.createEl("div", {
+			cls: "ai-draft-bench-saved-session-actions",
+		});
+
+		const cancelButton = actionsEl.createEl("button", {
+			text: "Cancel",
+		});
+
+		cancelButton.type = "button";
+		cancelButton.addEventListener("click", () => {
+			this.deletingSessionId = null;
+			this.renderContent();
+		});
+
+		const confirmDeleteButton = actionsEl.createEl("button", {
+			text: "Delete",
+			cls: "mod-warning",
+		});
+
+		confirmDeleteButton.type = "button";
+		confirmDeleteButton.addEventListener("click", () => {
+			if (kind === "current") {
+				this.currentSession = this.options.onDeleteCurrentSession();
+			} else {
+				this.savedSessions = this.options.onDeleteSavedSession(session.id);
+			}
+
+			this.deletingSessionId = null;
+			this.renderContent();
+		});
 	}
 
 	private getSessionLabel(session: AiDraftBenchCurrentSessionData): string {

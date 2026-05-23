@@ -52,8 +52,13 @@ export class AiDraftBenchPluginDataService {
 			createdAt: now,
 			updatedAt: now,
 			entryCount: 0,
+			userTitle: this.createDefaultSessionTitle(),
 			entries: [],
 		};
+	}
+
+	private createDefaultSessionTitle(): string {
+		return new Date().toLocaleString().slice(0, 25);
 	}
 
 	withUpdatedCurrentSessionEntries(currentSession: AiDraftBenchCurrentSessionData, entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary): AiDraftBenchCurrentSessionData {
@@ -116,6 +121,16 @@ export class AiDraftBenchPluginDataService {
 				userTitle: trimmedTitle || undefined,
 			};
 		});
+	}
+
+	renameCurrentSession(title: string, currentSession: AiDraftBenchCurrentSessionData): AiDraftBenchCurrentSessionData {
+		const trimmedTitle = title.trim().slice(0, 25);
+
+		return {
+			...currentSession,
+			updatedAt: new Date().toISOString(),
+			userTitle: trimmedTitle || undefined,
+		};
 	}
 
 	private archiveSession(currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[], sessionTitle?: string): AiDraftBenchCurrentSessionData[] {
