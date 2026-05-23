@@ -1,36 +1,45 @@
+type DiffToken = {
+	text: string;
+	isWhitespace: boolean;
+};
+
+type DiffSegment =
+	| {
+			type: "unchanged";
+			token: DiffToken;
+	  }
+	| {
+			type: "removed";
+			token: DiffToken;
+	  }
+	| {
+			type: "added";
+			token: DiffToken;
+	  };
+
 export class ResponseDiffRenderer {
 	render(container: HTMLElement, originalText: string, responseText: string): void {
-		const originalTokens = this.getComparableTokens(originalText);
+		const originalTokens = this.tokenizeText(originalText);
 		const responseTokens = this.tokenizeText(responseText);
-		const responseComparableTokens = responseTokens.filter((token) => !token.isWhitespace).map((token) => token.text);
+		const diffSegments = this.createDiffSegments(originalTokens, responseTokens);
 
-		const changedTokenIndexes = this.getChangedTokenIndexes(originalTokens, responseComparableTokens);
-
-		let comparableTokenIndex = 0;
-
-		for (const token of responseTokens) {
-			if (token.isWhitespace) {
-				container.appendChild(document.createTextNode(token.text));
+		for (const segment of diffSegments) {
+			if (segment.type === "unchanged") {
+				container.appendChild(document.createTextNode(segment.token.text));
 				continue;
 			}
 
-			if (changedTokenIndexes.has(comparableTokenIndex)) {
-				const changedEl = container.createSpan({
-					cls: "ai-draft-bench-diff-changed",
-					text: token.text,
-				});
+			const changedEl = container.createSpan({
+				cls: segment.type === "removed" ? "ai-draft-bench-diff-removed" : "ai-draft-bench-diff-added",
+				text: segment.token.text,
+			});
 
-				changedEl.setAttribute("title", "Changed from selected text");
-			} else {
-				container.appendChild(document.createTextNode(token.text));
-			}
-
-			comparableTokenIndex += 1;
+			changedEl.setAttribute("title", segment.type === "removed" ? "Removed from selected text" : "Added or changed from selected text");
 		}
 	}
 
-	private tokenizeText(text: string): Array<{ text: string; isWhitespace: boolean }> {
-		const matches = text.match(/\s+|[^\s]+/g) ?? [];
+	private tokenizeText(text: string): DiffToken[] {
+		const matches = text.match(/\s+|[A-Za-z0-9_]+|[^\sA-Za-z0-9_]/g) ?? [];
 
 		return matches.map((token) => ({
 			text: token,
@@ -38,27 +47,82 @@ export class ResponseDiffRenderer {
 		}));
 	}
 
-	private getComparableTokens(text: string): string[] {
-		return this.tokenizeText(text)
-			.filter((token) => !token.isWhitespace)
-			.map((token) => token.text);
-	}
+	private createDiffSegments(originalTokens: DiffToken[], responseTokens: DiffToken[]): DiffSegment[] {
+		const table = this.createLongestCommonSubsequenceTable(originalTokens, responseTokens);
+		const segments: DiffSegment[] = [];
 
-	private getChangedTokenIndexes(originalTokens: string[], responseTokens: string[]): Set<number> {
-		const unchangedResponseIndexes = this.getUnchangedResponseTokenIndexes(originalTokens, responseTokens);
+		let originalIndex = 0;
+		let responseIndex = 0;
 
-		const changedIndexes = new Set<number>();
+		while (originalIndex < originalTokens.length && responseIndex < responseTokens.length) {
+			const originalToken = originalTokens[originalIndex];
+			const responseToken = responseTokens[responseIndex];
 
-		for (let index = 0; index < responseTokens.length; index += 1) {
-			if (!unchangedResponseIndexes.has(index)) {
-				changedIndexes.add(index);
+			if (!originalToken || !responseToken) {
+				break;
+			}
+
+			if (originalToken.text === responseToken.text) {
+				segments.push({
+					type: "unchanged",
+					token: responseToken,
+				});
+
+				originalIndex += 1;
+				responseIndex += 1;
+				continue;
+			}
+
+			const nextOriginalScore = table[originalIndex + 1]?.[responseIndex] ?? 0;
+			const nextResponseScore = table[originalIndex]?.[responseIndex + 1] ?? 0;
+
+			if (nextOriginalScore >= nextResponseScore) {
+				segments.push({
+					type: "removed",
+					token: originalToken,
+				});
+
+				originalIndex += 1;
+			} else {
+				segments.push({
+					type: "added",
+					token: responseToken,
+				});
+
+				responseIndex += 1;
 			}
 		}
 
-		return changedIndexes;
+		while (originalIndex < originalTokens.length) {
+			const originalToken = originalTokens[originalIndex];
+
+			if (originalToken) {
+				segments.push({
+					type: "removed",
+					token: originalToken,
+				});
+			}
+
+			originalIndex += 1;
+		}
+
+		while (responseIndex < responseTokens.length) {
+			const responseToken = responseTokens[responseIndex];
+
+			if (responseToken) {
+				segments.push({
+					type: "added",
+					token: responseToken,
+				});
+			}
+
+			responseIndex += 1;
+		}
+
+		return this.mergeReadableWhitespace(segments);
 	}
 
-	private getUnchangedResponseTokenIndexes(originalTokens: string[], responseTokens: string[]): Set<number> {
+	private createLongestCommonSubsequenceTable(originalTokens: DiffToken[], responseTokens: DiffToken[]): number[][] {
 		const table = Array.from({ length: originalTokens.length + 1 }, () => Array<number>(responseTokens.length + 1).fill(0));
 
 		for (let originalIndex = originalTokens.length - 1; originalIndex >= 0; originalIndex -= 1) {
@@ -70,7 +134,7 @@ export class ResponseDiffRenderer {
 					continue;
 				}
 
-				if (originalTokens[originalIndex] === responseTokens[responseIndex]) {
+				if (originalTokens[originalIndex]?.text === responseTokens[responseIndex]?.text) {
 					currentRow[responseIndex] = (nextOriginalRow[responseIndex + 1] ?? 0) + 1;
 				} else {
 					currentRow[responseIndex] = Math.max(nextOriginalRow[responseIndex] ?? 0, currentRow[responseIndex + 1] ?? 0);
@@ -78,32 +142,22 @@ export class ResponseDiffRenderer {
 			}
 		}
 
-		const unchangedResponseIndexes = new Set<number>();
+		return table;
+	}
 
-		let originalIndex = 0;
-		let responseIndex = 0;
-
-		while (originalIndex < originalTokens.length && responseIndex < responseTokens.length) {
-			if (originalTokens[originalIndex] === responseTokens[responseIndex]) {
-				unchangedResponseIndexes.add(responseIndex);
-
-				originalIndex += 1;
-				responseIndex += 1;
-
-				continue;
+	private mergeReadableWhitespace(segments: DiffSegment[]): DiffSegment[] {
+		return segments.map((segment) => {
+			if (segment.token.isWhitespace && segment.type !== "unchanged") {
+				return {
+					...segment,
+					token: {
+						...segment.token,
+						text: segment.token.text.replace(/\n/g, "↵\n").replace(/\t/g, "⇥"),
+					},
+				};
 			}
 
-			const nextOriginalScore = table[originalIndex + 1]?.[responseIndex] ?? 0;
-
-			const nextResponseScore = table[originalIndex]?.[responseIndex + 1] ?? 0;
-
-			if (nextOriginalScore >= nextResponseScore) {
-				originalIndex += 1;
-			} else {
-				responseIndex += 1;
-			}
-		}
-
-		return unchangedResponseIndexes;
+			return segment;
+		});
 	}
 }
