@@ -51,6 +51,7 @@ export class DraftBenchHeaderRenderer {
 		});
 
 		this.renderSessionHistory(actionsEl, options);
+		this.renderSessionManagerButton(actionsEl, options);
 
 		const newSessionButton = actionsEl.createEl("button", {
 			cls: "ai-draft-bench-session-icon-button",
@@ -112,17 +113,19 @@ export class DraftBenchHeaderRenderer {
 
 			options.onRestoreSession(sessionSelect.value);
 		});
+	}
 
+	private renderSessionManagerButton(actionsEl: HTMLElement, options: DraftBenchHeaderRendererOptions): void {
 		const manageSessionsButton = actionsEl.createEl("button", {
 			cls: "ai-draft-bench-session-icon-button",
 			attr: {
 				type: "button",
-				"aria-label": "Manage saved sessions",
+				"aria-label": "Open session manager",
 			},
 		});
 
 		setIcon(manageSessionsButton, "history");
-		setTooltip(manageSessionsButton, "Manage saved sessions");
+		setTooltip(manageSessionsButton, "Open session manager");
 
 		manageSessionsButton.addEventListener("click", () => {
 			options.onManageSavedSessions();
