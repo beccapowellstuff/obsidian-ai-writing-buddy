@@ -1,8 +1,8 @@
 import { App, PluginSettingTab } from "obsidian";
 import type AiDraftBenchPlugin from "../main";
-import { TemplateSettingsRenderer } from "./TemplateSettingsRenderer";
-import { ConnectionSettingsRenderer } from "./ConnectionSettingsRenderer";
-import { PromptSettingsRenderer } from "./PromptSettingsRenderer";
+import { TemplateSettingsRenderer } from "./template-settings-renderer";
+import { ConnectionSettingsRenderer } from "./connection-settings-renderer";
+import { PromptSettingsRenderer } from "./prompt-settings-renderer";
 
 export class AiDraftBenchSettingTab extends PluginSettingTab {
 	private availableModels: string[] = [];

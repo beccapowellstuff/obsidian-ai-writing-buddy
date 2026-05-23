@@ -1,9 +1,9 @@
 import { setIcon } from "obsidian";
-import { ClipboardService } from "../services/ClipboardService";
-import { SelectionEditService } from "../services/SelectionEditService";
-import { AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/AiDraftBenchEntry";
-import { AiDraftBenchResponse } from "../types/AiDraftBenchResponse";
-import { ResponseDiffRenderer } from "./ResponseDiffRenderer";
+import { ClipboardService } from "../services/clipboard-service";
+import { SelectionEditService } from "../services/selection-edit-service";
+import { AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import { AiDraftBenchResponse } from "../types/ai-writing-buddy-Response";
+import { ResponseDiffRenderer } from "./response-diff-renderer";
 
 type ReplyHandler = (entryId: string) => void;
 

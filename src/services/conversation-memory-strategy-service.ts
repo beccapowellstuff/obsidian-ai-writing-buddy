@@ -1,5 +1,5 @@
-import { AiDraftBenchSettings } from "../config/defaultSettings";
-import { ConversationMemoryStrategy } from "../types/ConversationMemoryStrategy";
+import { AiDraftBenchSettings } from "../config/default-settings";
+import { ConversationMemoryStrategy } from "../types/conversation-memory-strategy";
 
 export class ConversationMemoryStrategyService {
 	getStrategy(settings: AiDraftBenchSettings): ConversationMemoryStrategy {

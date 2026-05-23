@@ -1,7 +1,7 @@
-import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
-import { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
-import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
-import { AiDraftBenchResponse } from "../types/AiDraftBenchResponse";
+import { AiDraftBenchEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import { AiDraftBenchMemorySummary } from "../types/ai-writing-buddy-plugin-data";
+import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
+import { AiDraftBenchResponse } from "../types/ai-writing-buddy-Response";
 
 export type AiChatRequest = {
 	message: string;

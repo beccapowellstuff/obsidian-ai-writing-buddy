@@ -1,5 +1,5 @@
 import { App, Modal, Setting } from "obsidian";
-import { PromptTemplate } from "../types/PromptTemplate";
+import { PromptTemplate } from "../types/prompt-template";
 
 export type AiPromptModalSubmitValue = {
 	instruction: string;

@@ -1,6 +1,6 @@
-import type { AiDraftBenchSettings } from "../config/defaultSettings";
-import type { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
-import type { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
+import type { AiDraftBenchSettings } from "../config/default-settings";
+import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import type { AiDraftBenchMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 
 export class DraftBenchSessionSummaryService {
 	constructor(private readonly settings: AiDraftBenchSettings) {}
@@ -39,12 +39,7 @@ export class DraftBenchSessionSummaryService {
 		for (const entry of entries.slice(-8)) {
 			const userText = this.getEntryUserText(entry);
 			const assistantText = entry.response.text;
-			const entrySummary = [
-				userText ? `User: ${this.compactText(userText, 240)}` : "",
-				assistantText ? `Assistant: ${this.compactText(assistantText, 360)}` : "",
-			]
-				.filter(Boolean)
-				.join("\n");
+			const entrySummary = [userText ? `User: ${this.compactText(userText, 240)}` : "", assistantText ? `Assistant: ${this.compactText(assistantText, 360)}` : ""].filter(Boolean).join("\n");
 
 			if (!entrySummary) {
 				continue;

@@ -1,12 +1,12 @@
 import { requestUrl } from "obsidian";
-import { AiDraftBenchSettings } from "../config/defaultSettings";
-import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
-import { AiDraftBenchResponse } from "../types/AiDraftBenchResponse";
-import { ConversationMemoryStrategy } from "../types/ConversationMemoryStrategy";
-import { AiChatRequest, AiResponseService } from "./AiResponseService";
-import { ConversationMemoryStrategyService } from "./ConversationMemoryStrategyService";
-import { DraftBenchChatMessage, DraftBenchPromptBuilder } from "./DraftBenchPromptBuilder";
-import { DraftBenchPromptSizeGuard } from "./DraftBenchPromptSizeGuard";
+import { AiDraftBenchSettings } from "../config/default-settings";
+import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
+import { AiDraftBenchResponse } from "../types/ai-writing-buddy-Response";
+import { ConversationMemoryStrategy } from "../types/conversation-memory-strategy";
+import { AiChatRequest, AiResponseService } from "./ai-response-service";
+import { ConversationMemoryStrategyService } from "./conversation-memory-strategy-service";
+import { DraftBenchChatMessage, DraftBenchPromptBuilder } from "./prompt-builder";
+import { DraftBenchPromptSizeGuard } from "./prompt-size-guard";
 
 type OpenAiChatCompletionResponse = {
 	choices?: Array<{

@@ -1,8 +1,8 @@
 import { App, Editor, EditorPosition, EventRef, MarkdownView, Menu, Notice, Plugin } from "obsidian";
-import { DraftBenchPromptBuilder } from "./DraftBenchPromptBuilder";
-import { AiPromptModal, AiPromptModalSubmitValue } from "../modals/AiPromptModal";
-import { AiDraftBenchSettings } from "../config/defaultSettings";
-import { DraftBenchViewService } from "./DraftBenchViewService";
+import { DraftBenchPromptBuilder } from "./prompt-builder";
+import { AiPromptModal, AiPromptModalSubmitValue } from "../modals/ai-prompt-modal";
+import { AiDraftBenchSettings } from "../config/default-settings";
+import { DraftBenchViewService } from "./draft-bench-view-service";
 
 type EditorMenuWorkspace = {
 	on(name: "editor-menu", callback: (menu: Menu, editor: Editor, view: MarkdownView) => void): EventRef;

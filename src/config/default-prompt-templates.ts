@@ -1,4 +1,4 @@
-import { PromptTemplate } from "../types/PromptTemplate";
+import { PromptTemplate } from "../types/prompt-template";
 
 const BUILT_IN_TEMPLATE_CREATED_AT = "2026-01-01T00:00:00.000Z";
 

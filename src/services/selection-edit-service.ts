@@ -1,5 +1,5 @@
 import { App, Notice, TFile } from "obsidian";
-import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
+import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
 
 type ValidatedSelectionContext = {
 	file: TFile;
@@ -11,57 +11,35 @@ type ValidatedSelectionContext = {
 export class SelectionEditService {
 	constructor(private readonly app: App) {}
 
-	async replaceSelection(
-		request: AiDraftBenchRequest,
-		replacementText: string
-	): Promise<void> {
-		const context = await this.getValidatedSelectionContext(
-			request,
-			"Replacement cancelled."
-		);
+	async replaceSelection(request: AiDraftBenchRequest, replacementText: string): Promise<void> {
+		const context = await this.getValidatedSelectionContext(request, "Replacement cancelled.");
 
 		if (!context) {
 			return;
 		}
 
-		const updatedContent =
-			context.currentContent.slice(0, context.startOffset) +
-			replacementText +
-			context.currentContent.slice(context.endOffset);
+		const updatedContent = context.currentContent.slice(0, context.startOffset) + replacementText + context.currentContent.slice(context.endOffset);
 
 		await this.app.vault.modify(context.file, updatedContent);
 
 		new Notice("Selection replaced.");
 	}
 
-	async insertAfterSelection(
-		request: AiDraftBenchRequest,
-		textToInsert: string
-	): Promise<void> {
-		const context = await this.getValidatedSelectionContext(
-			request,
-			"Insert cancelled."
-		);
+	async insertAfterSelection(request: AiDraftBenchRequest, textToInsert: string): Promise<void> {
+		const context = await this.getValidatedSelectionContext(request, "Insert cancelled.");
 
 		if (!context) {
 			return;
 		}
 
-		const updatedContent =
-			context.currentContent.slice(0, context.endOffset) +
-			"\n\n" +
-			textToInsert +
-			context.currentContent.slice(context.endOffset);
+		const updatedContent = context.currentContent.slice(0, context.endOffset) + "\n\n" + textToInsert + context.currentContent.slice(context.endOffset);
 
 		await this.app.vault.modify(context.file, updatedContent);
 
 		new Notice("Response inserted after selection.");
 	}
 
-	private async getValidatedSelectionContext(
-		request: AiDraftBenchRequest,
-		cancelMessage: string
-	): Promise<ValidatedSelectionContext | null> {
+	private async getValidatedSelectionContext(request: AiDraftBenchRequest, cancelMessage: string): Promise<ValidatedSelectionContext | null> {
 		const file = this.app.vault.getAbstractFileByPath(request.sourcePath);
 
 		if (!(file instanceof TFile)) {
@@ -71,17 +49,9 @@ export class SelectionEditService {
 
 		const currentContent = await this.app.vault.read(file);
 
-		const startOffset = this.positionToOffset(
-			currentContent,
-			request.selectionStart.line,
-			request.selectionStart.ch
-		);
+		const startOffset = this.positionToOffset(currentContent, request.selectionStart.line, request.selectionStart.ch);
 
-		const endOffset = this.positionToOffset(
-			currentContent,
-			request.selectionEnd.line,
-			request.selectionEnd.ch
-		);
+		const endOffset = this.positionToOffset(currentContent, request.selectionEnd.line, request.selectionEnd.ch);
 
 		const currentSelectedText = currentContent.slice(startOffset, endOffset);
 

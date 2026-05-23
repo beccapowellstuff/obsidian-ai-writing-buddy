@@ -1,6 +1,6 @@
 import { Notice, Setting } from "obsidian";
 import type AiDraftBenchPlugin from "../main";
-import { PromptTemplate } from "../types/PromptTemplate";
+import { PromptTemplate } from "../types/prompt-template";
 
 export class TemplateSettingsRenderer {
 	constructor(private readonly plugin: AiDraftBenchPlugin) {}

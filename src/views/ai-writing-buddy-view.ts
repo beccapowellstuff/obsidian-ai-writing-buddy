@@ -1,18 +1,18 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
-import { AiDraftBenchSettings } from "../config/defaultSettings";
-import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
-import { ConfirmClearSessionModal } from "../modals/ConfirmClearSessionModal";
-import { ConfirmNewSessionModal } from "../modals/ConfirmNewSessionModal";
-import { DraftBenchChatComposerRenderer } from "../renderers/DraftBenchChatComposerRenderer";
-import { DraftBenchEntryRenderer } from "../renderers/DraftBenchEntryRenderer";
-import { DraftBenchHeaderRenderer } from "../renderers/DraftBenchHeaderRenderer";
-import type { AiResponseService } from "../services/AiResponseService";
-import { ClipboardService } from "../services/ClipboardService";
-import { SelectionEditService } from "../services/SelectionEditService";
-import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
-import { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary, AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
-import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
-import { DraftBenchSessionController } from "../controllers/DraftBenchSessionController";
+import { AiDraftBenchSettings } from "../config/default-settings";
+import { PLUGIN_DISPLAY } from "../config/plugin-display";
+import { ConfirmClearSessionModal } from "../modals/confirm-clear-session-modal";
+import { ConfirmNewSessionModal } from "../modals/confirm-new-session-modal";
+import { DraftBenchChatComposerRenderer } from "../renderers/chat-composer-renderer";
+import { DraftBenchEntryRenderer } from "../renderers/entry-renderer";
+import { DraftBenchHeaderRenderer } from "../renderers/header-renderer";
+import type { AiResponseService } from "../services/ai-response-service";
+import { ClipboardService } from "../services/clipboard-service";
+import { SelectionEditService } from "../services/selection-edit-service";
+import { AiDraftBenchEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary, AiDraftBenchSessionListItem } from "../types/ai-writing-buddy-plugin-data";
+import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
+import { DraftBenchSessionController } from "../controllers/session-controller";
 
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 

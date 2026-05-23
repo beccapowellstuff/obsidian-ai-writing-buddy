@@ -1,5 +1,5 @@
-import { PLUGIN_DISPLAY } from "../config/pluginDisplay";
-import { AiDraftBenchSessionListItem } from "../types/AiDraftBenchPluginData";
+import { PLUGIN_DISPLAY } from "../config/plugin-display";
+import { AiDraftBenchSessionListItem } from "../types/ai-writing-buddy-plugin-data";
 
 type DraftBenchHeaderRendererOptions = {
 	hasEntries: boolean;

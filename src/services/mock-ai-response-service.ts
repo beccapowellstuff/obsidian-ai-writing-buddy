@@ -1,6 +1,6 @@
-import { AiResponseService, AiChatRequest } from "./AiResponseService";
-import { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
-import { AiDraftBenchResponse } from "../types/AiDraftBenchResponse";
+import { AiResponseService, AiChatRequest } from "./ai-response-service";
+import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
+import { AiDraftBenchResponse } from "../types/ai-writing-buddy-Response";
 
 const MOCK_RESPONSE_DELAY_MS = 1200;
 

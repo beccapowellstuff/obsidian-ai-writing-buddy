@@ -1,7 +1,7 @@
-import type { AiDraftBenchSettings } from "../config/defaultSettings";
-import type { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/AiDraftBenchEntry";
-import type { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
-import type { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
+import type { AiDraftBenchSettings } from "../config/default-settings";
+import type { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import type { AiDraftBenchMemorySummary } from "../types/ai-writing-buddy-plugin-data";
+import type { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
 
 export type DraftBenchChatMessage = {
 	role: "system" | "user" | "assistant";

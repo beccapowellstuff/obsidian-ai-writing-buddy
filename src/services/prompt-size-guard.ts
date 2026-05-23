@@ -1,4 +1,4 @@
-import { DraftBenchChatMessage } from "./DraftBenchPromptBuilder";
+import { DraftBenchChatMessage } from "./prompt-builder";
 
 export class DraftBenchPromptSizeGuard {
 	constructor(private readonly maxPromptCharacters: number) {}

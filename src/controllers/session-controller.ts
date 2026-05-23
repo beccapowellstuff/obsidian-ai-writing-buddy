@@ -1,11 +1,11 @@
-import type { AiDraftBenchSettings } from "../config/defaultSettings";
-import type { AiResponseService } from "../services/AiResponseService";
-import { DraftBenchSessionHistoryTrimmer } from "../services/DraftBenchSessionHistoryTrimmer";
-import { DraftBenchSessionSummaryService } from "../services/DraftBenchSessionSummaryService";
-import type { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
-import type { AiDraftBenchMemorySummary } from "../types/AiDraftBenchPluginData";
-import type { AiDraftBenchRequest } from "../types/AiDraftBenchRequest";
-import { createPlaceholderResponse } from "../utils/createPlaceholderResponse";
+import type { AiDraftBenchSettings } from "../config/default-settings";
+import type { AiResponseService } from "../services/ai-response-service";
+import { DraftBenchSessionHistoryTrimmer } from "../services/session-history-trimmer";
+import { DraftBenchSessionSummaryService } from "../services/session-summary-service";
+import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-draft-bench-entry";
+import type { AiDraftBenchMemorySummary } from "../types/ai-writing-buddy-plugin-data";
+import type { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
+import { createPlaceholderResponse } from "../utils/create-placeholder-response";
 
 type SessionChangeHandler = (scrollToBottom: boolean) => void;
 type SessionSaveHandler = (entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary) => void;

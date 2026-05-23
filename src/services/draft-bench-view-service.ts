@@ -1,5 +1,5 @@
 import { App, WorkspaceLeaf } from "obsidian";
-import { AI_DRAFT_BENCH_VIEW_TYPE, AiDraftBenchView } from "../views/AiDraftBenchView";
+import { AI_DRAFT_BENCH_VIEW_TYPE, AiDraftBenchView } from "../views/ai-writing-buddy-view";
 
 export class DraftBenchViewService {
 	constructor(private readonly app: App) {}

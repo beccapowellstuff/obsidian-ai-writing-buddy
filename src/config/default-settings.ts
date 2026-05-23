@@ -1,5 +1,5 @@
-import { PromptTemplate } from "../types/PromptTemplate";
-import { DEFAULT_PROMPT_TEMPLATES } from "./defaultPromptTemplates";
+import { PromptTemplate } from "../types/prompt-template";
+import { DEFAULT_PROMPT_TEMPLATES } from "./default-prompt-templates";
 export type AiDraftBenchProvider = "mock" | "openai-compatible";
 
 export type AiDraftBenchSettings = {

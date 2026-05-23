@@ -1,5 +1,5 @@
-import { AiDraftBenchSettings } from "../config/defaultSettings";
-import { AiDraftBenchEntry } from "../types/AiDraftBenchEntry";
+import { AiDraftBenchSettings } from "../config/default-settings";
+import { AiDraftBenchEntry } from "../types/ai-writing-buddy-draft-bench-entry";
 
 type RecentEntryOptions = {
 	excludeEntryId?: string;
