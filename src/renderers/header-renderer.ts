@@ -86,7 +86,11 @@ export class DraftBenchHeaderRenderer {
 	}
 
 	private renderSessionHistory(actionsEl: HTMLElement, options: DraftBenchHeaderRendererOptions): void {
-		if (options.sessionListItems.length === 0) {
+		const currentSessionTitle = options.currentSessionTitle?.trim();
+		const hasCurrentSessionTitle = Boolean(currentSessionTitle && options.hasEntries);
+		const hasSavedSessions = options.sessionListItems.length > 0;
+
+		if (!hasCurrentSessionTitle && !hasSavedSessions) {
 			return;
 		}
 
@@ -95,7 +99,7 @@ export class DraftBenchHeaderRenderer {
 		});
 
 		sessionSelect.createEl("option", {
-			text: options.currentSessionTitle?.trim() || "Open a previous session",
+			text: hasCurrentSessionTitle && currentSessionTitle ? currentSessionTitle : "Open a previous session",
 			value: "",
 		});
 

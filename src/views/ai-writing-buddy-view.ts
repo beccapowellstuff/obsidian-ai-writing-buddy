@@ -237,20 +237,31 @@ export class AiDraftBenchView extends ItemView {
 			savedSessions: this.onGetSavedSessions(),
 			onOpenSession: (sessionId) => {
 				this.restoreSession(sessionId);
+				this.render();
 			},
 			onDeleteSavedSession: (sessionId) => {
 				this.onDeleteSavedSession(sessionId);
+				this.render();
+
 				return this.onGetSavedSessions();
 			},
 			onRenameSavedSession: (sessionId, title) => {
-				return this.onRenameSavedSession(sessionId, title);
+				const savedSessions = this.onRenameSavedSession(sessionId, title);
+				this.render();
+
+				return savedSessions;
 			},
 			onRenameCurrentSession: (title) => {
-				return this.onRenameCurrentSession(title);
+				const currentSession = this.onRenameCurrentSession(title);
+				this.render();
+
+				return currentSession;
 			},
 			onDeleteCurrentSession: () => {
 				const newSession = this.onDeleteCurrentSession();
 				this.sessionController.replaceCurrentSessionEntries(newSession.entries, newSession.memorySummary);
+				this.render();
+
 				return newSession.entryCount > 0 || newSession.entries.length > 0 ? newSession : null;
 			},
 		}).open();
