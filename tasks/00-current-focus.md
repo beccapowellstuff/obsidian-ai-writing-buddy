@@ -1,3 +1,0 @@
-# Current Focus
-
-Goal: 
