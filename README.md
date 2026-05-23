@@ -1,12 +1,12 @@
-# AI Draft Bench
+# AI Writing Buddy
 
-AI Draft Bench is an experimental Obsidian writing assistant plugin for drafting, rewriting, reviewing, and safely applying AI-generated text to notes.
+AI Writing Buddy is an experimental Obsidian writing assistant plugin for drafting, rewriting, reviewing, and safely applying AI-generated text to notes.
 
 The main idea is simple: select text, ask AI to work with it, review the result in a side panel, then choose whether to copy it, insert it, or replace the original selection. The plugin is designed to keep the user in control instead of silently changing note content.
 
 ## Current status
 
-AI Draft Bench is in active development. It now supports both mock responses for development and OpenAI-compatible providers for real AI requests.
+AI Writing Buddy is in active development. It now supports both mock responses for development and OpenAI-compatible providers for real AI requests.
 
 Current features include:
 
@@ -30,7 +30,7 @@ This is still not ready for general release. Some areas are still being refined,
 
 ## How it works
 
-AI Draft Bench keeps AI output separate from the note until you explicitly choose what to do with it.
+AI Writing Buddy keeps AI output separate from the note until you explicitly choose what to do with it.
 
 A typical selected-text workflow looks like this:
 
@@ -40,10 +40,10 @@ A typical selected-text workflow looks like this:
 4. Choose a template, or leave the template blank and write your own instruction.
 5. Add any extra instruction if needed.
 6. Press **Ask**.
-7. Review the response in the AI Draft Bench side panel.
+7. Review the response in the AI Writing Buddy side panel.
 8. Choose whether to copy the response, reply to it, replace the original selection, or insert the response after the selection.
 
-For general chat, open the AI Draft Bench side panel with the ribbon icon and type into the chat box at the bottom of the panel.
+For general chat, open the AI Writing Buddy side panel with the ribbon icon and type into the chat box at the bottom of the panel.
 
 ## Templates
 
@@ -66,11 +66,11 @@ The current template settings page works, but it is visually large. A future tas
 
 ## Provider setup
 
-AI Draft Bench can use either the mock provider or an OpenAI-compatible provider.
+AI Writing Buddy can use either the mock provider or an OpenAI-compatible provider.
 
 To configure a real provider:
 
-1. Open **Settings → AI Draft Bench**.
+1. Open **Settings → AI Writing Buddy**.
 2. Set **Provider** to **Compatible provider**.
 3. Set **Server address** to your provider base URL.
 4. Set **Secret key** if your provider requires one.
@@ -90,7 +90,7 @@ The mock provider remains useful while developing UI behaviour because it does n
 
 ## Safe note editing
 
-AI Draft Bench should never silently overwrite note content.
+AI Writing Buddy should never silently overwrite note content.
 
 When you ask AI about selected text, the plugin stores the source note path, the selected text, and the selection position. Before replacing or inserting later, it checks that the original selected text still matches the note. If the note changed, the edit is cancelled and a warning is shown.
 
@@ -166,7 +166,7 @@ manifest.json
 styles.css
 ```
 
-After deploying, reload the plugin in Obsidian. During development, this usually means disabling and re-enabling **AI Draft Bench** under **Settings → Community plugins**. Sometimes closing and reopening the side panel is also useful after UI changes.
+After deploying, reload the plugin in Obsidian. During development, this usually means disabling and re-enabling **AI Writing Buddy** under **Settings → Community plugins**. Sometimes closing and reopening the side panel is also useful after UI changes.
 
 ## Project structure
 
@@ -188,7 +188,7 @@ The current architecture aims to keep `main.ts` focused on plugin lifecycle and 
 
 ## Design principles
 
-AI Draft Bench is being built around a few practical rules:
+AI Writing Buddy is being built around a few practical rules:
 
 - Keep note edits explicit.
 - Keep AI responses reviewable before applying them.
@@ -200,7 +200,7 @@ AI Draft Bench is being built around a few practical rules:
 
 ## Privacy notes
 
-AI Draft Bench sends selected text, chat messages, prompt settings, and template instructions to the configured provider when you make a request.
+AI Writing Buddy sends selected text, chat messages, prompt settings, and template instructions to the configured provider when you make a request.
 
 If you use a local provider, that data is sent to your local server. If you configure a hosted provider, that data is sent to that external service. The plugin should not send note content unless you explicitly ask it to work with selected text or chat context, but provider behaviour depends on the service you configure.
 

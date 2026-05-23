@@ -1,10 +1,10 @@
 {
 	"id": "obsidian-ai-draft-bench",
-	"name": "AI Draft Bench",
-	"version": "1.0.0",
+	"name": "AI Writing Buddy",
+	"version": "0.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Ask AI about selected text and review suggestions in a side panel before applying changes.",
+	"description": "AI Writing Buddy is an Obsidian writing assistant for drafting, rewriting, reviewing, and exploring text. Send selected note content to the sidebar, talk through ideas, and apply changes only when you’re ready.",
 	"author": "Becci",
-	"authorUrl": "",
-	"isDesktopOnly": false
+	"authorUrl": "https://github.com/beccapowellstuff",
+	"isDesktopOnly": true
 }
