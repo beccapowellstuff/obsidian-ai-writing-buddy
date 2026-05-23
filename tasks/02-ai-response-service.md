@@ -11,6 +11,8 @@ Goal: keep the panel flow independent from the AI provider implementation.
 - AIR-007 DONE: Use real provider for general chat.
 - AIR-008 DONE: Use real provider for selected-text requests.
 - AIR-009 DONE: Use real provider for follow-up replies.
+
+
 - AIR-010 TODO: Standardise AI request payload building for chat, selected text, and follow-up replies
-- AIR-011 TODO: Handle provider errors without breaking the panel.
+- AIR-011 PARTIAL: Provider errors are caught and shown, but should move to explicit error response state under AIR-012.
 - AIR-012 LATER: Replace `isPlaceholder` with clearer response states such as loading, mock, ready, and error.

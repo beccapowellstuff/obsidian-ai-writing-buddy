@@ -21,6 +21,7 @@ Goal: let chat and follow-up requests include the right context without sending 
 - CTX-030 DONE: Fall back to trimmed local history for generic chat-completions providers
 - CTX-009 DONE: Decide how much session history to send to the AI.
 - CTX-013 DONE: Let follow-up replies include previous entry text and response.
+- CTX-013 DONE: Let follow-up replies include previous entry text and response.
 
 - CTX-008 TODO: Define active context behaviour for follow-up chat
    - Explicit Reply target wins.
@@ -31,7 +32,6 @@ Goal: let chat and follow-up requests include the right context without sending 
 - CTX-010 TODO: Refactor general chat context into a dedicated context builder service.
 - CTX-011 TODO: Refactor selected-text context into a dedicated context builder service.
 - CTX-012 TODO: Refactor follow-up reply context into a dedicated context builder service.
-- CTX-013 DONE: Let follow-up replies include previous entry text and response.
 - CTX-017 TODO: Add context size guard for selected text and follow-up context.
 - CTX-018 TODO: Add surrounding note context for selected-text requests.
 - CTX-023 TODO: Add delete saved session action.

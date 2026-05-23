@@ -3,6 +3,7 @@
 ## Settings
 
 - SET-001 TODO: Debounce settings saves for text inputs.
+- SET-002 TODO: Add reset-to-default button for each of the prompt sections you can change.
 
 ## Documentation
 

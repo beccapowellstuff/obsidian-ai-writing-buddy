@@ -9,6 +9,7 @@ Goal: make note changes explicit, reversible in spirit, and safe from stale sele
 - SAFE-005 DONE: Before replacing or inserting, confirm the original selected text still matches the saved selection.
 - SAFE-006 DONE: If the source text changed, cancel the edit and warn the user.
 - SAFE-007 DONE: Keep copy as a safe non-editing action that does not modify the note.
-- SAFE-008 TODO: Consider whether “Insert below selection” is different enough from “Insert after selection” to keep as a separate action.
-- SAFE-009 TODO: Add diff view.
-- SAFE-010 TODO: Consider a conflict resolution option when the source text has changed, such as showing the old selection, current text, and proposed replacement before allowing any manual override.
+- SAFE-008 DONE: Consider whether “Insert below selection” is different enough from “Insert after selection” to keep as a separate action.
+- SAFE-009 DONE: Add diff view.
+
+- SAFE-010 TODO: When the source text has changed, show a conflict modal with original selected text, current note text, and proposed replacement, then let the user cancel or overwrite anyway.
