@@ -1,5 +1,5 @@
 {
-	"name": "obsidian-ai-draft-bench",
+	"name": "obsidian-ai-writing-buddy",
 	"version": "1.0.0",
 	"description": "An Obsidian writing assistant for drafting, rewriting, reviewing, and safely applying AI-generated text to notes.",
 	"main": "main.js",
