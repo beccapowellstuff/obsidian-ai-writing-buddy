@@ -29,65 +29,64 @@
 
 .ai-draft-bench-header {
 	flex: 0 0 auto;
-	margin-bottom: 18px;
-	padding: 18px 20px;
+	margin-bottom: 10px;
+	padding: 10px 12px;
 	border: 1px solid var(--background-modifier-border);
-	border-radius: 18px;
-	background:
-		radial-gradient(circle at top left,
-			rgba(155, 120, 255, 0.22),
-			transparent 34%),
-		linear-gradient(135deg,
-			var(--background-primary-alt),
-			var(--background-secondary));
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+	border-radius: 12px;
+	background: var(--background-primary-alt);
+	box-shadow: none;
 }
 
 .ai-draft-bench-header-top {
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
-}
-
-.ai-draft-bench-header-title-group {
-	min-width: 0;
+	gap: 8px;
 }
 
 .ai-draft-bench-header-kicker {
-	margin-bottom: 4px;
-	font-size: 0.72em;
-	font-weight: 800;
-	color: var(--interactive-accent);
-	text-transform: uppercase;
-	letter-spacing: 0.12em;
+	display: none;
 }
 
 .ai-draft-bench-header h2 {
 	margin: 0;
-	font-size: 1.55em;
-	letter-spacing: -0.02em;
+	font-size: 1.05em;
+	line-height: 1.2;
+	letter-spacing: -0.01em;
 }
 
-.ai-draft-bench-header p {
-	margin: 6px 0 0 0;
-	color: var(--text-muted);
-	line-height: 1.4;
+.ai-draft-bench-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	justify-content: flex-end;
 }
 
-.ai-draft-bench-clear-session-button {
-	flex: 0 0 auto;
+.ai-draft-bench-session-icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
 	border-radius: 999px;
-	padding: 5px 11px;
-	font-size: 0.82em;
-	font-weight: 700;
 }
 
-.ai-draft-bench-clear-session-button:disabled {
+.ai-draft-bench-session-icon-button svg {
+	width: 16px;
+	height: 16px;
+}
+
+.ai-draft-bench-session-icon-button:disabled {
 	opacity: 0.45;
 	cursor: not-allowed;
 }
 
+.ai-draft-bench-session-history-select {
+	min-width: 150px;
+	max-width: 220px;
+}
 
 /* ==========================================================================
    AI Draft Bench: entries

@@ -1,3 +1,4 @@
+import { setIcon, setTooltip } from "obsidian";
 import { PLUGIN_DISPLAY } from "../config/plugin-display";
 import { AiDraftBenchSessionListItem } from "../types/ai-writing-buddy-plugin-data";
 
@@ -8,7 +9,6 @@ type DraftBenchHeaderRendererOptions = {
 	onStartNewSession: () => void;
 	onRestoreSession: (sessionId: string) => void;
 };
-
 export class DraftBenchHeaderRenderer {
 	render(container: HTMLElement, options: DraftBenchHeaderRendererOptions): void {
 		const headerEl = container.createEl("div", {
@@ -22,9 +22,10 @@ export class DraftBenchHeaderRenderer {
 		this.renderTitle(headerTopEl);
 		this.renderActions(headerTopEl, options);
 
-		headerEl.createEl("p", {
-			text: PLUGIN_DISPLAY.headerDescription,
-		});
+		//	May add this back in IF wanted later.
+		//		headerEl.createEl("p", {
+		//			text: PLUGIN_DISPLAY.headerDescription,
+		//		});
 	}
 
 	private renderTitle(headerTopEl: HTMLElement): void {
@@ -50,21 +51,31 @@ export class DraftBenchHeaderRenderer {
 		this.renderSessionHistory(actionsEl, options);
 
 		const newSessionButton = actionsEl.createEl("button", {
-			cls: "ai-draft-bench-session-button",
-			text: "Start a new session",
+			cls: "ai-draft-bench-session-icon-button",
+			attr: {
+				type: "button",
+				"aria-label": "Start a new session",
+			},
 		});
-		newSessionButton.type = "button";
-		newSessionButton.title = "Start a new session";
+
+		setIcon(newSessionButton, "plus");
+		setTooltip(newSessionButton, "Start a new session");
+
 		newSessionButton.addEventListener("click", () => {
 			options.onStartNewSession();
 		});
 
 		const clearButton = actionsEl.createEl("button", {
-			cls: "ai-draft-bench-session-button",
-			text: "Clear the current session",
+			cls: "ai-draft-bench-session-icon-button",
+			attr: {
+				type: "button",
+				"aria-label": "Clear the current session",
+			},
 		});
-		clearButton.type = "button";
-		clearButton.title = "Clear the current session";
+
+		setIcon(clearButton, "eraser");
+		setTooltip(clearButton, "Clear the current session");
+
 		clearButton.disabled = !options.hasEntries;
 		clearButton.addEventListener("click", () => {
 			options.onClearSession();
