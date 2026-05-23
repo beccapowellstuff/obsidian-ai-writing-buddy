@@ -6,6 +6,7 @@ import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
 import type { AiDraftBenchMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 import type { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
 import { createPlaceholderResponse } from "../utils/create-placeholder-response";
+import { formatProviderErrorMessage } from "../utils/format-provider-error-message";
 
 type SessionChangeHandler = (scrollToBottom: boolean) => void;
 type SessionSaveHandler = (entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary) => void;
@@ -106,7 +107,7 @@ export class DraftBenchSessionController {
 		} catch (error) {
 			console.error("AI Draft Bench selection response failed", error);
 
-			entry.response = createPlaceholderResponse(["AI provider error.", "", this.getErrorMessage(error), "", "Check your provider settings, server address, and selected model."].join("\n"));
+			entry.response = createPlaceholderResponse(["AI provider error.", "", formatProviderErrorMessage(error)].join("\n"));
 		}
 
 		this.refreshMemorySummary();
@@ -153,7 +154,7 @@ export class DraftBenchSessionController {
 		} catch (error) {
 			console.error("AI Draft Bench chat response failed", error);
 
-			entry.response = createPlaceholderResponse(["AI provider error.", "", this.getErrorMessage(error), "", "Check your provider settings, server address, and selected model."].join("\n"));
+			entry.response = createPlaceholderResponse(["AI provider error.", "", formatProviderErrorMessage(error)].join("\n"));
 		}
 
 		this.refreshMemorySummary();
@@ -181,13 +182,5 @@ export class DraftBenchSessionController {
 		}
 
 		return `${text.slice(0, 87)}...`;
-	}
-
-	private getErrorMessage(error: unknown): string {
-		if (error instanceof Error && error.message.trim()) {
-			return error.message.trim();
-		}
-
-		return "Unknown provider error.";
 	}
 }
