@@ -146,4 +146,23 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 		highlightChanges: false,
 		temperature: 0.7,
 	},
+
+	{
+		id: "humanise",
+		name: "Humanise",
+		description: "Rewrite the selected text so it feels more natural, human, and less AI-generated.",
+		scope: "selection",
+		prompt: [
+			"Reduce common AI tells such as overly neat structure, generic phrasing, repetitive emphasis, excessive polish, unnatural transitions, and overused em dashes.",
+			"Use em dashes sparingly. Keep one only if it genuinely improves the rhythm or meaning of the sentence.",
+			"Do not use em dashes as a default way to join thoughts or add dramatic emphasis.",
+			"Where an em dash feels unnecessary, replace it with a comma, full stop, colon, semicolon, or a cleaner sentence structure.",
+		].join("\n"),
+		returnsReplacementTextOnly: true,
+		isBuiltIn: true,
+		createdAt: BUILT_IN_TEMPLATE_CREATED_AT,
+		updatedAt: BUILT_IN_TEMPLATE_CREATED_AT,
+		highlightChanges: true,
+		temperature: 0.2,
+	},
 ];

@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 
-$VaultPluginPath = "H:\- ! Creations\- !TP Work\- - ! STORIES\Story Ideas\Story Ideas\.obsidian\plugins\obsidian-ai-draft-bench"
+$VaultPluginPath = "H:\- ! Creations\- !TP Work\- - ! STORIES\Story Ideas\Story Ideas\.obsidian\plugins\obsidian-ai-writing-buddy"
 
 Write-Host "Deploying AI Draft Bench to Obsidian vault..."
 Write-Host "Project: $ProjectRoot"

@@ -11,7 +11,7 @@ export class MockAiResponseService implements AiResponseService {
 		return {
 			text: `Fake AI response for: ${request.instruction}`,
 			createdAt: new Date().toISOString(),
-			isPlaceholder: true,
+			isPlaceholder: false,
 		};
 	}
 
@@ -24,14 +24,14 @@ export class MockAiResponseService implements AiResponseService {
 			return {
 				text: `Mock follow-up response to "${replyContext}": ${request.message}`,
 				createdAt: new Date().toISOString(),
-				isPlaceholder: true,
+				isPlaceholder: false,
 			};
 		}
 
 		return {
 			text: `Mock chat response: ${request.message}`,
 			createdAt: new Date().toISOString(),
-			isPlaceholder: true,
+			isPlaceholder: false,
 		};
 	}
 

@@ -18,11 +18,13 @@ import { SavedSessionsModal } from "../modals/saved-sessions-modal";
 export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
 
 type SessionSaveHandler = (entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary) => void;
-type NewSessionHandler = () => void;
+type NewSessionHandler = (sessionTitle?: string) => void;
 type SessionListProvider = () => AiDraftBenchSessionListItem[];
 type RestoreSessionHandler = (sessionId: string) => AiDraftBenchCurrentSessionData | null;
 type DeleteSavedSessionHandler = (sessionId: string) => AiDraftBenchSessionListItem[];
 type SavedSessionsProvider = () => AiDraftBenchCurrentSessionData[];
+type CurrentSessionTitleProvider = () => string | undefined;
+type RenameSavedSessionHandler = (sessionId: string, title: string) => AiDraftBenchCurrentSessionData[];
 
 export class AiDraftBenchView extends ItemView {
 	private readonly sessionController: DraftBenchSessionController;
@@ -35,7 +37,7 @@ export class AiDraftBenchView extends ItemView {
 
 	constructor(
 		leaf: WorkspaceLeaf,
-		private readonly aiResponseService: AiResponseService,
+		private readonly getAiResponseService: () => AiResponseService,
 		private readonly settings: AiDraftBenchSettings,
 		initialEntries: AiDraftBenchEntry[],
 		initialMemorySummary: AiDraftBenchMemorySummary | undefined,
@@ -45,21 +47,23 @@ export class AiDraftBenchView extends ItemView {
 		private readonly onRestoreSession: RestoreSessionHandler,
 		private readonly onDeleteSavedSession: DeleteSavedSessionHandler,
 		private readonly onGetSavedSessions: SavedSessionsProvider,
+		private readonly onRenameSavedSession: RenameSavedSessionHandler,
+		private readonly getCurrentSessionTitle: CurrentSessionTitleProvider,
 	) {
 		super(leaf);
 
 		this.sessionController = new DraftBenchSessionController(
-			this.aiResponseService,
+			this.getAiResponseService,
 			(scrollToBottom) => {
-				this.render();
-
 				if (scrollToBottom) {
+					this.render();
 					this.scrollToBottom();
 					return;
 				}
 
 				this.renderPreservingScroll();
 			},
+
 			onSaveSession,
 			onNewSession,
 			this.settings,
@@ -138,6 +142,7 @@ export class AiDraftBenchView extends ItemView {
 
 		this.headerRenderer.render(container, {
 			hasEntries: this.sessionController.hasEntries(),
+			currentSessionTitle: this.getCurrentSessionTitle(),
 			sessionListItems: this.getSessionListItems(),
 			onClearSession: () => {
 				this.clearCurrentSession();
@@ -195,9 +200,19 @@ export class AiDraftBenchView extends ItemView {
 			return;
 		}
 
-		new ConfirmNewSessionModal(this.app, () => {
-			this.sessionController.startNewSession();
+		new ConfirmNewSessionModal(this.app, this.getDefaultSessionTitle(), (sessionTitle) => {
+			this.sessionController.startNewSession(sessionTitle);
 		}).open();
+	}
+
+	private getDefaultSessionTitle(): string {
+		const currentSessionTitle = this.getCurrentSessionTitle();
+
+		if (currentSessionTitle?.trim()) {
+			return currentSessionTitle.trim();
+		}
+
+		return new Date().toLocaleString();
 	}
 
 	private restoreSession(sessionId: string): void {
@@ -220,6 +235,9 @@ export class AiDraftBenchView extends ItemView {
 				this.onDeleteSavedSession(sessionId);
 				return this.onGetSavedSessions();
 			},
+			onRenameSession: (sessionId, title) => {
+				return this.onRenameSavedSession(sessionId, title);
+			},
 		}).open();
 	}
 
@@ -235,7 +253,7 @@ export class AiDraftBenchView extends ItemView {
 		setTooltip(scrollButtonEl, "Scroll to latest response");
 
 		scrollButtonEl.addEventListener("click", () => {
-			this.scrollToBottom();
+			this.smoothScrollToBottom();
 		});
 
 		entriesEl.addEventListener("scroll", () => {
@@ -258,19 +276,33 @@ export class AiDraftBenchView extends ItemView {
 	}
 
 	private scrollToBottom(): void {
-		window.setTimeout(() => {
-			const entriesEl = this.contentEl.querySelector(".ai-draft-bench-entries");
+		const entriesEl = this.contentEl.querySelector(".ai-draft-bench-entries");
 
-			if (!(entriesEl instanceof HTMLElement)) {
-				return;
-			}
+		if (!(entriesEl instanceof HTMLElement)) {
+			return;
+		}
 
-			entriesEl.scrollTo({
-				top: entriesEl.scrollHeight,
-				behavior: "smooth",
-			});
+		entriesEl.scrollTop = entriesEl.scrollHeight;
+		this.updateScrollToBottomButton(entriesEl);
 
+		window.requestAnimationFrame(() => {
+			entriesEl.scrollTop = entriesEl.scrollHeight;
 			this.updateScrollToBottomButton(entriesEl);
-		}, 0);
+		});
+	}
+
+	private smoothScrollToBottom(): void {
+		const entriesEl = this.contentEl.querySelector(".ai-draft-bench-entries");
+
+		if (!(entriesEl instanceof HTMLElement)) {
+			return;
+		}
+
+		entriesEl.scrollTo({
+			top: entriesEl.scrollHeight,
+			behavior: "smooth",
+		});
+
+		this.updateScrollToBottomButton(entriesEl);
 	}
 }

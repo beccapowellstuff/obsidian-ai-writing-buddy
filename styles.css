@@ -144,6 +144,17 @@
 	border-bottom: 1px solid var(--background-modifier-border);
 }
 
+.ai-draft-bench-session-title-input {
+	width: 100%;
+	margin-top: 4px;
+}
+
+.ai-draft-bench-session-title-hint {
+	margin-top: 6px;
+	color: var(--text-muted);
+	font-size: 0.85em;
+}
+
 .ai-draft-bench-saved-session-label {
 	min-width: 0;
 	overflow: hidden;
@@ -205,6 +216,11 @@
 .ai-draft-bench-saved-session-preview-template {
 	color: var(--text-muted);
 	font-size: 0.9em;
+}
+
+.ai-draft-bench-saved-session-rename-input {
+	min-width: 0;
+	width: 100%;
 }
 
 /* ==========================================================================

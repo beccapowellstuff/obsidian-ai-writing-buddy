@@ -4,6 +4,7 @@ import { AiDraftBenchSessionListItem } from "../types/ai-writing-buddy-plugin-da
 
 type DraftBenchHeaderRendererOptions = {
 	hasEntries: boolean;
+	currentSessionTitle?: string;
 	sessionListItems: AiDraftBenchSessionListItem[];
 	onClearSession: () => void;
 	onStartNewSession: () => void;
@@ -93,7 +94,7 @@ export class DraftBenchHeaderRenderer {
 		});
 
 		sessionSelect.createEl("option", {
-			text: "Open a previous session",
+			text: options.currentSessionTitle?.trim() || "Open a previous session",
 			value: "",
 		});
 

@@ -9,7 +9,7 @@ import { createPlaceholderResponse } from "../utils/create-placeholder-response"
 
 type SessionChangeHandler = (scrollToBottom: boolean) => void;
 type SessionSaveHandler = (entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary) => void;
-type NewSessionHandler = () => void;
+type NewSessionHandler = (sessionTitle?: string) => void;
 
 export class DraftBenchSessionController {
 	private entries: AiDraftBenchEntry[];
@@ -19,7 +19,7 @@ export class DraftBenchSessionController {
 	private readonly sessionSummaryService: DraftBenchSessionSummaryService;
 
 	constructor(
-		private readonly aiResponseService: AiResponseService,
+		private readonly getAiResponseService: () => AiResponseService,
 		private readonly onChange: SessionChangeHandler,
 		private readonly onSave: SessionSaveHandler,
 		private readonly onNewSession: NewSessionHandler,
@@ -49,11 +49,11 @@ export class DraftBenchSessionController {
 		this.onChange(false);
 	}
 
-	startNewSession(): void {
+	startNewSession(sessionTitle?: string): void {
 		this.entries = [];
 		this.replyToEntryId = null;
 		this.memorySummary = undefined;
-		this.onNewSession();
+		this.onNewSession(sessionTitle);
 		this.onChange(false);
 	}
 
@@ -102,7 +102,7 @@ export class DraftBenchSessionController {
 		this.onChange(true);
 
 		try {
-			entry.response = await this.aiResponseService.createSelectionResponse(request);
+			entry.response = await this.getAiResponseService().createSelectionResponse(request);
 		} catch (error) {
 			console.error("AI Draft Bench selection response failed", error);
 
@@ -144,7 +144,7 @@ export class DraftBenchSessionController {
 		this.onChange(true);
 
 		try {
-			entry.response = await this.aiResponseService.createChatResponse({
+			entry.response = await this.getAiResponseService().createChatResponse({
 				message: trimmedMessage,
 				replyToEntry,
 				recentEntries,

@@ -76,10 +76,10 @@ export class AiDraftBenchPluginDataService {
 		}));
 	}
 
-	startNewSession(currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[]): SessionSwitchResult {
+	startNewSession(currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[], sessionTitle?: string): SessionSwitchResult {
 		return {
 			currentSession: this.createEmptyCurrentSession(),
-			savedSessions: this.archiveSession(currentSession, savedSessions),
+			savedSessions: this.archiveSession(currentSession, savedSessions, sessionTitle),
 		};
 	}
 
@@ -102,12 +102,35 @@ export class AiDraftBenchPluginDataService {
 		return savedSessions.filter((session) => session.id !== sessionId);
 	}
 
-	private archiveSession(currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[]): AiDraftBenchCurrentSessionData[] {
+	renameSavedSession(sessionId: string, title: string, savedSessions: AiDraftBenchCurrentSessionData[]): AiDraftBenchCurrentSessionData[] {
+		const trimmedTitle = title.trim().slice(0, 25);
+
+		return savedSessions.map((session) => {
+			if (session.id !== sessionId) {
+				return session;
+			}
+
+			return {
+				...session,
+				updatedAt: new Date().toISOString(),
+				userTitle: trimmedTitle || undefined,
+			};
+		});
+	}
+
+	private archiveSession(currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[], sessionTitle?: string): AiDraftBenchCurrentSessionData[] {
 		if (currentSession.entryCount === 0 && currentSession.entries.length === 0) {
 			return savedSessions;
 		}
 
-		return [currentSession, ...savedSessions.filter((session) => session.id !== currentSession.id)];
+		const trimmedTitle = sessionTitle?.trim().slice(0, 25);
+		const sessionToArchive: AiDraftBenchCurrentSessionData = {
+			...currentSession,
+			updatedAt: new Date().toISOString(),
+			userTitle: trimmedTitle || currentSession.userTitle,
+		};
+
+		return [sessionToArchive, ...savedSessions.filter((session) => session.id !== currentSession.id)];
 	}
 
 	private getSavedSettings(savedData: SavedPluginData): Partial<AiDraftBenchSettings> | null {

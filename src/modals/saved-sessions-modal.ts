@@ -7,10 +7,12 @@ type SavedSessionsModalOptions = {
 	sessions: AiDraftBenchCurrentSessionData[];
 	onOpenSession: (sessionId: string) => void;
 	onDeleteSession: (sessionId: string) => AiDraftBenchCurrentSessionData[];
+	onRenameSession: (sessionId: string, title: string) => AiDraftBenchCurrentSessionData[];
 };
 
 export class SavedSessionsModal extends Modal {
 	private sessions: AiDraftBenchCurrentSessionData[];
+	private editingSessionId: string | null = null;
 
 	constructor(
 		app: App,
@@ -52,6 +54,64 @@ export class SavedSessionsModal extends Modal {
 				cls: "ai-draft-bench-saved-session-row",
 			});
 
+			if (this.editingSessionId === session.id) {
+				const inputEl = rowEl.createEl("input", {
+					type: "text",
+					value: session.userTitle ?? "",
+					cls: "ai-draft-bench-saved-session-rename-input",
+				});
+
+				inputEl.maxLength = 25;
+
+				const actionsEl = rowEl.createEl("div", {
+					cls: "ai-draft-bench-saved-session-actions",
+				});
+
+				const saveButton = actionsEl.createEl("button", {
+					text: "Save",
+					cls: "mod-cta",
+				});
+
+				saveButton.type = "button";
+				saveButton.addEventListener("click", () => {
+					this.sessions = this.options.onRenameSession(session.id, inputEl.value);
+					this.editingSessionId = null;
+					this.renderContent();
+				});
+
+				const cancelButton = actionsEl.createEl("button", {
+					text: "Cancel",
+				});
+
+				cancelButton.type = "button";
+				cancelButton.addEventListener("click", () => {
+					this.editingSessionId = null;
+					this.renderContent();
+				});
+
+				inputEl.addEventListener("keydown", (event) => {
+					if (event.key === "Enter") {
+						event.preventDefault();
+						this.sessions = this.options.onRenameSession(session.id, inputEl.value);
+						this.editingSessionId = null;
+						this.renderContent();
+					}
+
+					if (event.key === "Escape") {
+						event.preventDefault();
+						this.editingSessionId = null;
+						this.renderContent();
+					}
+				});
+
+				window.setTimeout(() => {
+					inputEl.focus();
+					inputEl.select();
+				}, 0);
+
+				continue;
+			}
+
 			rowEl.createEl("div", {
 				cls: "ai-draft-bench-saved-session-label",
 				text: this.getSessionLabel(session),
@@ -59,6 +119,16 @@ export class SavedSessionsModal extends Modal {
 
 			const actionsEl = rowEl.createEl("div", {
 				cls: "ai-draft-bench-saved-session-actions",
+			});
+
+			const renameButton = actionsEl.createEl("button", {
+				text: "Rename",
+			});
+
+			renameButton.type = "button";
+			renameButton.addEventListener("click", () => {
+				this.editingSessionId = session.id;
+				this.renderContent();
 			});
 
 			const previewButton = actionsEl.createEl("button", {

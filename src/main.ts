@@ -33,7 +33,7 @@ export default class AiDraftBenchPlugin extends Plugin {
 		this.registerView(AI_DRAFT_BENCH_VIEW_TYPE, (leaf) => {
 			return new AiDraftBenchView(
 				leaf,
-				createAiResponseService(this.settings),
+				() => createAiResponseService(this.settings),
 				this.settings,
 				this.currentSession.entries,
 				this.currentSession.memorySummary,
@@ -41,8 +41,8 @@ export default class AiDraftBenchPlugin extends Plugin {
 					this.currentSession = this.pluginDataService.withUpdatedCurrentSessionEntries(this.currentSession, entries, memorySummary);
 					void this.savePluginData();
 				},
-				() => {
-					const result = this.pluginDataService.startNewSession(this.currentSession, this.savedSessions);
+				(sessionTitle) => {
+					const result = this.pluginDataService.startNewSession(this.currentSession, this.savedSessions, sessionTitle);
 					this.currentSession = result.currentSession;
 					this.savedSessions = result.savedSessions;
 					void this.savePluginData();
@@ -68,6 +68,13 @@ export default class AiDraftBenchPlugin extends Plugin {
 					return this.pluginDataService.getSessionListItems(this.savedSessions);
 				},
 				() => this.savedSessions,
+				(sessionId, title): AiDraftBenchCurrentSessionData[] => {
+					this.savedSessions = this.pluginDataService.renameSavedSession(sessionId, title, this.savedSessions);
+					void this.savePluginData();
+
+					return this.savedSessions;
+				},
+				() => this.currentSession.userTitle,
 			);
 		});
 
