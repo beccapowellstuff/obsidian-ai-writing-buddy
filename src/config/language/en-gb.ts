@@ -6,7 +6,7 @@ export const INTERFACE_TEXT = {
 	},
 	header: {
 		kicker: "Writing assistant",
-		description: "Review draft suggestions before applying them to your note.",
+		description: "Review AI draft suggestions before applying them to your note.",
 		startNewSession: "Start a new session",
 		clearCurrentSession: "Clear the current session",
 		openPreviousSession: "Open a previous session",
@@ -205,7 +205,7 @@ export const INTERFACE_TEXT = {
 			].join("\n"),
 		providerRequestTimedOut: (technicalMessage: string): string =>
 			[
-				"The AI provider took too long to respond.",
+				"The AI provider is asleep and took too long to respond.",
 				"",
 				"Check that the provider is running, the selected model is loaded, and the timeout setting is high enough for your model.",
 				"",
