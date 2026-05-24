@@ -25,8 +25,7 @@ export const INTERFACE_TEXT = {
 		cancel: "Cancel",
 		deleteCurrentQuestion: "Delete current session and start a new one?",
 		deleteSavedQuestion: "Delete saved session?",
-		sessionLabel: (dateLabel: string | null, entryCount: number): string =>
-			dateLabel ? `${dateLabel} \u00b7 ${entryCount} entries` : `${entryCount} entries`,
+		sessionLabel: (dateLabel: string | null, entryCount: number): string => (dateLabel ? `${dateLabel} \u00b7 ${entryCount} entries` : `${entryCount} entries`),
 		newSessionTitle: "Start new session?",
 		newSessionDescription: "This will save the session you are currently working in, then open a blank new session.",
 		savedSessionName: "Saved session name:",
@@ -36,8 +35,7 @@ export const INTERFACE_TEXT = {
 		clearDescription: "This removes the visible entries from the current panel.",
 		clearSession: "Clear session",
 		deleteTitle: "Delete saved session?",
-		deleteDescription: (sessionLabel: string): string =>
-			`This will permanently delete "${sessionLabel}" from your saved sessions. Your current session will not be changed.`,
+		deleteDescription: (sessionLabel: string): string => `This will permanently delete "${sessionLabel}" from your saved sessions. Your current session will not be changed.`,
 		deleteSavedSession: "Delete saved session",
 		previewTitle: "Saved session preview",
 		close: "Close",
@@ -188,30 +186,28 @@ export const INTERFACE_TEXT = {
 				`Technical detail: ${technicalMessage}`,
 			].join("\n"),
 		emptyProviderResponse: (technicalMessage: string): string =>
-			[
-				"The AI provider replied, but did not return any text.",
-				"",
-				"Try again, or check that the selected model supports chat completions.",
-				"",
-				`Technical detail: ${technicalMessage}`,
-			].join("\n"),
-		rejectedProviderRequest: (technicalMessage: string): string =>
-			["The AI provider rejected the request.", "", "Check the server address, selected model, and API key if your provider needs one.", "", `Technical detail: ${technicalMessage}`].join(
+			["The AI provider replied, but did not return any text.", "", "Try again, or check that the selected model supports chat completions.", "", `Technical detail: ${technicalMessage}`].join(
 				"\n",
 			),
+		rejectedProviderRequest: (technicalMessage: string): string =>
+			["The AI provider rejected the request.", "", "Check the server address, selected model, and API key if your provider needs one.", "", `Technical detail: ${technicalMessage}`].join("\n"),
 		unreachableProvider: (technicalMessage: string): string =>
-			[
-				"AI Writing Buddy could not reach the AI provider.",
-				"",
-				"Check that the provider is running and that the server address is correct.",
-				"",
-				`Technical detail: ${technicalMessage}`,
-			].join("\n"),
+			["AI Writing Buddy could not reach the AI provider.", "", "Check that the provider is running and that the server address is correct.", "", `Technical detail: ${technicalMessage}`].join(
+				"\n",
+			),
 		responseFailed: (technicalMessage: string): string =>
 			[
 				"The AI provider failed while creating a response.",
 				"",
 				"Check your provider settings, server address, selected model, and API key if needed.",
+				"",
+				`Technical detail: ${technicalMessage}`,
+			].join("\n"),
+		providerRequestTimedOut: (technicalMessage: string): string =>
+			[
+				"The AI provider took too long to respond.",
+				"",
+				"Check that the provider is running, the selected model is loaded, and the timeout setting is high enough for your model.",
 				"",
 				`Technical detail: ${technicalMessage}`,
 			].join("\n"),

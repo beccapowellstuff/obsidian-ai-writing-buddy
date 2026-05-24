@@ -7,6 +7,7 @@ import { AiChatRequest, AiResponseService } from "./ai-response-service";
 import { ConversationMemoryStrategyService } from "./conversation-memory-strategy-service";
 import { AiWritingBuddyChatMessage, AiWritingBuddyPromptBuilder } from "./prompt-builder";
 import { AiWritingBuddyPromptSizeGuard } from "./prompt-size-guard";
+import { withTimeout } from "../utils/with-timeout";
 
 type OpenAiChatCompletionResponse = {
 	choices?: Array<{
@@ -70,18 +71,22 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 			headers.Authorization = `Bearer ${this.settings.apiKey.trim()}`;
 		}
 
-		const response = await requestUrl({
-			url,
-			method: "POST",
-			headers,
-			body: JSON.stringify({
-				model: this.settings.modelName.trim(),
-				messages,
-				temperature: options.temperature,
-				stream: false,
+		const response = await withTimeout(
+			requestUrl({
+				url,
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					model: this.settings.modelName.trim(),
+					messages,
+					temperature: options.temperature,
+					stream: false,
+				}),
+				throw: false,
 			}),
-			throw: false,
-		});
+			this.settings.requestTimeoutMs,
+			`AI provider request timed out after ${this.settings.requestTimeoutMs}ms.`,
+		);
 
 		if (response.status < 200 || response.status >= 300) {
 			throw new Error(`AI provider request failed with status ${response.status}.`);

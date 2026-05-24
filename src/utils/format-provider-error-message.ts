@@ -20,6 +20,10 @@ export function formatProviderErrorMessage(error: unknown): string {
 		return INTERFACE_TEXT.errors.rejectedProviderRequest(technicalMessage);
 	}
 
+	if (lowerMessage.includes("timed out")) {
+		return INTERFACE_TEXT.errors.providerRequestTimedOut(technicalMessage);
+	}
+
 	if (lowerMessage.includes("failed to fetch") || lowerMessage.includes("network") || lowerMessage.includes("econnrefused") || lowerMessage.includes("connection refused")) {
 		return INTERFACE_TEXT.errors.unreachableProvider(technicalMessage);
 	}
