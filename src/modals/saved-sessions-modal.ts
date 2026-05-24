@@ -1,7 +1,8 @@
-import { App, Modal } from "obsidian";
+import { App, Modal, Notice } from "obsidian";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { AiWritingBuddyCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
 import { SavedSessionPreviewModal } from "./saved-session-preview-modal";
+import { AiWritingBuddySessionExportService } from "../services/session-export-service";
 
 type SavedSessionsModalOptions = {
 	currentSession: AiWritingBuddyCurrentSessionData | null;
@@ -149,6 +150,15 @@ export class SavedSessionsModal extends Modal {
 			}).open();
 		});
 
+		const saveToNoteButton = actionsEl.createEl("button", {
+			text: INTERFACE_TEXT.sessionManager.saveToNote,
+		});
+
+		saveToNoteButton.type = "button";
+		saveToNoteButton.addEventListener("click", () => {
+			void this.saveSessionToNote(session);
+		});
+
 		if (kind === "saved") {
 			const openButton = actionsEl.createEl("button", {
 				text: INTERFACE_TEXT.sessionManager.open,
@@ -271,6 +281,15 @@ export class SavedSessionsModal extends Modal {
 			this.deletingSessionId = null;
 			this.renderContent();
 		});
+	}
+
+	private async saveSessionToNote(session: AiWritingBuddyCurrentSessionData): Promise<void> {
+		try {
+			await new AiWritingBuddySessionExportService(this.app).saveSessionToNote(session, this.getSessionLabel(session));
+		} catch (error) {
+			console.error(INTERFACE_TEXT.sessionManager.saveToNoteFailedConsole, error);
+			new Notice(INTERFACE_TEXT.sessionManager.saveToNoteFailed);
+		}
 	}
 
 	private getSessionLabel(session: AiWritingBuddyCurrentSessionData): string {
