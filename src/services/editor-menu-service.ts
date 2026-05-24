@@ -2,6 +2,7 @@ import { App, Editor, EditorPosition, EventRef, MarkdownView, Menu, Notice, Plug
 import { AiWritingBuddyPromptBuilder } from "./prompt-builder";
 import { AiPromptModal, AiPromptModalSubmitValue } from "../modals/ai-prompt-modal";
 import { AiWritingBuddySettings } from "../config/default-settings";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import { AiWritingBuddyViewService } from "./view-service";
 
 type EditorMenuWorkspace = {
@@ -42,13 +43,13 @@ export class EditorMenuService {
 		}
 
 		menu.addItem((item) => {
-			item.setTitle("Ask AI about selection")
+			item.setTitle(INTERFACE_TEXT.selectionPrompt.askAboutSelection)
 				.setIcon("sparkles")
 				.onClick(() => {
 					const sourcePath = view.file?.path;
 
 					if (!sourcePath) {
-						new Notice("Could not find source note for selected text.");
+						new Notice(INTERFACE_TEXT.notices.selectedTextSourceNoteNotFound);
 						return;
 					}
 

@@ -1,3 +1,5 @@
+import { INTERFACE_TEXT } from "../config/interface-text";
+
 type SendChatHandler = (message: string) => void;
 type CancelReplyHandler = () => void;
 
@@ -25,14 +27,14 @@ export class AiWritingBuddyChatComposerRenderer {
 		const inputEl = composerEl.createEl("textarea", {
 			cls: "ai-writing-buddy-chat-input",
 			attr: {
-				placeholder: "Ask about your draft...",
+				placeholder: INTERFACE_TEXT.chat.placeholder,
 				rows: "2",
 			},
 		});
 
 		const sendButtonEl = composerEl.createEl("button", {
 			cls: "ai-writing-buddy-chat-send",
-			text: "Send",
+			text: INTERFACE_TEXT.chat.send,
 		});
 
 		const updateSendButtonState = (): void => {
@@ -88,7 +90,7 @@ export class AiWritingBuddyChatComposerRenderer {
 		});
 
 		const cancelButtonEl = replyEl.createEl("button", {
-			text: "Cancel",
+			text: INTERFACE_TEXT.chat.cancel,
 			cls: "ai-writing-buddy-reply-cancel",
 		});
 

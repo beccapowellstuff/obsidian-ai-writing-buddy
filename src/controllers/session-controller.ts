@@ -1,4 +1,5 @@
 import type { AiWritingBuddySettings } from "../config/default-settings";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import type { AiResponseService } from "../services/ai-response-service";
 import { AiWritingBuddySessionHistoryTrimmer } from "../services/session-history-trimmer";
 import { AiWritingBuddySessionSummaryService } from "../services/session-summary-service";
@@ -83,10 +84,10 @@ export class AiWritingBuddySessionController {
 		const replyToEntry = this.entries.find((entry) => entry.id === this.replyToEntryId);
 
 		if (!replyToEntry) {
-			return "Replying to an earlier draft";
+			return INTERFACE_TEXT.chat.replyingToEarlierDraft;
 		}
 
-		return `Replying to: ${this.getEntrySnippet(replyToEntry)}`;
+		return INTERFACE_TEXT.chat.replyingTo(this.getEntrySnippet(replyToEntry));
 	}
 
 	async addSelectionEntry(request: AiWritingBuddyRequest): Promise<void> {
@@ -94,7 +95,7 @@ export class AiWritingBuddySessionController {
 			id: crypto.randomUUID(),
 			type: "selection",
 			request,
-			response: createPlaceholderResponse("Thinking..."),
+			response: createPlaceholderResponse(INTERFACE_TEXT.responses.thinking),
 			createdAt: new Date().toISOString(),
 		};
 
@@ -107,7 +108,7 @@ export class AiWritingBuddySessionController {
 		} catch (error) {
 			console.error("AI Writing Buddy selection response failed", error);
 
-			entry.response = createPlaceholderResponse(["AI provider error.", "", formatProviderErrorMessage(error)].join("\n"));
+			entry.response = createPlaceholderResponse([INTERFACE_TEXT.responses.providerErrorHeading, "", formatProviderErrorMessage(error)].join("\n"));
 		}
 
 		this.refreshMemorySummary();
@@ -133,7 +134,7 @@ export class AiWritingBuddySessionController {
 			id: crypto.randomUUID(),
 			type: "chat",
 			message: trimmedMessage,
-			response: createPlaceholderResponse("Thinking..."),
+			response: createPlaceholderResponse(INTERFACE_TEXT.responses.thinking),
 			createdAt: new Date().toISOString(),
 			replyToEntryId: replyToEntryId ?? undefined,
 			replyToSnippet,
@@ -154,7 +155,7 @@ export class AiWritingBuddySessionController {
 		} catch (error) {
 			console.error("AI Writing Buddy chat response failed", error);
 
-			entry.response = createPlaceholderResponse(["AI provider error.", "", formatProviderErrorMessage(error)].join("\n"));
+			entry.response = createPlaceholderResponse([INTERFACE_TEXT.responses.providerErrorHeading, "", formatProviderErrorMessage(error)].join("\n"));
 		}
 
 		this.refreshMemorySummary();
@@ -174,7 +175,7 @@ export class AiWritingBuddySessionController {
 		const text = entry.response.text.replace(/\s+/g, " ").trim();
 
 		if (!text) {
-			return "Empty response";
+			return INTERFACE_TEXT.chat.emptyResponse;
 		}
 
 		if (text.length <= 90) {

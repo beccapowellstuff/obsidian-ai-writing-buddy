@@ -1,4 +1,5 @@
 import { App, Modal } from "obsidian";
+import { INTERFACE_TEXT } from "../config/interface-text";
 
 export class ConfirmDeleteSavedSessionModal extends Modal {
 	constructor(
@@ -14,11 +15,11 @@ export class ConfirmDeleteSavedSessionModal extends Modal {
 		contentEl.empty();
 
 		contentEl.createEl("h2", {
-			text: "Delete saved session?",
+			text: INTERFACE_TEXT.sessionManager.deleteTitle,
 		});
 
 		contentEl.createEl("p", {
-			text: `This will permanently delete "${this.sessionLabel}" from your saved sessions. Your current session will not be changed.`,
+			text: INTERFACE_TEXT.sessionManager.deleteDescription(this.sessionLabel),
 		});
 
 		const buttonRow = contentEl.createEl("div", {
@@ -26,7 +27,7 @@ export class ConfirmDeleteSavedSessionModal extends Modal {
 		});
 
 		const cancelButton = buttonRow.createEl("button", {
-			text: "Cancel",
+			text: INTERFACE_TEXT.sessionManager.cancel,
 		});
 
 		cancelButton.type = "button";
@@ -35,7 +36,7 @@ export class ConfirmDeleteSavedSessionModal extends Modal {
 		});
 
 		const deleteButton = buttonRow.createEl("button", {
-			text: "Delete saved session",
+			text: INTERFACE_TEXT.sessionManager.deleteSavedSession,
 			cls: "mod-warning",
 		});
 

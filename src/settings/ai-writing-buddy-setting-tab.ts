@@ -1,6 +1,6 @@
 import { App, PluginSettingTab } from "obsidian";
 import type AiWritingBuddyPlugin from "../main";
-import { PLUGIN_DISPLAY } from "../config/plugin-display";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import { TemplateSettingsRenderer } from "./template-settings-renderer";
 import { ConnectionSettingsRenderer } from "./connection-settings-renderer";
 import { PromptSettingsRenderer } from "./prompt-settings-renderer";
@@ -27,11 +27,11 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 
 		introEl.createEl("div", {
 			cls: "ai-writing-buddy-settings-title",
-			text: PLUGIN_DISPLAY.name,
+			text: INTERFACE_TEXT.app.name,
 		});
 
 		introEl.createEl("p", {
-			text: `Connect your model provider and tune how ${PLUGIN_DISPLAY.name} helps with your notes.`,
+			text: INTERFACE_TEXT.app.settingsIntroduction(INTERFACE_TEXT.app.name),
 		});
 
 		new ConnectionSettingsRenderer(this.plugin, this.availableModels, () => this.display()).render(containerEl);

@@ -1,5 +1,6 @@
 import { Plugin, requestUrl } from "obsidian";
 import { AiWritingBuddySettings } from "./config/default-settings";
+import { INTERFACE_TEXT } from "./config/interface-text";
 import { PLUGIN_DISPLAY } from "./config/plugin-display";
 import { AiWritingBuddySettingTab } from "./settings/ai-writing-buddy-setting-tab";
 import { AiWritingBuddyPluginDataService } from "./services/ai-writing-buddy-plugin-data-service";
@@ -91,7 +92,7 @@ export default class AiWritingBuddyPlugin extends Plugin {
 			);
 		});
 
-		this.addRibbonIcon(PLUGIN_DISPLAY.ribbonIcon, PLUGIN_DISPLAY.ribbonTooltip, () => {
+		this.addRibbonIcon(PLUGIN_DISPLAY.ribbonIcon, INTERFACE_TEXT.app.ribbonTooltip, () => {
 			void this.aiWritingBuddyViewService.openView();
 		});
 
@@ -172,9 +173,9 @@ export default class AiWritingBuddyPlugin extends Plugin {
 		}
 
 		if (this.settings.provider === "mock") {
-			return "Mock provider test succeeded.";
+			return INTERFACE_TEXT.errors.mockProviderTestSucceeded;
 		}
 
-		return "Connection test succeeded.";
+		return INTERFACE_TEXT.errors.connectionTestSucceeded;
 	}
 }

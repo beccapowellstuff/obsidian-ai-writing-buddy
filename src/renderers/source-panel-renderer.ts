@@ -1,4 +1,5 @@
 import { AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
+import { INTERFACE_TEXT } from "../config/interface-text";
 
 export class AiWritingBuddySourcePanelRenderer {
 	render(container: HTMLElement, entry: AiWritingBuddySelectionEntry): void {
@@ -8,7 +9,7 @@ export class AiWritingBuddySourcePanelRenderer {
 
 		sourceEl.createEl("div", {
 			cls: "ai-writing-buddy-source-label",
-			text: "Source",
+			text: INTERFACE_TEXT.entries.source,
 		});
 
 		sourceEl.createEl("div", {
@@ -21,7 +22,7 @@ export class AiWritingBuddySourcePanelRenderer {
 		});
 
 		selectedDetailsEl.createEl("summary", {
-			text: "Selected text",
+			text: INTERFACE_TEXT.entries.selectedText,
 		});
 
 		selectedDetailsEl.createEl("div", {

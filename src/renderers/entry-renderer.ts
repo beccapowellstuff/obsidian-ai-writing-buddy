@@ -1,4 +1,5 @@
 import { App, setIcon, setTooltip } from "obsidian";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import { ClipboardService } from "../services/clipboard-service";
 import { SelectionEditService } from "../services/selection-edit-service";
 import { AiWritingBuddyChatEntry, AiWritingBuddyEntry, AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
@@ -44,7 +45,7 @@ export class AiWritingBuddyEntryRenderer {
 		});
 
 		entryEl.createEl("h3", {
-			text: entry.replyToEntryId ? "Follow-up" : "Chat",
+			text: entry.replyToEntryId ? INTERFACE_TEXT.entries.followUp : INTERFACE_TEXT.entries.chat,
 		});
 
 		entryEl.createEl("p", { text: entry.message });
@@ -64,7 +65,7 @@ export class AiWritingBuddyEntryRenderer {
 
 			templateTextEl.createEl("span", {
 				cls: "ai-writing-buddy-template-summary-label",
-				text: "Template:",
+				text: INTERFACE_TEXT.entries.templateLabel,
 			});
 
 			templateTextEl.createEl("span", {
@@ -76,11 +77,11 @@ export class AiWritingBuddyEntryRenderer {
 				const promptButtonEl = templateHeaderEl.createEl("button", {
 					cls: "ai-writing-buddy-action-button",
 					attr: {
-						"aria-label": "Show full prompt",
+						"aria-label": INTERFACE_TEXT.entries.showFullPrompt,
 					},
 				});
 
-				setTooltip(promptButtonEl, "Show full prompt");
+				setTooltip(promptButtonEl, INTERFACE_TEXT.entries.showFullPrompt);
 
 				const iconEl = promptButtonEl.createSpan({
 					cls: "ai-writing-buddy-action-icon",
@@ -95,7 +96,7 @@ export class AiWritingBuddyEntryRenderer {
 		}
 
 		if (entry.request.instruction.trim()) {
-			container.createEl("h3", { text: entry.request.templateName ? "Extra instruction" : "Instruction" });
+			container.createEl("h3", { text: entry.request.templateName ? INTERFACE_TEXT.entries.extraInstruction : INTERFACE_TEXT.entries.instruction });
 			container.createEl("p", { text: entry.request.instruction });
 		}
 	}

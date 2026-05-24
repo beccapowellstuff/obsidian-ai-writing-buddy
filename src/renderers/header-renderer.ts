@@ -1,5 +1,5 @@
 import { setIcon, setTooltip } from "obsidian";
-import { PLUGIN_DISPLAY } from "../config/plugin-display";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import { AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
 
 type AiWritingBuddyHeaderRendererOptions = {
@@ -26,7 +26,7 @@ export class AiWritingBuddyHeaderRenderer {
 
 		//	May add this back in IF wanted later.
 		//		headerEl.createEl("p", {
-		//			text: PLUGIN_DISPLAY.headerDescription,
+		//			text: INTERFACE_TEXT.header.description,
 		//		});
 	}
 
@@ -37,11 +37,11 @@ export class AiWritingBuddyHeaderRenderer {
 
 		titleGroupEl.createEl("div", {
 			cls: "ai-writing-buddy-header-kicker",
-			text: PLUGIN_DISPLAY.headerKicker,
+			text: INTERFACE_TEXT.header.kicker,
 		});
 
 		titleGroupEl.createEl("h2", {
-			text: PLUGIN_DISPLAY.name,
+			text: INTERFACE_TEXT.app.name,
 		});
 	}
 
@@ -57,12 +57,12 @@ export class AiWritingBuddyHeaderRenderer {
 			cls: "ai-writing-buddy-session-icon-button",
 			attr: {
 				type: "button",
-				"aria-label": "Start a new session",
+				"aria-label": INTERFACE_TEXT.header.startNewSession,
 			},
 		});
 
 		setIcon(newSessionButton, "plus");
-		setTooltip(newSessionButton, "Start a new session");
+		setTooltip(newSessionButton, INTERFACE_TEXT.header.startNewSession);
 
 		newSessionButton.addEventListener("click", () => {
 			options.onStartNewSession();
@@ -72,12 +72,12 @@ export class AiWritingBuddyHeaderRenderer {
 			cls: "ai-writing-buddy-session-icon-button",
 			attr: {
 				type: "button",
-				"aria-label": "Clear the current session",
+				"aria-label": INTERFACE_TEXT.header.clearCurrentSession,
 			},
 		});
 
 		setIcon(clearButton, "eraser");
-		setTooltip(clearButton, "Clear the current session");
+		setTooltip(clearButton, INTERFACE_TEXT.header.clearCurrentSession);
 
 		clearButton.disabled = !options.hasEntries;
 		clearButton.addEventListener("click", () => {
@@ -99,7 +99,7 @@ export class AiWritingBuddyHeaderRenderer {
 		});
 
 		sessionSelect.createEl("option", {
-			text: hasCurrentSessionTitle && currentSessionTitle ? currentSessionTitle : "Open a previous session",
+			text: hasCurrentSessionTitle && currentSessionTitle ? currentSessionTitle : INTERFACE_TEXT.header.openPreviousSession,
 			value: "",
 		});
 
@@ -124,12 +124,12 @@ export class AiWritingBuddyHeaderRenderer {
 			cls: "ai-writing-buddy-session-icon-button",
 			attr: {
 				type: "button",
-				"aria-label": "Open session manager",
+				"aria-label": INTERFACE_TEXT.header.openSessionManager,
 			},
 		});
 
 		setIcon(manageSessionsButton, "history");
-		setTooltip(manageSessionsButton, "Open session manager");
+		setTooltip(manageSessionsButton, INTERFACE_TEXT.header.openSessionManager);
 
 		manageSessionsButton.addEventListener("click", () => {
 			options.onManageSavedSessions();
@@ -144,9 +144,9 @@ export class AiWritingBuddyHeaderRenderer {
 		const updatedAt = new Date(session.updatedAt);
 
 		if (Number.isNaN(updatedAt.getTime())) {
-			return `${session.entryCount} entries`;
+			return INTERFACE_TEXT.sessionManager.sessionLabel(null, session.entryCount);
 		}
 
-		return `${updatedAt.toLocaleString()} · ${session.entryCount} entries`;
+		return INTERFACE_TEXT.sessionManager.sessionLabel(updatedAt.toLocaleString(), session.entryCount);
 	}
 }

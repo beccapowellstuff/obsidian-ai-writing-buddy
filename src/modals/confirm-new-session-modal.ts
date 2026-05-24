@@ -1,4 +1,5 @@
 import { App, Modal } from "obsidian";
+import { INTERFACE_TEXT } from "../config/interface-text";
 
 const SESSION_TITLE_MAX_LENGTH = 25;
 
@@ -16,15 +17,15 @@ export class ConfirmNewSessionModal extends Modal {
 		contentEl.empty();
 
 		contentEl.createEl("h2", {
-			text: "Start new session?",
+			text: INTERFACE_TEXT.sessionManager.newSessionTitle,
 		});
 
 		contentEl.createEl("p", {
-			text: "This will save the session you are currently working in, then open a blank new session.",
+			text: INTERFACE_TEXT.sessionManager.newSessionDescription,
 		});
 
 		contentEl.createEl("p", {
-			text: "Saved session name:",
+			text: INTERFACE_TEXT.sessionManager.savedSessionName,
 		});
 
 		const inputEl = contentEl.createEl("input", {
@@ -40,7 +41,7 @@ export class ConfirmNewSessionModal extends Modal {
 		});
 
 		const updateHint = (): void => {
-			hintEl.setText(`${inputEl.value.length}/${SESSION_TITLE_MAX_LENGTH} characters`);
+			hintEl.setText(INTERFACE_TEXT.sessionManager.characters(inputEl.value.length, SESSION_TITLE_MAX_LENGTH));
 		};
 
 		inputEl.addEventListener("input", updateHint);
@@ -51,7 +52,7 @@ export class ConfirmNewSessionModal extends Modal {
 		});
 
 		const cancelButton = buttonRow.createEl("button", {
-			text: "Cancel",
+			text: INTERFACE_TEXT.sessionManager.cancel,
 		});
 
 		cancelButton.type = "button";
@@ -60,7 +61,7 @@ export class ConfirmNewSessionModal extends Modal {
 		});
 
 		const startButton = buttonRow.createEl("button", {
-			text: "Start",
+			text: INTERFACE_TEXT.sessionManager.start,
 			cls: "mod-cta",
 		});
 

@@ -1,15 +1,16 @@
 import { Setting } from "obsidian";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import type AiWritingBuddyPlugin from "../main";
 
 export class PromptSettingsRenderer {
 	constructor(private readonly plugin: AiWritingBuddyPlugin) {}
 
 	render(containerEl: HTMLElement): void {
-		new Setting(containerEl).setName("Prompts").setHeading();
+		new Setting(containerEl).setName(INTERFACE_TEXT.settings.prompts.heading).setHeading();
 
 		new Setting(containerEl)
-			.setName("Open chat system prompt")
-			.setDesc("Used for general chat prompts that are not based on selected text.")
+			.setName(INTERFACE_TEXT.settings.prompts.openChatSystemPrompt)
+			.setDesc(INTERFACE_TEXT.settings.prompts.openChatDescription)
 			.addTextArea((text) => {
 				text.setValue(this.plugin.settings.openChatSystemPrompt).onChange(async (value) => {
 					this.plugin.settings.openChatSystemPrompt = value;
@@ -21,8 +22,8 @@ export class PromptSettingsRenderer {
 			});
 
 		new Setting(containerEl)
-			.setName("Selected text system prompt")
-			.setDesc("Used when asking the model to work with selected note text.")
+			.setName(INTERFACE_TEXT.settings.prompts.selectedTextSystemPrompt)
+			.setDesc(INTERFACE_TEXT.settings.prompts.selectedTextDescription)
 			.addTextArea((text) => {
 				text.setValue(this.plugin.settings.selectionSystemPrompt).onChange(async (value) => {
 					this.plugin.settings.selectionSystemPrompt = value;
@@ -34,8 +35,8 @@ export class PromptSettingsRenderer {
 			});
 
 		new Setting(containerEl)
-			.setName("Enable personality prompt")
-			.setDesc("Add the personality prompt to requests.")
+			.setName(INTERFACE_TEXT.settings.prompts.enablePersonalityPrompt)
+			.setDesc(INTERFACE_TEXT.settings.prompts.enablePersonalityDescription)
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.personalityEnabled).onChange(async (value) => {
 					this.plugin.settings.personalityEnabled = value;
@@ -44,8 +45,8 @@ export class PromptSettingsRenderer {
 			});
 
 		new Setting(containerEl)
-			.setName("Personality prompt")
-			.setDesc("Optional tone and style guidance added when enabled.")
+			.setName(INTERFACE_TEXT.settings.prompts.personalityPrompt)
+			.setDesc(INTERFACE_TEXT.settings.prompts.personalityDescription)
 			.addTextArea((text) => {
 				text.setValue(this.plugin.settings.personalityPrompt).onChange(async (value) => {
 					this.plugin.settings.personalityPrompt = value;

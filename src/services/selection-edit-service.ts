@@ -1,4 +1,5 @@
 import { App, Notice, TFile } from "obsidian";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 
 type ValidatedSelectionContext = {
@@ -12,7 +13,7 @@ export class SelectionEditService {
 	constructor(private readonly app: App) {}
 
 	async replaceSelection(request: AiWritingBuddyRequest, replacementText: string): Promise<void> {
-		const context = await this.getValidatedSelectionContext(request, "Replacement cancelled.");
+		const context = await this.getValidatedSelectionContext(request, INTERFACE_TEXT.notices.replacementCancelled);
 
 		if (!context) {
 			return;
@@ -22,11 +23,11 @@ export class SelectionEditService {
 
 		await this.app.vault.modify(context.file, updatedContent);
 
-		new Notice("Selection replaced.");
+		new Notice(INTERFACE_TEXT.notices.selectionReplaced);
 	}
 
 	async insertAfterSelection(request: AiWritingBuddyRequest, textToInsert: string): Promise<void> {
-		const context = await this.getValidatedSelectionContext(request, "Insert cancelled.");
+		const context = await this.getValidatedSelectionContext(request, INTERFACE_TEXT.notices.insertCancelled);
 
 		if (!context) {
 			return;
@@ -36,14 +37,14 @@ export class SelectionEditService {
 
 		await this.app.vault.modify(context.file, updatedContent);
 
-		new Notice("Response inserted after selection.");
+		new Notice(INTERFACE_TEXT.notices.responseInsertedAfterSelection);
 	}
 
 	private async getValidatedSelectionContext(request: AiWritingBuddyRequest, cancelMessage: string): Promise<ValidatedSelectionContext | null> {
 		const file = this.app.vault.getAbstractFileByPath(request.sourcePath);
 
 		if (!(file instanceof TFile)) {
-			new Notice("Could not find the source note.");
+			new Notice(INTERFACE_TEXT.notices.sourceNoteNotFound);
 			return null;
 		}
 
@@ -56,7 +57,7 @@ export class SelectionEditService {
 		const currentSelectedText = currentContent.slice(startOffset, endOffset);
 
 		if (currentSelectedText !== request.selectedText) {
-			new Notice(`Original selected text has changed. ${cancelMessage}`);
+			new Notice(INTERFACE_TEXT.notices.originalSelectionChanged(cancelMessage));
 			return null;
 		}
 

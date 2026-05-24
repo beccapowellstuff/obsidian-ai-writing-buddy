@@ -1,4 +1,5 @@
 import { App, Modal } from "obsidian";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import { AiWritingBuddyCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
 import { ConfirmDeleteSavedSessionModal } from "./confirm-delete-saved-session-modal";
 
@@ -25,7 +26,7 @@ export class SavedSessionPreviewModal extends Modal {
 		contentEl.empty();
 
 		contentEl.createEl("h2", {
-			text: "Saved session preview",
+			text: INTERFACE_TEXT.sessionManager.previewTitle,
 		});
 
 		contentEl.createEl("p", {
@@ -44,7 +45,7 @@ export class SavedSessionPreviewModal extends Modal {
 
 			if (entry.type === "chat") {
 				entryEl.createEl("h3", {
-					text: "Chat",
+					text: INTERFACE_TEXT.entries.chat,
 				});
 
 				entryEl.createEl("p", {
@@ -52,7 +53,7 @@ export class SavedSessionPreviewModal extends Modal {
 				});
 			} else {
 				entryEl.createEl("h3", {
-					text: "Selected text",
+					text: INTERFACE_TEXT.entries.selectedText,
 				});
 
 				entryEl.createEl("p", {
@@ -62,13 +63,13 @@ export class SavedSessionPreviewModal extends Modal {
 				if (entry.request.templateName) {
 					entryEl.createEl("p", {
 						cls: "ai-writing-buddy-saved-session-preview-template",
-						text: `Template: ${entry.request.templateName}`,
+						text: INTERFACE_TEXT.entries.template(entry.request.templateName),
 					});
 				}
 			}
 
 			entryEl.createEl("h3", {
-				text: "Response",
+				text: INTERFACE_TEXT.entries.response,
 			});
 
 			entryEl.createEl("p", {
@@ -81,7 +82,7 @@ export class SavedSessionPreviewModal extends Modal {
 		});
 
 		const closeButton = buttonRow.createEl("button", {
-			text: "Close",
+			text: INTERFACE_TEXT.sessionManager.close,
 		});
 
 		closeButton.type = "button";
@@ -90,7 +91,7 @@ export class SavedSessionPreviewModal extends Modal {
 		});
 
 		const openButton = buttonRow.createEl("button", {
-			text: "Open session",
+			text: INTERFACE_TEXT.sessionManager.openSession,
 			cls: "mod-cta",
 		});
 
@@ -102,7 +103,7 @@ export class SavedSessionPreviewModal extends Modal {
 		});
 
 		const deleteButton = buttonRow.createEl("button", {
-			text: "Delete saved session",
+			text: INTERFACE_TEXT.sessionManager.deleteSavedSession,
 			cls: "mod-warning",
 		});
 

@@ -1,5 +1,6 @@
 import { ItemView, setIcon, setTooltip, WorkspaceLeaf } from "obsidian";
 import { AiWritingBuddySettings } from "../config/default-settings";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import { PLUGIN_DISPLAY } from "../config/plugin-display";
 import { ConfirmClearSessionModal } from "../modals/confirm-clear-session-modal";
 import { ConfirmNewSessionModal } from "../modals/confirm-new-session-modal";
@@ -101,7 +102,7 @@ export class AiWritingBuddyView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return PLUGIN_DISPLAY.name;
+		return INTERFACE_TEXT.app.name;
 	}
 
 	getIcon(): string {
@@ -173,7 +174,7 @@ export class AiWritingBuddyView extends ItemView {
 		if (entries.length === 0) {
 			entriesEl.createEl("p", {
 				cls: "ai-writing-buddy-empty",
-				text: "Select text in a note, right click, and ask AI about it. Or use the chat box below.",
+				text: INTERFACE_TEXT.entries.empty,
 			});
 		}
 
@@ -271,12 +272,12 @@ export class AiWritingBuddyView extends ItemView {
 		const scrollButtonEl = container.createEl("button", {
 			cls: "ai-writing-buddy-scroll-bottom-button",
 			attr: {
-				"aria-label": "Scroll to latest response",
+				"aria-label": INTERFACE_TEXT.entries.scrollToLatestResponse,
 			},
 		});
 
 		setIcon(scrollButtonEl, "arrow-down");
-		setTooltip(scrollButtonEl, "Scroll to latest response");
+		setTooltip(scrollButtonEl, INTERFACE_TEXT.entries.scrollToLatestResponse);
 
 		scrollButtonEl.addEventListener("click", () => {
 			this.smoothScrollToBottom();

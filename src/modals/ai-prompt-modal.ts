@@ -1,4 +1,5 @@
 import { App, Modal, Setting } from "obsidian";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import { PromptTemplate } from "../types/prompt-template";
 
 export type AiPromptModalSubmitValue = {
@@ -23,10 +24,10 @@ export class AiPromptModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl("h2", { text: "Ask AI about selection" });
+		contentEl.createEl("h2", { text: INTERFACE_TEXT.selectionPrompt.askAboutSelection });
 
 		contentEl.createEl("p", {
-			text: "Choose a template or enter your own instruction for the selected text.",
+			text: INTERFACE_TEXT.selectionPrompt.description,
 		});
 
 		let instruction = "";
@@ -35,10 +36,10 @@ export class AiPromptModal extends Modal {
 		const selectionTemplates = this.templates.filter((template) => template.scope === "selection");
 
 		new Setting(contentEl)
-			.setName("Template")
-			.setDesc("Optional starting point for the request.")
+			.setName(INTERFACE_TEXT.selectionPrompt.template)
+			.setDesc(INTERFACE_TEXT.selectionPrompt.templateDescription)
 			.addDropdown((dropdown) => {
-				dropdown.addOption("", "No template");
+				dropdown.addOption("", INTERFACE_TEXT.selectionPrompt.noTemplate);
 
 				for (const template of selectionTemplates) {
 					dropdown.addOption(template.id, template.name);
@@ -50,10 +51,10 @@ export class AiPromptModal extends Modal {
 			});
 
 		new Setting(contentEl)
-			.setName("Instruction")
-			.setDesc("Add extra direction, or write your own instruction without a template.")
+			.setName(INTERFACE_TEXT.selectionPrompt.instruction)
+			.setDesc(INTERFACE_TEXT.selectionPrompt.instructionDescription)
 			.addTextArea((text) => {
-				text.setPlaceholder("What should the AI do?").onChange((value) => {
+				text.setPlaceholder(INTERFACE_TEXT.selectionPrompt.instructionPlaceholder).onChange((value) => {
 					instruction = value;
 				});
 
@@ -63,7 +64,7 @@ export class AiPromptModal extends Modal {
 
 		new Setting(contentEl).addButton((button) => {
 			button
-				.setButtonText("Ask")
+				.setButtonText(INTERFACE_TEXT.selectionPrompt.ask)
 				.setCta()
 				.onClick(() => {
 					const selectedTemplate = selectionTemplates.find((template) => template.id === selectedTemplateId);

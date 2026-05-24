@@ -1,4 +1,5 @@
 import { Notice, Setting } from "obsidian";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import type AiWritingBuddyPlugin from "../main";
 import { PromptTemplate } from "../types/prompt-template";
 
@@ -6,41 +7,43 @@ export class TemplateSettingsRenderer {
 	constructor(private readonly plugin: AiWritingBuddyPlugin) {}
 
 	render(containerEl: HTMLElement, refresh: () => void): void {
-		new Setting(containerEl).setName("Templates").setHeading();
+		new Setting(containerEl).setName(INTERFACE_TEXT.settings.templates.heading).setHeading();
 
 		const builtInTemplates = this.plugin.settings.promptTemplates.filter((template) => template.isBuiltIn);
 		const userTemplates = this.plugin.settings.promptTemplates.filter((template) => !template.isBuiltIn);
 
-		new Setting(containerEl).setName("User templates").setDesc(userTemplates.length === 0 ? "No user templates yet." : `${userTemplates.length} user templates saved.`);
+		new Setting(containerEl)
+			.setName(INTERFACE_TEXT.settings.templates.userTemplates)
+			.setDesc(userTemplates.length === 0 ? INTERFACE_TEXT.settings.templates.noUserTemplates : INTERFACE_TEXT.settings.templates.userTemplatesSaved(userTemplates.length));
 
 		new Setting(containerEl)
-			.setName("Create template")
-			.setDesc("Add a custom selected-text template.")
+			.setName(INTERFACE_TEXT.settings.templates.createTemplate)
+			.setDesc(INTERFACE_TEXT.settings.templates.createTemplateDescription)
 			.addButton((button) => {
 				button
-					.setButtonText("Add template")
+					.setButtonText(INTERFACE_TEXT.settings.templates.addTemplate)
 					.setCta()
 					.onClick(async () => {
 						this.plugin.settings.promptTemplates.push(this.createBlankUserTemplate());
 						await this.plugin.saveSettings();
 
-						new Notice("Template added.");
+						new Notice(INTERFACE_TEXT.notices.templateAdded);
 						refresh();
 					});
 			});
 
-		new Setting(containerEl).setName("Built-in templates").setHeading();
+		new Setting(containerEl).setName(INTERFACE_TEXT.settings.templates.builtInTemplates).setHeading();
 
 		for (const template of builtInTemplates) {
 			new Setting(containerEl)
 				.setName(template.name)
 				.setDesc(template.description)
 				.addButton((button) => {
-					button.setButtonText("Copy to my templates").onClick(async () => {
+					button.setButtonText(INTERFACE_TEXT.settings.templates.copyToMyTemplates).onClick(async () => {
 						this.plugin.settings.promptTemplates.push(this.copyBuiltInTemplate(template));
 						await this.plugin.saveSettings();
 
-						new Notice("Template copied.");
+						new Notice(INTERFACE_TEXT.notices.templateCopied);
 						refresh();
 					});
 				});
@@ -55,8 +58,8 @@ export class TemplateSettingsRenderer {
 
 	private renderUserTemplateFields(containerEl: HTMLElement, template: PromptTemplate, refresh: () => void): void {
 		new Setting(containerEl)
-			.setName("Name")
-			.setDesc("Shown in the template selector.")
+			.setName(INTERFACE_TEXT.settings.templates.name)
+			.setDesc(INTERFACE_TEXT.settings.templates.nameDescription)
 			.addText((text) => {
 				text.setValue(template.name).onChange(async (value) => {
 					template.name = value.trim() || "Untitled template";
@@ -66,8 +69,8 @@ export class TemplateSettingsRenderer {
 			});
 
 		new Setting(containerEl)
-			.setName("Description")
-			.setDesc("Short explanation of what this template does.")
+			.setName(INTERFACE_TEXT.settings.templates.description)
+			.setDesc(INTERFACE_TEXT.settings.templates.descriptionDescription)
 			.addTextArea((text) => {
 				text.setValue(template.description).onChange(async (value) => {
 					template.description = value;
@@ -80,8 +83,8 @@ export class TemplateSettingsRenderer {
 			});
 
 		new Setting(containerEl)
-			.setName("Template prompt")
-			.setDesc("Instruction sent to the AI when this template is selected.")
+			.setName(INTERFACE_TEXT.settings.templates.templatePrompt)
+			.setDesc(INTERFACE_TEXT.settings.templates.templatePromptDescription)
 			.addTextArea((text) => {
 				text.setValue(template.prompt).onChange(async (value) => {
 					template.prompt = value;
@@ -94,8 +97,8 @@ export class TemplateSettingsRenderer {
 			});
 
 		new Setting(containerEl)
-			.setName("Replacement text only")
-			.setDesc("Use when the response should be safe to replace the selected text.")
+			.setName(INTERFACE_TEXT.settings.templates.replacementTextOnly)
+			.setDesc(INTERFACE_TEXT.settings.templates.replacementTextOnlyDescription)
 			.addToggle((toggle) => {
 				toggle.setValue(template.returnsReplacementTextOnly).onChange(async (value) => {
 					template.returnsReplacementTextOnly = value;
@@ -105,8 +108,8 @@ export class TemplateSettingsRenderer {
 			});
 
 		new Setting(containerEl)
-			.setName("Highlight changes")
-			.setDesc("Highlight changed words in the response. Best for spelling and grammar templates.")
+			.setName(INTERFACE_TEXT.settings.templates.highlightChanges)
+			.setDesc(INTERFACE_TEXT.settings.templates.highlightChangesDescription)
 			.addToggle((toggle) => {
 				toggle.setValue(template.highlightChanges).onChange(async (value) => {
 					template.highlightChanges = value;
@@ -116,10 +119,10 @@ export class TemplateSettingsRenderer {
 			});
 
 		new Setting(containerEl)
-			.setName("Temperature")
-			.setDesc("Lower is stricter. Higher is more creative.")
+			.setName(INTERFACE_TEXT.settings.templates.temperature)
+			.setDesc(INTERFACE_TEXT.settings.templates.temperatureDescription)
 			.addText((text) => {
-				text.setPlaceholder("0.7")
+				text.setPlaceholder(INTERFACE_TEXT.settings.templates.temperaturePlaceholder)
 					.setValue(String(template.temperature ?? 0.7))
 					.onChange(async (value) => {
 						const parsedValue = Number.parseFloat(value);
@@ -135,18 +138,18 @@ export class TemplateSettingsRenderer {
 			});
 
 		new Setting(containerEl)
-			.setName("Delete template")
-			.setDesc("Remove this user-created template.")
+			.setName(INTERFACE_TEXT.settings.templates.deleteTemplate)
+			.setDesc(INTERFACE_TEXT.settings.templates.deleteTemplateDescription)
 			.addButton((button) => {
 				button
-					.setButtonText("Delete")
+					.setButtonText(INTERFACE_TEXT.settings.templates.delete)
 					.setWarning()
 					.onClick(async () => {
 						this.plugin.settings.promptTemplates = this.plugin.settings.promptTemplates.filter((existingTemplate) => existingTemplate.id !== template.id);
 
 						await this.plugin.saveSettings();
 
-						new Notice("Template deleted.");
+						new Notice(INTERFACE_TEXT.notices.templateDeleted);
 						refresh();
 					});
 			});

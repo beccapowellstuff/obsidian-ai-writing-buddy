@@ -1,4 +1,5 @@
 import { App, Modal } from "obsidian";
+import { INTERFACE_TEXT } from "../config/interface-text";
 import { AiWritingBuddyCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
 import { SavedSessionPreviewModal } from "./saved-session-preview-modal";
 
@@ -42,12 +43,12 @@ export class SavedSessionsModal extends Modal {
 		contentEl.empty();
 
 		contentEl.createEl("h2", {
-			text: "Session manager",
+			text: INTERFACE_TEXT.sessionManager.title,
 		});
 
 		if (!this.currentSession && this.savedSessions.length === 0) {
 			contentEl.createEl("p", {
-				text: "There are no sessions yet.",
+				text: INTERFACE_TEXT.sessionManager.empty,
 			});
 			return;
 		}
@@ -55,7 +56,7 @@ export class SavedSessionsModal extends Modal {
 		if (this.currentSession) {
 			contentEl.createEl("h3", {
 				cls: "ai-writing-buddy-session-manager-section-title",
-				text: "Current session",
+				text: INTERFACE_TEXT.sessionManager.currentSession,
 			});
 
 			const currentListEl = contentEl.createEl("div", {
@@ -68,7 +69,7 @@ export class SavedSessionsModal extends Modal {
 		if (this.savedSessions.length > 0) {
 			contentEl.createEl("h3", {
 				cls: "ai-writing-buddy-session-manager-section-title",
-				text: "Saved sessions",
+				text: INTERFACE_TEXT.sessionManager.savedSessions,
 			});
 
 			const savedListEl = contentEl.createEl("div", {
@@ -106,7 +107,7 @@ export class SavedSessionsModal extends Modal {
 		});
 
 		const renameButton = actionsEl.createEl("button", {
-			text: "Rename",
+			text: INTERFACE_TEXT.sessionManager.rename,
 		});
 
 		renameButton.type = "button";
@@ -117,7 +118,7 @@ export class SavedSessionsModal extends Modal {
 		});
 
 		const previewButton = actionsEl.createEl("button", {
-			text: "Preview",
+			text: INTERFACE_TEXT.sessionManager.preview,
 		});
 
 		previewButton.type = "button";
@@ -150,7 +151,7 @@ export class SavedSessionsModal extends Modal {
 
 		if (kind === "saved") {
 			const openButton = actionsEl.createEl("button", {
-				text: "Open",
+				text: INTERFACE_TEXT.sessionManager.open,
 			});
 
 			openButton.type = "button";
@@ -161,7 +162,7 @@ export class SavedSessionsModal extends Modal {
 		}
 
 		const deleteButton = actionsEl.createEl("button", {
-			text: "Delete",
+			text: INTERFACE_TEXT.sessionManager.delete,
 			cls: "mod-warning",
 		});
 
@@ -187,7 +188,7 @@ export class SavedSessionsModal extends Modal {
 		});
 
 		const saveButton = actionsEl.createEl("button", {
-			text: "Save",
+			text: INTERFACE_TEXT.sessionManager.save,
 			cls: "mod-cta",
 		});
 
@@ -206,7 +207,7 @@ export class SavedSessionsModal extends Modal {
 		saveButton.addEventListener("click", saveRename);
 
 		const cancelButton = actionsEl.createEl("button", {
-			text: "Cancel",
+			text: INTERFACE_TEXT.sessionManager.cancel,
 		});
 
 		cancelButton.type = "button";
@@ -237,7 +238,7 @@ export class SavedSessionsModal extends Modal {
 	private renderDeleteConfirmationRow(rowEl: HTMLElement, session: AiWritingBuddyCurrentSessionData, kind: SessionRowKind): void {
 		rowEl.createEl("div", {
 			cls: "ai-writing-buddy-saved-session-label ai-writing-buddy-session-delete-warning",
-			text: kind === "current" ? "Delete current session and start a new one?" : "Delete saved session?",
+			text: kind === "current" ? INTERFACE_TEXT.sessionManager.deleteCurrentQuestion : INTERFACE_TEXT.sessionManager.deleteSavedQuestion,
 		});
 
 		const actionsEl = rowEl.createEl("div", {
@@ -245,7 +246,7 @@ export class SavedSessionsModal extends Modal {
 		});
 
 		const cancelButton = actionsEl.createEl("button", {
-			text: "Cancel",
+			text: INTERFACE_TEXT.sessionManager.cancel,
 		});
 
 		cancelButton.type = "button";
@@ -255,7 +256,7 @@ export class SavedSessionsModal extends Modal {
 		});
 
 		const confirmDeleteButton = actionsEl.createEl("button", {
-			text: "Delete",
+			text: INTERFACE_TEXT.sessionManager.delete,
 			cls: "mod-warning",
 		});
 
@@ -280,9 +281,9 @@ export class SavedSessionsModal extends Modal {
 		const updatedAt = new Date(session.updatedAt);
 
 		if (Number.isNaN(updatedAt.getTime())) {
-			return `${session.entryCount} entries`;
+			return INTERFACE_TEXT.sessionManager.sessionLabel(null, session.entryCount);
 		}
 
-		return `${updatedAt.toLocaleString()} · ${session.entryCount} entries`;
+		return INTERFACE_TEXT.sessionManager.sessionLabel(updatedAt.toLocaleString(), session.entryCount);
 	}
 }

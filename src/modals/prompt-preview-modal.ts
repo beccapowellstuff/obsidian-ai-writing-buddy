@@ -1,4 +1,5 @@
 import { App, Modal, Setting } from "obsidian";
+import { INTERFACE_TEXT } from "../config/interface-text";
 
 export class PromptPreviewModal extends Modal {
 	constructor(
@@ -14,11 +15,11 @@ export class PromptPreviewModal extends Modal {
 		contentEl.empty();
 
 		contentEl.createEl("h2", {
-			text: "Full prompt",
+			text: INTERFACE_TEXT.selectionPrompt.fullPrompt,
 		});
 
 		contentEl.createEl("p", {
-			text: "This is the prompt content sent for this selected-text request. You can select and copy any part of it.",
+			text: INTERFACE_TEXT.selectionPrompt.fullPromptDescription,
 		});
 
 		const textAreaEl = contentEl.createEl("textarea", {
@@ -31,7 +32,7 @@ export class PromptPreviewModal extends Modal {
 
 		new Setting(contentEl).addButton((button) => {
 			button
-				.setButtonText("Close")
+				.setButtonText(INTERFACE_TEXT.selectionPrompt.close)
 				.setCta()
 				.onClick(() => {
 					this.close();
