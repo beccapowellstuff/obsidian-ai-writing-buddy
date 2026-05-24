@@ -1,11 +1,11 @@
 import { AiResponseService, AiChatRequest } from "./ai-response-service";
-import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
-import { AiDraftBenchResponse } from "../types/ai-writing-buddy-response";
+import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
+import { AiWritingBuddyResponse } from "../types/ai-writing-buddy-response";
 
 const MOCK_RESPONSE_DELAY_MS = 1200;
 
 export class MockAiResponseService implements AiResponseService {
-	async createSelectionResponse(request: AiDraftBenchRequest): Promise<AiDraftBenchResponse> {
+	async createSelectionResponse(request: AiWritingBuddyRequest): Promise<AiWritingBuddyResponse> {
 		await this.waitForMockDelay();
 
 		return {
@@ -15,7 +15,7 @@ export class MockAiResponseService implements AiResponseService {
 		};
 	}
 
-	async createChatResponse(request: AiChatRequest): Promise<AiDraftBenchResponse> {
+	async createChatResponse(request: AiChatRequest): Promise<AiWritingBuddyResponse> {
 		await this.waitForMockDelay();
 
 		if (request.replyToEntry) {

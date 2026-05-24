@@ -1,9 +1,9 @@
 import { Notice, Setting } from "obsidian";
-import type AiDraftBenchPlugin from "../main";
+import type AiWritingBuddyPlugin from "../main";
 
 export class ConnectionSettingsRenderer {
 	constructor(
-		private readonly plugin: AiDraftBenchPlugin,
+		private readonly plugin: AiWritingBuddyPlugin,
 		private readonly availableModels: string[],
 		private readonly refresh: () => void,
 	) {}
@@ -84,7 +84,7 @@ export class ConnectionSettingsRenderer {
 						const message = await this.plugin.testProviderConnection();
 						new Notice(message);
 					} catch (error) {
-						console.error("AI Draft Bench connection test failed", error);
+						console.error("AI Writing Buddy connection test failed", error);
 
 						const message = error instanceof Error ? error.message : "Connection test failed.";
 						new Notice(`Connection test failed: ${message}`);
@@ -155,7 +155,7 @@ export class ConnectionSettingsRenderer {
 						new Notice("Models loaded.");
 						this.refresh();
 					} catch (error) {
-						console.error("AI Draft Bench model loading failed", error);
+						console.error("AI Writing Buddy model loading failed", error);
 
 						const message = error instanceof Error ? error.message : "Model loading failed.";
 						new Notice(`Model loading failed: ${message}`);

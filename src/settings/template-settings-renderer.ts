@@ -1,9 +1,9 @@
 import { Notice, Setting } from "obsidian";
-import type AiDraftBenchPlugin from "../main";
+import type AiWritingBuddyPlugin from "../main";
 import { PromptTemplate } from "../types/prompt-template";
 
 export class TemplateSettingsRenderer {
-	constructor(private readonly plugin: AiDraftBenchPlugin) {}
+	constructor(private readonly plugin: AiWritingBuddyPlugin) {}
 
 	render(containerEl: HTMLElement, refresh: () => void): void {
 		new Setting(containerEl).setName("Templates").setHeading();

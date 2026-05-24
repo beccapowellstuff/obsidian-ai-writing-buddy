@@ -1,40 +1,40 @@
-import type { AiDraftBenchSettings } from "../config/default-settings";
+import type { AiWritingBuddySettings } from "../config/default-settings";
 import type { AiResponseService } from "../services/ai-response-service";
-import { DraftBenchSessionHistoryTrimmer } from "../services/session-history-trimmer";
-import { DraftBenchSessionSummaryService } from "../services/session-summary-service";
-import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
-import type { AiDraftBenchMemorySummary } from "../types/ai-writing-buddy-plugin-data";
-import type { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
+import { AiWritingBuddySessionHistoryTrimmer } from "../services/session-history-trimmer";
+import { AiWritingBuddySessionSummaryService } from "../services/session-summary-service";
+import type { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
+import type { AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
+import type { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 import { createPlaceholderResponse } from "../utils/create-placeholder-response";
 import { formatProviderErrorMessage } from "../utils/format-provider-error-message";
 
 type SessionChangeHandler = (scrollToBottom: boolean) => void;
-type SessionSaveHandler = (entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary) => void;
+type SessionSaveHandler = (entries: AiWritingBuddyEntry[], memorySummary?: AiWritingBuddyMemorySummary) => void;
 type NewSessionHandler = (sessionTitle?: string) => void;
 
-export class DraftBenchSessionController {
-	private entries: AiDraftBenchEntry[];
+export class AiWritingBuddySessionController {
+	private entries: AiWritingBuddyEntry[];
 	private replyToEntryId: string | null = null;
-	private memorySummary: AiDraftBenchMemorySummary | undefined;
-	private readonly sessionHistoryTrimmer: DraftBenchSessionHistoryTrimmer;
-	private readonly sessionSummaryService: DraftBenchSessionSummaryService;
+	private memorySummary: AiWritingBuddyMemorySummary | undefined;
+	private readonly sessionHistoryTrimmer: AiWritingBuddySessionHistoryTrimmer;
+	private readonly sessionSummaryService: AiWritingBuddySessionSummaryService;
 
 	constructor(
 		private readonly getAiResponseService: () => AiResponseService,
 		private readonly onChange: SessionChangeHandler,
 		private readonly onSave: SessionSaveHandler,
 		private readonly onNewSession: NewSessionHandler,
-		settings: AiDraftBenchSettings,
-		initialEntries: AiDraftBenchEntry[] = [],
-		initialMemorySummary?: AiDraftBenchMemorySummary,
+		settings: AiWritingBuddySettings,
+		initialEntries: AiWritingBuddyEntry[] = [],
+		initialMemorySummary?: AiWritingBuddyMemorySummary,
 	) {
 		this.entries = [...initialEntries];
 		this.memorySummary = initialMemorySummary;
-		this.sessionHistoryTrimmer = new DraftBenchSessionHistoryTrimmer(settings);
-		this.sessionSummaryService = new DraftBenchSessionSummaryService(settings);
+		this.sessionHistoryTrimmer = new AiWritingBuddySessionHistoryTrimmer(settings);
+		this.sessionSummaryService = new AiWritingBuddySessionSummaryService(settings);
 	}
 
-	getEntries(): AiDraftBenchEntry[] {
+	getEntries(): AiWritingBuddyEntry[] {
 		return this.entries;
 	}
 
@@ -58,7 +58,7 @@ export class DraftBenchSessionController {
 		this.onChange(false);
 	}
 
-	replaceCurrentSessionEntries(entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary): void {
+	replaceCurrentSessionEntries(entries: AiWritingBuddyEntry[], memorySummary?: AiWritingBuddyMemorySummary): void {
 		this.entries = [...entries];
 		this.replyToEntryId = null;
 		this.memorySummary = memorySummary;
@@ -89,8 +89,8 @@ export class DraftBenchSessionController {
 		return `Replying to: ${this.getEntrySnippet(replyToEntry)}`;
 	}
 
-	async addSelectionEntry(request: AiDraftBenchRequest): Promise<void> {
-		const entry: AiDraftBenchEntry = {
+	async addSelectionEntry(request: AiWritingBuddyRequest): Promise<void> {
+		const entry: AiWritingBuddyEntry = {
 			id: crypto.randomUUID(),
 			type: "selection",
 			request,
@@ -105,7 +105,7 @@ export class DraftBenchSessionController {
 		try {
 			entry.response = await this.getAiResponseService().createSelectionResponse(request);
 		} catch (error) {
-			console.error("AI Draft Bench selection response failed", error);
+			console.error("AI Writing Buddy selection response failed", error);
 
 			entry.response = createPlaceholderResponse(["AI provider error.", "", formatProviderErrorMessage(error)].join("\n"));
 		}
@@ -129,7 +129,7 @@ export class DraftBenchSessionController {
 			excludeEntryId: replyToEntryId ?? undefined,
 		});
 
-		const entry: AiDraftBenchEntry = {
+		const entry: AiWritingBuddyEntry = {
 			id: crypto.randomUUID(),
 			type: "chat",
 			message: trimmedMessage,
@@ -152,7 +152,7 @@ export class DraftBenchSessionController {
 				memorySummary: this.memorySummary,
 			});
 		} catch (error) {
-			console.error("AI Draft Bench chat response failed", error);
+			console.error("AI Writing Buddy chat response failed", error);
 
 			entry.response = createPlaceholderResponse(["AI provider error.", "", formatProviderErrorMessage(error)].join("\n"));
 		}
@@ -170,7 +170,7 @@ export class DraftBenchSessionController {
 		this.onSave([...this.entries], this.memorySummary);
 	}
 
-	private getEntrySnippet(entry: AiDraftBenchEntry): string {
+	private getEntrySnippet(entry: AiWritingBuddyEntry): string {
 		const text = entry.response.text.replace(/\s+/g, " ").trim();
 
 		if (!text) {

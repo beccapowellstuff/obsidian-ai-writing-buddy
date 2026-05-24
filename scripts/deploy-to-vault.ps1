@@ -4,7 +4,7 @@ $ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Pa
 
 $VaultPluginPath = "H:\- ! Creations\- !TP Work\- - ! STORIES\Story Ideas\Story Ideas\.obsidian\plugins\obsidian-ai-writing-buddy"
 
-Write-Host "Deploying AI Draft Bench to Obsidian vault..."
+Write-Host "Deploying AI Writing Buddy to Obsidian vault..."
 Write-Host "Project: $ProjectRoot"
 Write-Host "Target:  $VaultPluginPath"
 

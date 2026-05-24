@@ -1,13 +1,13 @@
 import { setIcon } from "obsidian";
 import { ClipboardService } from "../services/clipboard-service";
 import { SelectionEditService } from "../services/selection-edit-service";
-import { AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/ai-writing-buddy-entry";
-import { AiDraftBenchResponse } from "../types/ai-writing-buddy-response";
+import { AiWritingBuddyEntry, AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
+import { AiWritingBuddyResponse } from "../types/ai-writing-buddy-response";
 import { ResponseDiffRenderer } from "./response-diff-renderer";
 
 type ReplyHandler = (entryId: string) => void;
 
-export class DraftBenchResponseRenderer {
+export class AiWritingBuddyResponseRenderer {
 	private readonly responseDiffRenderer = new ResponseDiffRenderer();
 
 	constructor(
@@ -16,31 +16,31 @@ export class DraftBenchResponseRenderer {
 		private readonly onReply: ReplyHandler,
 	) {}
 
-	render(container: HTMLElement, response: AiDraftBenchResponse, entry: AiDraftBenchEntry): void {
+	render(container: HTMLElement, response: AiWritingBuddyResponse, entry: AiWritingBuddyEntry): void {
 		container.createEl("h3", { text: "Draft response" });
 
 		const isResponsePending = response.isPlaceholder && response.text === "Thinking...";
 		const isProviderError = response.isPlaceholder && response.text.startsWith("AI provider error.");
 
 		const responseEl = container.createEl("div", {
-			cls: response.isPlaceholder ? "ai-draft-bench-response-text ai-draft-bench-response-text-placeholder" : "ai-draft-bench-response-text",
+			cls: response.isPlaceholder ? "ai-writing-buddy-response-text ai-writing-buddy-response-text-placeholder" : "ai-writing-buddy-response-text",
 		});
 
 		const responseToolbarEl = responseEl.createEl("div", {
-			cls: "ai-draft-bench-response-toolbar",
+			cls: "ai-writing-buddy-response-toolbar",
 		});
 
 		const replyActionsEl = responseToolbarEl.createEl("div", {
-			cls: "ai-draft-bench-response-actions-left",
+			cls: "ai-writing-buddy-response-actions-left",
 		});
 
 		const outputActionsEl = responseToolbarEl.createEl("div", {
-			cls: "ai-draft-bench-response-actions-right",
+			cls: "ai-writing-buddy-response-actions-right",
 		});
 
 		if (isResponsePending) {
 			replyActionsEl.createEl("span", {
-				cls: "ai-draft-bench-response-pending-label",
+				cls: "ai-writing-buddy-response-pending-label",
 				text: "Generating response...",
 			});
 		} else {
@@ -66,13 +66,13 @@ export class DraftBenchResponseRenderer {
 		}
 
 		const responseContentEl = responseEl.createEl("div", {
-			cls: "ai-draft-bench-response-content",
+			cls: "ai-writing-buddy-response-content",
 		});
 
 		this.renderResponseContent(responseContentEl, response, entry);
 	}
 
-	private renderResponseContent(container: HTMLElement, response: AiDraftBenchResponse, entry: AiDraftBenchEntry): void {
+	private renderResponseContent(container: HTMLElement, response: AiWritingBuddyResponse, entry: AiWritingBuddyEntry): void {
 		if (this.shouldHighlightResponseChanges(response, entry)) {
 			this.responseDiffRenderer.render(container, entry.request.selectedText, response.text);
 			return;
@@ -81,13 +81,13 @@ export class DraftBenchResponseRenderer {
 		container.textContent = response.text;
 	}
 
-	private shouldHighlightResponseChanges(response: AiDraftBenchResponse, entry: AiDraftBenchEntry): entry is AiDraftBenchSelectionEntry {
+	private shouldHighlightResponseChanges(response: AiWritingBuddyResponse, entry: AiWritingBuddyEntry): entry is AiWritingBuddySelectionEntry {
 		return entry.type === "selection" && entry.request.highlightChanges === true && !response.isPlaceholder && response.text.trim().length > 0;
 	}
 
 	private createActionButton(container: HTMLElement, iconName: string, label: string, onClick: () => Promise<void>, disabled = false): void {
 		const buttonEl = container.createEl("button", {
-			cls: "ai-draft-bench-action-button",
+			cls: "ai-writing-buddy-action-button",
 			attr: {
 				"aria-label": label,
 				title: label,
@@ -97,7 +97,7 @@ export class DraftBenchResponseRenderer {
 		buttonEl.disabled = disabled;
 
 		const iconEl = buttonEl.createSpan({
-			cls: "ai-draft-bench-action-icon",
+			cls: "ai-writing-buddy-action-icon",
 		});
 
 		setIcon(iconEl, iconName);

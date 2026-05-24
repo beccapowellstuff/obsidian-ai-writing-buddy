@@ -1,16 +1,16 @@
 import { App, setIcon, setTooltip } from "obsidian";
 import { ClipboardService } from "../services/clipboard-service";
 import { SelectionEditService } from "../services/selection-edit-service";
-import { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/ai-writing-buddy-entry";
+import { AiWritingBuddyChatEntry, AiWritingBuddyEntry, AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
 import { PromptPreviewModal } from "../modals/prompt-preview-modal";
-import { DraftBenchSourcePanelRenderer } from "./source-panel-renderer";
-import { DraftBenchResponseRenderer } from "./response-renderer";
+import { AiWritingBuddySourcePanelRenderer } from "./source-panel-renderer";
+import { AiWritingBuddyResponseRenderer } from "./response-renderer";
 
 type ReplyHandler = (entryId: string) => void;
 
-export class DraftBenchEntryRenderer {
-	private readonly sourcePanelRenderer = new DraftBenchSourcePanelRenderer();
-	private readonly responseRenderer = new DraftBenchResponseRenderer(this.clipboardService, this.selectionEditService, this.onReply);
+export class AiWritingBuddyEntryRenderer {
+	private readonly sourcePanelRenderer = new AiWritingBuddySourcePanelRenderer();
+	private readonly responseRenderer = new AiWritingBuddyResponseRenderer(this.clipboardService, this.selectionEditService, this.onReply);
 
 	constructor(
 		private readonly app: App,
@@ -19,7 +19,7 @@ export class DraftBenchEntryRenderer {
 		private readonly onReply: ReplyHandler,
 	) {}
 
-	renderEntry(container: HTMLElement, entry: AiDraftBenchEntry): void {
+	renderEntry(container: HTMLElement, entry: AiWritingBuddyEntry): void {
 		if (entry.type === "selection") {
 			this.renderSelectionEntry(container, entry);
 			return;
@@ -28,9 +28,9 @@ export class DraftBenchEntryRenderer {
 		this.renderChatEntry(container, entry);
 	}
 
-	private renderSelectionEntry(container: HTMLElement, entry: AiDraftBenchSelectionEntry): void {
+	private renderSelectionEntry(container: HTMLElement, entry: AiWritingBuddySelectionEntry): void {
 		const entryEl = container.createEl("div", {
-			cls: "ai-draft-bench-entry",
+			cls: "ai-writing-buddy-entry",
 		});
 
 		this.sourcePanelRenderer.render(entryEl, entry);
@@ -38,9 +38,9 @@ export class DraftBenchEntryRenderer {
 		this.responseRenderer.render(entryEl, entry.response, entry);
 	}
 
-	private renderChatEntry(container: HTMLElement, entry: AiDraftBenchChatEntry): void {
+	private renderChatEntry(container: HTMLElement, entry: AiWritingBuddyChatEntry): void {
 		const entryEl = container.createEl("div", {
-			cls: "ai-draft-bench-entry ai-draft-bench-chat-entry",
+			cls: "ai-writing-buddy-entry ai-writing-buddy-chat-entry",
 		});
 
 		entryEl.createEl("h3", {
@@ -52,29 +52,29 @@ export class DraftBenchEntryRenderer {
 		this.responseRenderer.render(entryEl, entry.response, entry);
 	}
 
-	private renderTemplateAndInstruction(container: HTMLElement, entry: AiDraftBenchSelectionEntry): void {
+	private renderTemplateAndInstruction(container: HTMLElement, entry: AiWritingBuddySelectionEntry): void {
 		if (entry.request.templateName) {
 			const templateHeaderEl = container.createEl("div", {
-				cls: "ai-draft-bench-template-summary",
+				cls: "ai-writing-buddy-template-summary",
 			});
 
 			const templateTextEl = templateHeaderEl.createEl("div", {
-				cls: "ai-draft-bench-template-summary-text",
+				cls: "ai-writing-buddy-template-summary-text",
 			});
 
 			templateTextEl.createEl("span", {
-				cls: "ai-draft-bench-template-summary-label",
+				cls: "ai-writing-buddy-template-summary-label",
 				text: "Template:",
 			});
 
 			templateTextEl.createEl("span", {
-				cls: "ai-draft-bench-template-summary-name",
+				cls: "ai-writing-buddy-template-summary-name",
 				text: entry.request.templateName,
 			});
 
 			if (entry.request.promptPreview) {
 				const promptButtonEl = templateHeaderEl.createEl("button", {
-					cls: "ai-draft-bench-action-button",
+					cls: "ai-writing-buddy-action-button",
 					attr: {
 						"aria-label": "Show full prompt",
 					},
@@ -83,7 +83,7 @@ export class DraftBenchEntryRenderer {
 				setTooltip(promptButtonEl, "Show full prompt");
 
 				const iconEl = promptButtonEl.createSpan({
-					cls: "ai-draft-bench-action-icon",
+					cls: "ai-writing-buddy-action-icon",
 				});
 
 				setIcon(iconEl, "file-text");

@@ -1,49 +1,49 @@
 import { ItemView, setIcon, setTooltip, WorkspaceLeaf } from "obsidian";
-import { AiDraftBenchSettings } from "../config/default-settings";
+import { AiWritingBuddySettings } from "../config/default-settings";
 import { PLUGIN_DISPLAY } from "../config/plugin-display";
 import { ConfirmClearSessionModal } from "../modals/confirm-clear-session-modal";
 import { ConfirmNewSessionModal } from "../modals/confirm-new-session-modal";
-import { DraftBenchChatComposerRenderer } from "../renderers/chat-composer-renderer";
-import { DraftBenchEntryRenderer } from "../renderers/entry-renderer";
-import { DraftBenchHeaderRenderer } from "../renderers/header-renderer";
+import { AiWritingBuddyChatComposerRenderer } from "../renderers/chat-composer-renderer";
+import { AiWritingBuddyEntryRenderer } from "../renderers/entry-renderer";
+import { AiWritingBuddyHeaderRenderer } from "../renderers/header-renderer";
 import type { AiResponseService } from "../services/ai-response-service";
 import { ClipboardService } from "../services/clipboard-service";
 import { SelectionEditService } from "../services/selection-edit-service";
-import { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
-import { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary, AiDraftBenchSessionListItem } from "../types/ai-writing-buddy-plugin-data";
-import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
-import { DraftBenchSessionController } from "../controllers/session-controller";
+import { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
+import { AiWritingBuddyCurrentSessionData, AiWritingBuddyMemorySummary, AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
+import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
+import { AiWritingBuddySessionController } from "../controllers/session-controller";
 import { SavedSessionsModal } from "../modals/saved-sessions-modal";
 
-export const AI_DRAFT_BENCH_VIEW_TYPE = "ai-draft-bench-view";
+export const AI_WRITING_BUDDY_VIEW_TYPE = "ai-writing-buddy-view";
 
-type SessionSaveHandler = (entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary) => void;
+type SessionSaveHandler = (entries: AiWritingBuddyEntry[], memorySummary?: AiWritingBuddyMemorySummary) => void;
 type NewSessionHandler = (sessionTitle?: string) => void;
-type SessionListProvider = () => AiDraftBenchSessionListItem[];
-type RestoreSessionHandler = (sessionId: string) => AiDraftBenchCurrentSessionData | null;
-type DeleteSavedSessionHandler = (sessionId: string) => AiDraftBenchSessionListItem[];
-type SavedSessionsProvider = () => AiDraftBenchCurrentSessionData[];
+type SessionListProvider = () => AiWritingBuddySessionListItem[];
+type RestoreSessionHandler = (sessionId: string) => AiWritingBuddyCurrentSessionData | null;
+type DeleteSavedSessionHandler = (sessionId: string) => AiWritingBuddySessionListItem[];
+type SavedSessionsProvider = () => AiWritingBuddyCurrentSessionData[];
 type CurrentSessionTitleProvider = () => string | undefined;
-type RenameSavedSessionHandler = (sessionId: string, title: string) => AiDraftBenchCurrentSessionData[];
-type CurrentSessionProvider = () => AiDraftBenchCurrentSessionData | null;
-type RenameCurrentSessionHandler = (title: string) => AiDraftBenchCurrentSessionData;
-type DeleteCurrentSessionHandler = () => AiDraftBenchCurrentSessionData;
+type RenameSavedSessionHandler = (sessionId: string, title: string) => AiWritingBuddyCurrentSessionData[];
+type CurrentSessionProvider = () => AiWritingBuddyCurrentSessionData | null;
+type RenameCurrentSessionHandler = (title: string) => AiWritingBuddyCurrentSessionData;
+type DeleteCurrentSessionHandler = () => AiWritingBuddyCurrentSessionData;
 
-export class AiDraftBenchView extends ItemView {
-	private readonly sessionController: DraftBenchSessionController;
+export class AiWritingBuddyView extends ItemView {
+	private readonly sessionController: AiWritingBuddySessionController;
 	private readonly clipboardService: ClipboardService;
 	private readonly selectionEditService: SelectionEditService;
-	private readonly entryRenderer: DraftBenchEntryRenderer;
-	private readonly headerRenderer = new DraftBenchHeaderRenderer();
-	private readonly chatComposerRenderer: DraftBenchChatComposerRenderer;
+	private readonly entryRenderer: AiWritingBuddyEntryRenderer;
+	private readonly headerRenderer = new AiWritingBuddyHeaderRenderer();
+	private readonly chatComposerRenderer: AiWritingBuddyChatComposerRenderer;
 	private scrollButtonEl: HTMLButtonElement | null = null;
 
 	constructor(
 		leaf: WorkspaceLeaf,
 		private readonly getAiResponseService: () => AiResponseService,
-		private readonly settings: AiDraftBenchSettings,
-		initialEntries: AiDraftBenchEntry[],
-		initialMemorySummary: AiDraftBenchMemorySummary | undefined,
+		private readonly settings: AiWritingBuddySettings,
+		initialEntries: AiWritingBuddyEntry[],
+		initialMemorySummary: AiWritingBuddyMemorySummary | undefined,
 		onSaveSession: SessionSaveHandler,
 		onNewSession: NewSessionHandler,
 		private readonly getSessionListItems: SessionListProvider,
@@ -58,7 +58,7 @@ export class AiDraftBenchView extends ItemView {
 	) {
 		super(leaf);
 
-		this.sessionController = new DraftBenchSessionController(
+		this.sessionController = new AiWritingBuddySessionController(
 			this.getAiResponseService,
 			(scrollToBottom) => {
 				if (scrollToBottom) {
@@ -80,13 +80,13 @@ export class AiDraftBenchView extends ItemView {
 		this.clipboardService = new ClipboardService();
 		this.selectionEditService = new SelectionEditService(this.app);
 
-		this.entryRenderer = new DraftBenchEntryRenderer(this.app, this.clipboardService, this.selectionEditService, (entryId) => {
+		this.entryRenderer = new AiWritingBuddyEntryRenderer(this.app, this.clipboardService, this.selectionEditService, (entryId) => {
 			this.sessionController.setReplyToEntry(entryId);
 			this.chatComposerRenderer.requestFocusOnNextRender();
 			this.render();
 		});
 
-		this.chatComposerRenderer = new DraftBenchChatComposerRenderer(
+		this.chatComposerRenderer = new AiWritingBuddyChatComposerRenderer(
 			(message) => {
 				void this.sessionController.addChatEntry(message);
 			},
@@ -97,7 +97,7 @@ export class AiDraftBenchView extends ItemView {
 	}
 
 	getViewType(): string {
-		return AI_DRAFT_BENCH_VIEW_TYPE;
+		return AI_WRITING_BUDDY_VIEW_TYPE;
 	}
 
 	getDisplayText(): string {
@@ -116,12 +116,12 @@ export class AiDraftBenchView extends ItemView {
 		// Nothing to clean up yet.
 	}
 
-	setRequest(request: AiDraftBenchRequest): void {
+	setRequest(request: AiWritingBuddyRequest): void {
 		void this.sessionController.addSelectionEntry(request);
 	}
 
 	private renderPreservingScroll(): void {
-		const entriesEl = this.contentEl.querySelector(".ai-draft-bench-entries");
+		const entriesEl = this.contentEl.querySelector(".ai-writing-buddy-entries");
 		const previousScrollTop = entriesEl instanceof HTMLElement ? entriesEl.scrollTop : null;
 
 		this.render();
@@ -131,7 +131,7 @@ export class AiDraftBenchView extends ItemView {
 		}
 
 		window.setTimeout(() => {
-			const newEntriesEl = this.contentEl.querySelector(".ai-draft-bench-entries");
+			const newEntriesEl = this.contentEl.querySelector(".ai-writing-buddy-entries");
 
 			if (!(newEntriesEl instanceof HTMLElement)) {
 				return;
@@ -144,7 +144,7 @@ export class AiDraftBenchView extends ItemView {
 	private render(): void {
 		const container = this.contentEl;
 		container.empty();
-		container.addClass("ai-draft-bench-view");
+		container.addClass("ai-writing-buddy-view");
 
 		this.headerRenderer.render(container, {
 			hasEntries: this.sessionController.hasEntries(),
@@ -165,14 +165,14 @@ export class AiDraftBenchView extends ItemView {
 		});
 
 		const entriesEl = container.createEl("div", {
-			cls: "ai-draft-bench-entries",
+			cls: "ai-writing-buddy-entries",
 		});
 
 		const entries = this.sessionController.getEntries();
 
 		if (entries.length === 0) {
 			entriesEl.createEl("p", {
-				cls: "ai-draft-bench-empty",
+				cls: "ai-writing-buddy-empty",
 				text: "Select text in a note, right click, and ask AI about it. Or use the chat box below.",
 			});
 		}
@@ -269,7 +269,7 @@ export class AiDraftBenchView extends ItemView {
 
 	private renderScrollToBottomButton(container: HTMLElement, entriesEl: HTMLElement): void {
 		const scrollButtonEl = container.createEl("button", {
-			cls: "ai-draft-bench-scroll-bottom-button",
+			cls: "ai-writing-buddy-scroll-bottom-button",
 			attr: {
 				"aria-label": "Scroll to latest response",
 			},
@@ -302,7 +302,7 @@ export class AiDraftBenchView extends ItemView {
 	}
 
 	private scrollToBottom(): void {
-		const entriesEl = this.contentEl.querySelector(".ai-draft-bench-entries");
+		const entriesEl = this.contentEl.querySelector(".ai-writing-buddy-entries");
 
 		if (!(entriesEl instanceof HTMLElement)) {
 			return;
@@ -318,7 +318,7 @@ export class AiDraftBenchView extends ItemView {
 	}
 
 	private smoothScrollToBottom(): void {
-		const entriesEl = this.contentEl.querySelector(".ai-draft-bench-entries");
+		const entriesEl = this.contentEl.querySelector(".ai-writing-buddy-entries");
 
 		if (!(entriesEl instanceof HTMLElement)) {
 			return;

@@ -1,4 +1,4 @@
-export type AiDraftBenchResponse = {
+export type AiWritingBuddyResponse = {
 	text: string;
 	createdAt: string;
 	isPlaceholder: boolean;

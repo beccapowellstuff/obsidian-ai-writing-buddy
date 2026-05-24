@@ -1,16 +1,16 @@
 import { App, PluginSettingTab } from "obsidian";
-import type AiDraftBenchPlugin from "../main";
+import type AiWritingBuddyPlugin from "../main";
 import { PLUGIN_DISPLAY } from "../config/plugin-display";
 import { TemplateSettingsRenderer } from "./template-settings-renderer";
 import { ConnectionSettingsRenderer } from "./connection-settings-renderer";
 import { PromptSettingsRenderer } from "./prompt-settings-renderer";
 
-export class AiDraftBenchSettingTab extends PluginSettingTab {
+export class AiWritingBuddySettingTab extends PluginSettingTab {
 	private availableModels: string[] = [];
 
 	constructor(
 		app: App,
-		private readonly plugin: AiDraftBenchPlugin,
+		private readonly plugin: AiWritingBuddyPlugin,
 	) {
 		super(app, plugin);
 	}
@@ -19,14 +19,14 @@ export class AiDraftBenchSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
-		containerEl.addClass("ai-draft-bench-settings");
+		containerEl.addClass("ai-writing-buddy-settings");
 
 		const introEl = containerEl.createEl("div", {
-			cls: "ai-draft-bench-settings-hero",
+			cls: "ai-writing-buddy-settings-hero",
 		});
 
 		introEl.createEl("div", {
-			cls: "ai-draft-bench-settings-title",
+			cls: "ai-writing-buddy-settings-title",
 			text: PLUGIN_DISPLAY.name,
 		});
 

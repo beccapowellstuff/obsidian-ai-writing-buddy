@@ -1,16 +1,16 @@
-import { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
-import { AiDraftBenchMemorySummary } from "../types/ai-writing-buddy-plugin-data";
-import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
-import { AiDraftBenchResponse } from "../types/ai-writing-buddy-response";
+import { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
+import { AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
+import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
+import { AiWritingBuddyResponse } from "../types/ai-writing-buddy-response";
 
 export type AiChatRequest = {
 	message: string;
-	replyToEntry?: AiDraftBenchEntry;
-	recentEntries?: AiDraftBenchEntry[];
-	memorySummary?: AiDraftBenchMemorySummary;
+	replyToEntry?: AiWritingBuddyEntry;
+	recentEntries?: AiWritingBuddyEntry[];
+	memorySummary?: AiWritingBuddyMemorySummary;
 };
 
 export interface AiResponseService {
-	createSelectionResponse(request: AiDraftBenchRequest): Promise<AiDraftBenchResponse>;
-	createChatResponse(request: AiChatRequest): Promise<AiDraftBenchResponse>;
+	createSelectionResponse(request: AiWritingBuddyRequest): Promise<AiWritingBuddyResponse>;
+	createChatResponse(request: AiChatRequest): Promise<AiWritingBuddyResponse>;
 }

@@ -1,6 +1,6 @@
-/* AI Draft Bench: panel layout */
+/* AI Writing Buddy: panel layout */
 
-.ai-draft-bench-view {
+.ai-writing-buddy-view {
 	position: relative;
 	display: flex;
 	flex-direction: column;
@@ -8,7 +8,7 @@
 	min-height: 0;
 }
 
-.ai-draft-bench-entries {
+.ai-writing-buddy-entries {
 	flex: 1 1 auto;
 	min-height: 0;
 	overflow-y: auto;
@@ -16,12 +16,12 @@
 	padding-bottom: 12px;
 }
 
-.ai-draft-bench-empty {
+.ai-writing-buddy-empty {
 	color: var(--text-muted);
 	line-height: 1.45;
 }
 
-.ai-draft-bench-scroll-bottom-button {
+.ai-writing-buddy-scroll-bottom-button {
 	position: absolute;
 	left: 50%;
 	bottom: 150px;
@@ -45,18 +45,18 @@
 		transform 120ms ease;
 }
 
-.ai-draft-bench-scroll-bottom-button.is-visible {
+.ai-writing-buddy-scroll-bottom-button.is-visible {
 	opacity: 0.95;
 	pointer-events: auto;
 	transform: translate(-50%, 0);
 }
 
-.ai-draft-bench-scroll-bottom-button:hover {
+.ai-writing-buddy-scroll-bottom-button:hover {
 	color: var(--text-normal);
 	background: var(--background-modifier-hover);
 }
 
-.ai-draft-bench-scroll-bottom-button svg {
+.ai-writing-buddy-scroll-bottom-button svg {
 	width: 16px;
 	height: 16px;
 }

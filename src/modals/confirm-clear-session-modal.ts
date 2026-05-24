@@ -21,7 +21,7 @@ export class ConfirmClearSessionModal extends Modal {
 		});
 
 		const buttonRow = contentEl.createEl("div", {
-			cls: "ai-draft-bench-modal-button-row",
+			cls: "ai-writing-buddy-modal-button-row",
 		});
 
 		const cancelButton = buttonRow.createEl("button", {

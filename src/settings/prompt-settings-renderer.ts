@@ -1,8 +1,8 @@
 import { Setting } from "obsidian";
-import type AiDraftBenchPlugin from "../main";
+import type AiWritingBuddyPlugin from "../main";
 
 export class PromptSettingsRenderer {
-	constructor(private readonly plugin: AiDraftBenchPlugin) {}
+	constructor(private readonly plugin: AiWritingBuddyPlugin) {}
 
 	render(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName("Prompts").setHeading();

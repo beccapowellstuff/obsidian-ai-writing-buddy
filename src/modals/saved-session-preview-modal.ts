@@ -1,9 +1,9 @@
 import { App, Modal } from "obsidian";
-import { AiDraftBenchCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
+import { AiWritingBuddyCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
 import { ConfirmDeleteSavedSessionModal } from "./confirm-delete-saved-session-modal";
 
 type SavedSessionPreviewModalOptions = {
-	session: AiDraftBenchCurrentSessionData;
+	session: AiWritingBuddyCurrentSessionData;
 	sessionLabel: string;
 	onOpenSession: (sessionId: string) => void;
 	onDeleteSession: (sessionId: string) => void;
@@ -29,17 +29,17 @@ export class SavedSessionPreviewModal extends Modal {
 		});
 
 		contentEl.createEl("p", {
-			cls: "ai-draft-bench-saved-session-preview-meta",
+			cls: "ai-writing-buddy-saved-session-preview-meta",
 			text: this.options.sessionLabel,
 		});
 
 		const entriesEl = contentEl.createEl("div", {
-			cls: "ai-draft-bench-saved-session-preview-entries",
+			cls: "ai-writing-buddy-saved-session-preview-entries",
 		});
 
 		for (const entry of this.options.session.entries) {
 			const entryEl = entriesEl.createEl("div", {
-				cls: "ai-draft-bench-saved-session-preview-entry",
+				cls: "ai-writing-buddy-saved-session-preview-entry",
 			});
 
 			if (entry.type === "chat") {
@@ -61,7 +61,7 @@ export class SavedSessionPreviewModal extends Modal {
 
 				if (entry.request.templateName) {
 					entryEl.createEl("p", {
-						cls: "ai-draft-bench-saved-session-preview-template",
+						cls: "ai-writing-buddy-saved-session-preview-template",
 						text: `Template: ${entry.request.templateName}`,
 					});
 				}
@@ -77,7 +77,7 @@ export class SavedSessionPreviewModal extends Modal {
 		}
 
 		const buttonRow = contentEl.createEl("div", {
-			cls: "ai-draft-bench-modal-button-row",
+			cls: "ai-writing-buddy-modal-button-row",
 		});
 
 		const closeButton = buttonRow.createEl("button", {

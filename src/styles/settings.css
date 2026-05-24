@@ -1,11 +1,11 @@
-/* AI Draft Bench: settings tab */
+/* AI Writing Buddy: settings tab */
 
-.ai-draft-bench-settings {
-	--ai-draft-bench-card-radius: 18px;
-	--ai-draft-bench-card-padding: 18px;
+.ai-writing-buddy-settings {
+	--ai-writing-buddy-card-radius: 18px;
+	--ai-writing-buddy-card-padding: 18px;
 }
 
-.ai-draft-bench-settings-hero {
+.ai-writing-buddy-settings-hero {
 	margin: 0 0 14px 0;
 	padding: 12px 14px;
 	border: 1px solid var(--background-modifier-border);
@@ -14,14 +14,14 @@
 	box-shadow: none;
 }
 
-.ai-draft-bench-settings-title {
+.ai-writing-buddy-settings-title {
 	margin: 0;
 	font-size: 1.2em;
 	font-weight: 800;
 	letter-spacing: -0.02em;
 }
 
-.ai-draft-bench-settings-hero p {
+.ai-writing-buddy-settings-hero p {
 	max-width: 720px;
 	margin: 4px 0 0 0;
 	color: var(--text-muted);
@@ -29,13 +29,13 @@
 	line-height: 1.35;
 }
 
-.ai-draft-bench-settings .setting-item-heading {
+.ai-writing-buddy-settings .setting-item-heading {
 	margin-top: 26px;
 	padding: 10px 0 8px 0;
 	border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.ai-draft-bench-settings .setting-item-heading .setting-item-name {
+.ai-writing-buddy-settings .setting-item-heading .setting-item-name {
 	color: var(--interactive-accent);
 	font-size: 1.1em;
 	font-weight: 800;
@@ -43,11 +43,11 @@
 	text-transform: uppercase;
 }
 
-.ai-draft-bench-settings .setting-item:not(.setting-item-heading) {
+.ai-writing-buddy-settings .setting-item:not(.setting-item-heading) {
 	margin: 12px 0;
-	padding: var(--ai-draft-bench-card-padding);
+	padding: var(--ai-writing-buddy-card-padding);
 	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--ai-draft-bench-card-radius);
+	border-radius: var(--ai-writing-buddy-card-radius);
 	background:
 		linear-gradient(180deg,
 			var(--background-primary-alt),
@@ -55,37 +55,37 @@
 	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10);
 }
 
-.ai-draft-bench-settings .setting-item-name {
+.ai-writing-buddy-settings .setting-item-name {
 	font-weight: 750;
 }
 
-.ai-draft-bench-settings .setting-item-description {
+.ai-writing-buddy-settings .setting-item-description {
 	margin-top: 4px;
 	color: var(--text-muted);
 	line-height: 1.4;
 }
 
-.ai-draft-bench-settings textarea,
-.ai-draft-bench-settings input,
-.ai-draft-bench-settings select {
+.ai-writing-buddy-settings textarea,
+.ai-writing-buddy-settings input,
+.ai-writing-buddy-settings select {
 	border-radius: 10px;
 }
 
-.ai-draft-bench-settings textarea {
+.ai-writing-buddy-settings textarea {
 	min-height: 120px;
 	padding: 10px 12px;
 	line-height: 1.45;
 }
 
-.ai-draft-bench-settings button {
+.ai-writing-buddy-settings button {
 	border-radius: 999px;
 	font-weight: 700;
 }
 
-.ai-draft-bench-settings button:hover {
+.ai-writing-buddy-settings button:hover {
 	transform: translateY(-1px);
 }
 
-.ai-draft-bench-settings .dropdown {
+.ai-writing-buddy-settings .dropdown {
 	min-width: 220px;
 }

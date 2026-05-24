@@ -1,12 +1,12 @@
 import { requestUrl } from "obsidian";
-import { AiDraftBenchSettings } from "../config/default-settings";
-import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
-import { AiDraftBenchResponse } from "../types/ai-writing-buddy-response";
+import { AiWritingBuddySettings } from "../config/default-settings";
+import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
+import { AiWritingBuddyResponse } from "../types/ai-writing-buddy-response";
 import { ConversationMemoryStrategy } from "../types/conversation-memory-strategy";
 import { AiChatRequest, AiResponseService } from "./ai-response-service";
 import { ConversationMemoryStrategyService } from "./conversation-memory-strategy-service";
-import { DraftBenchChatMessage, DraftBenchPromptBuilder } from "./prompt-builder";
-import { DraftBenchPromptSizeGuard } from "./prompt-size-guard";
+import { AiWritingBuddyChatMessage, AiWritingBuddyPromptBuilder } from "./prompt-builder";
+import { AiWritingBuddyPromptSizeGuard } from "./prompt-size-guard";
 
 type OpenAiChatCompletionResponse = {
 	choices?: Array<{
@@ -21,18 +21,18 @@ type ChatCompletionOptions = {
 };
 
 export class OpenAiCompatibleResponseService implements AiResponseService {
-	private readonly promptBuilder: DraftBenchPromptBuilder;
-	private readonly promptSizeGuard: DraftBenchPromptSizeGuard;
+	private readonly promptBuilder: AiWritingBuddyPromptBuilder;
+	private readonly promptSizeGuard: AiWritingBuddyPromptSizeGuard;
 	private readonly memoryStrategyService = new ConversationMemoryStrategyService();
 	private readonly memoryStrategy: ConversationMemoryStrategy;
 
-	constructor(private readonly settings: AiDraftBenchSettings) {
-		this.promptBuilder = new DraftBenchPromptBuilder(settings);
-		this.promptSizeGuard = new DraftBenchPromptSizeGuard(settings.maxPromptCharacters);
+	constructor(private readonly settings: AiWritingBuddySettings) {
+		this.promptBuilder = new AiWritingBuddyPromptBuilder(settings);
+		this.promptSizeGuard = new AiWritingBuddyPromptSizeGuard(settings.maxPromptCharacters);
 		this.memoryStrategy = this.memoryStrategyService.getStrategy(settings);
 	}
 
-	async createSelectionResponse(request: AiDraftBenchRequest): Promise<AiDraftBenchResponse> {
+	async createSelectionResponse(request: AiWritingBuddyRequest): Promise<AiWritingBuddyResponse> {
 		const responseText = await this.sendChatCompletion(this.promptBuilder.buildSelectionPrompt(request), {
 			temperature: request.temperature ?? 0.7,
 		});
@@ -40,7 +40,7 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 		return this.createResponse(responseText);
 	}
 
-	async createChatResponse(request: AiChatRequest): Promise<AiDraftBenchResponse> {
+	async createChatResponse(request: AiChatRequest): Promise<AiWritingBuddyResponse> {
 		const responseText = await this.sendChatCompletion(this.promptBuilder.buildChatPrompt(request), {
 			temperature: 0.7,
 		});
@@ -48,7 +48,7 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 		return this.createResponse(responseText);
 	}
 
-	private async sendChatCompletion(messages: DraftBenchChatMessage[], options: ChatCompletionOptions): Promise<string> {
+	private async sendChatCompletion(messages: AiWritingBuddyChatMessage[], options: ChatCompletionOptions): Promise<string> {
 		this.promptSizeGuard.validate(messages);
 
 		if (this.memoryStrategy.mode === "provider-state") {
@@ -97,7 +97,7 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 		return content;
 	}
 
-	private createResponse(text: string): AiDraftBenchResponse {
+	private createResponse(text: string): AiWritingBuddyResponse {
 		return {
 			text,
 			createdAt: new Date().toISOString(),

@@ -1,24 +1,24 @@
-import { AiDraftBenchSettings } from "../config/default-settings";
-import { AiDraftBenchEntry } from "./ai-writing-buddy-entry";
+import { AiWritingBuddySettings } from "../config/default-settings";
+import { AiWritingBuddyEntry } from "./ai-writing-buddy-entry";
 
-export type AiDraftBenchMemorySummary = {
+export type AiWritingBuddyMemorySummary = {
 	text: string;
 	updatedAt: string;
 	sourceEntryId?: string;
 	entryCount: number;
 };
 
-export type AiDraftBenchCurrentSessionData = {
+export type AiWritingBuddyCurrentSessionData = {
 	id: string;
 	createdAt: string;
 	updatedAt: string;
 	entryCount: number;
 	userTitle?: string;
-	memorySummary?: AiDraftBenchMemorySummary;
-	entries: AiDraftBenchEntry[];
+	memorySummary?: AiWritingBuddyMemorySummary;
+	entries: AiWritingBuddyEntry[];
 };
 
-export type AiDraftBenchSessionListItem = {
+export type AiWritingBuddySessionListItem = {
 	id: string;
 	createdAt: string;
 	updatedAt: string;
@@ -26,8 +26,8 @@ export type AiDraftBenchSessionListItem = {
 	userTitle?: string;
 };
 
-export type AiDraftBenchPluginData = {
-	settings: AiDraftBenchSettings;
-	currentSession: AiDraftBenchCurrentSessionData;
-	savedSessions: AiDraftBenchCurrentSessionData[];
+export type AiWritingBuddyPluginData = {
+	settings: AiWritingBuddySettings;
+	currentSession: AiWritingBuddyCurrentSessionData;
+	savedSessions: AiWritingBuddyCurrentSessionData[];
 };

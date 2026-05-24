@@ -1,5 +1,5 @@
 import { App, Notice, TFile } from "obsidian";
-import { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
+import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 
 type ValidatedSelectionContext = {
 	file: TFile;
@@ -11,7 +11,7 @@ type ValidatedSelectionContext = {
 export class SelectionEditService {
 	constructor(private readonly app: App) {}
 
-	async replaceSelection(request: AiDraftBenchRequest, replacementText: string): Promise<void> {
+	async replaceSelection(request: AiWritingBuddyRequest, replacementText: string): Promise<void> {
 		const context = await this.getValidatedSelectionContext(request, "Replacement cancelled.");
 
 		if (!context) {
@@ -25,7 +25,7 @@ export class SelectionEditService {
 		new Notice("Selection replaced.");
 	}
 
-	async insertAfterSelection(request: AiDraftBenchRequest, textToInsert: string): Promise<void> {
+	async insertAfterSelection(request: AiWritingBuddyRequest, textToInsert: string): Promise<void> {
 		const context = await this.getValidatedSelectionContext(request, "Insert cancelled.");
 
 		if (!context) {
@@ -39,7 +39,7 @@ export class SelectionEditService {
 		new Notice("Response inserted after selection.");
 	}
 
-	private async getValidatedSelectionContext(request: AiDraftBenchRequest, cancelMessage: string): Promise<ValidatedSelectionContext | null> {
+	private async getValidatedSelectionContext(request: AiWritingBuddyRequest, cancelMessage: string): Promise<ValidatedSelectionContext | null> {
 		const file = this.app.vault.getAbstractFileByPath(request.sourcePath);
 
 		if (!(file instanceof TFile)) {

@@ -1,24 +1,24 @@
-import type { AiDraftBenchSettings } from "../config/default-settings";
-import type { AiDraftBenchChatEntry, AiDraftBenchEntry, AiDraftBenchSelectionEntry } from "../types/ai-writing-buddy-entry";
-import type { AiDraftBenchMemorySummary } from "../types/ai-writing-buddy-plugin-data";
-import type { AiDraftBenchRequest } from "../types/ai-writing-buddy-request";
+import type { AiWritingBuddySettings } from "../config/default-settings";
+import type { AiWritingBuddyChatEntry, AiWritingBuddyEntry, AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
+import type { AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
+import type { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 
-export type DraftBenchChatMessage = {
+export type AiWritingBuddyChatMessage = {
 	role: "system" | "user" | "assistant";
 	content: string;
 };
 
-export type DraftBenchChatPromptRequest = {
+export type AiWritingBuddyChatPromptRequest = {
 	message: string;
-	replyToEntry?: AiDraftBenchEntry;
-	recentEntries?: AiDraftBenchEntry[];
-	memorySummary?: AiDraftBenchMemorySummary;
+	replyToEntry?: AiWritingBuddyEntry;
+	recentEntries?: AiWritingBuddyEntry[];
+	memorySummary?: AiWritingBuddyMemorySummary;
 };
 
-export class DraftBenchPromptBuilder {
-	constructor(private readonly settings: AiDraftBenchSettings) {}
+export class AiWritingBuddyPromptBuilder {
+	constructor(private readonly settings: AiWritingBuddySettings) {}
 
-	buildSelectionPrompt(request: AiDraftBenchRequest): DraftBenchChatMessage[] {
+	buildSelectionPrompt(request: AiWritingBuddyRequest): AiWritingBuddyChatMessage[] {
 		return [
 			...this.buildSystemMessages(this.settings.selectionSystemPrompt),
 			{
@@ -39,7 +39,7 @@ export class DraftBenchPromptBuilder {
 		];
 	}
 
-	buildChatPrompt(request: DraftBenchChatPromptRequest): DraftBenchChatMessage[] {
+	buildChatPrompt(request: AiWritingBuddyChatPromptRequest): AiWritingBuddyChatMessage[] {
 		const messages = this.buildSystemMessages(this.settings.openChatSystemPrompt);
 		const memorySummary = this.formatMemorySummary(request.memorySummary);
 		const recentUserMessageIndex = this.formatRecentUserMessageIndex(request.recentEntries);
@@ -70,7 +70,7 @@ export class DraftBenchPromptBuilder {
 		return messages;
 	}
 
-	private formatMemorySummary(summary: AiDraftBenchMemorySummary | undefined): string {
+	private formatMemorySummary(summary: AiWritingBuddyMemorySummary | undefined): string {
 		if (!summary) {
 			return "";
 		}
@@ -89,7 +89,7 @@ export class DraftBenchPromptBuilder {
 		].join("\n");
 	}
 
-	private formatRecentUserMessageIndex(entries: AiDraftBenchEntry[] | undefined): string {
+	private formatRecentUserMessageIndex(entries: AiWritingBuddyEntry[] | undefined): string {
 		if (!entries || entries.length === 0) {
 			return "";
 		}
@@ -109,12 +109,12 @@ export class DraftBenchPromptBuilder {
 		].join("\n");
 	}
 
-	private buildRecentHistoryMessages(entries: AiDraftBenchEntry[] | undefined): DraftBenchChatMessage[] {
+	private buildRecentHistoryMessages(entries: AiWritingBuddyEntry[] | undefined): AiWritingBuddyChatMessage[] {
 		if (!entries || entries.length === 0) {
 			return [];
 		}
 
-		const messages: DraftBenchChatMessage[] = [];
+		const messages: AiWritingBuddyChatMessage[] = [];
 
 		for (const entry of entries) {
 			const userText = this.getEntryUserText(entry).trim();
@@ -138,7 +138,7 @@ export class DraftBenchPromptBuilder {
 		return messages;
 	}
 
-	private getEntryUserText(entry: AiDraftBenchEntry): string {
+	private getEntryUserText(entry: AiWritingBuddyEntry): string {
 		if (entry.type === "chat") {
 			return entry.message ?? "";
 		}
@@ -146,11 +146,11 @@ export class DraftBenchPromptBuilder {
 		return entry.request?.instruction ?? "";
 	}
 
-	private getEntryResponseText(entry: AiDraftBenchEntry): string {
+	private getEntryResponseText(entry: AiWritingBuddyEntry): string {
 		return entry.response.text ?? "";
 	}
 
-	private formatReplyContext(replyToEntry: AiDraftBenchEntry | undefined): string {
+	private formatReplyContext(replyToEntry: AiWritingBuddyEntry | undefined): string {
 		if (!replyToEntry) {
 			return "";
 		}
@@ -162,7 +162,7 @@ export class DraftBenchPromptBuilder {
 		return this.formatChatReplyContext(replyToEntry);
 	}
 
-	private formatSelectionReplyContext(replyToEntry: AiDraftBenchSelectionEntry): string {
+	private formatSelectionReplyContext(replyToEntry: AiWritingBuddySelectionEntry): string {
 		const request = replyToEntry.request;
 
 		return [
@@ -191,7 +191,7 @@ export class DraftBenchPromptBuilder {
 			.join("\n");
 	}
 
-	private formatChatReplyContext(replyToEntry: AiDraftBenchChatEntry): string {
+	private formatChatReplyContext(replyToEntry: AiWritingBuddyChatEntry): string {
 		const originalUserText = this.getEntryUserText(replyToEntry).trim();
 		const assistantResponseText = this.getEntryResponseText(replyToEntry).trim();
 
@@ -211,8 +211,8 @@ export class DraftBenchPromptBuilder {
 			.join("\n");
 	}
 
-	private buildSystemMessages(primarySystemPrompt: string): DraftBenchChatMessage[] {
-		const messages: DraftBenchChatMessage[] = [];
+	private buildSystemMessages(primarySystemPrompt: string): AiWritingBuddyChatMessage[] {
+		const messages: AiWritingBuddyChatMessage[] = [];
 		const trimmedPrimaryPrompt = primarySystemPrompt.trim();
 
 		if (trimmedPrimaryPrompt) {
@@ -236,7 +236,7 @@ export class DraftBenchPromptBuilder {
 		return messages;
 	}
 
-	formatPromptPreview(messages: DraftBenchChatMessage[]): string {
+	formatPromptPreview(messages: AiWritingBuddyChatMessage[]): string {
 		return messages
 			.map((message) => {
 				return [`[${message.role.toUpperCase()}]`, message.content].join("\n");

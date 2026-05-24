@@ -1,24 +1,24 @@
 import { App, Editor, EditorPosition, EventRef, MarkdownView, Menu, Notice, Plugin } from "obsidian";
-import { DraftBenchPromptBuilder } from "./prompt-builder";
+import { AiWritingBuddyPromptBuilder } from "./prompt-builder";
 import { AiPromptModal, AiPromptModalSubmitValue } from "../modals/ai-prompt-modal";
-import { AiDraftBenchSettings } from "../config/default-settings";
-import { DraftBenchViewService } from "./view-service";
+import { AiWritingBuddySettings } from "../config/default-settings";
+import { AiWritingBuddyViewService } from "./view-service";
 
 type EditorMenuWorkspace = {
 	on(name: "editor-menu", callback: (menu: Menu, editor: Editor, view: MarkdownView) => void): EventRef;
 };
 
-type AiDraftBenchPluginWithSettings = Plugin & {
-	settings: AiDraftBenchSettings;
+type AiWritingBuddyPluginWithSettings = Plugin & {
+	settings: AiWritingBuddySettings;
 };
 
 export class EditorMenuService {
-	private readonly plugin: AiDraftBenchPluginWithSettings;
+	private readonly plugin: AiWritingBuddyPluginWithSettings;
 	private readonly app: App;
 
 	constructor(
-		plugin: AiDraftBenchPluginWithSettings,
-		private readonly draftBenchViewService: DraftBenchViewService,
+		plugin: AiWritingBuddyPluginWithSettings,
+		private readonly aiWritingBuddyViewService: AiWritingBuddyViewService,
 	) {
 		this.plugin = plugin;
 		this.app = plugin.app;
@@ -64,7 +64,7 @@ export class EditorMenuService {
 	}
 
 	private async handlePromptSubmit(value: AiPromptModalSubmitValue, sourcePath: string, selectionStart: EditorPosition, selectionEnd: EditorPosition): Promise<void> {
-		const draftBenchView = await this.draftBenchViewService.openView();
+		const aiWritingBuddyView = await this.aiWritingBuddyViewService.openView();
 
 		const request = {
 			instruction: value.instruction,
@@ -81,10 +81,10 @@ export class EditorMenuService {
 			temperature: value.template?.temperature,
 		};
 
-		const promptBuilder = new DraftBenchPromptBuilder(this.plugin.settings);
+		const promptBuilder = new AiWritingBuddyPromptBuilder(this.plugin.settings);
 		const promptPreview = promptBuilder.formatPromptPreview(promptBuilder.buildSelectionPrompt(request));
 
-		draftBenchView.setRequest({
+		aiWritingBuddyView.setRequest({
 			...request,
 			promptPreview,
 		});

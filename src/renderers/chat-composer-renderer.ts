@@ -1,7 +1,7 @@
 type SendChatHandler = (message: string) => void;
 type CancelReplyHandler = () => void;
 
-export class DraftBenchChatComposerRenderer {
+export class AiWritingBuddyChatComposerRenderer {
 	private shouldFocusOnNextRender = false;
 
 	constructor(
@@ -15,7 +15,7 @@ export class DraftBenchChatComposerRenderer {
 
 	render(container: HTMLElement, replyContextText: string | null): void {
 		const composerEl = container.createEl("div", {
-			cls: "ai-draft-bench-chat-composer",
+			cls: "ai-writing-buddy-chat-composer",
 		});
 
 		if (replyContextText) {
@@ -23,7 +23,7 @@ export class DraftBenchChatComposerRenderer {
 		}
 
 		const inputEl = composerEl.createEl("textarea", {
-			cls: "ai-draft-bench-chat-input",
+			cls: "ai-writing-buddy-chat-input",
 			attr: {
 				placeholder: "Ask about your draft...",
 				rows: "2",
@@ -31,7 +31,7 @@ export class DraftBenchChatComposerRenderer {
 		});
 
 		const sendButtonEl = composerEl.createEl("button", {
-			cls: "ai-draft-bench-chat-send",
+			cls: "ai-writing-buddy-chat-send",
 			text: "Send",
 		});
 
@@ -80,7 +80,7 @@ export class DraftBenchChatComposerRenderer {
 
 	private renderReplyContext(container: HTMLElement, replyContextText: string): void {
 		const replyEl = container.createEl("div", {
-			cls: "ai-draft-bench-reply-context",
+			cls: "ai-writing-buddy-reply-context",
 		});
 
 		replyEl.createSpan({
@@ -89,7 +89,7 @@ export class DraftBenchChatComposerRenderer {
 
 		const cancelButtonEl = replyEl.createEl("button", {
 			text: "Cancel",
-			cls: "ai-draft-bench-reply-cancel",
+			cls: "ai-writing-buddy-reply-cancel",
 		});
 
 		cancelButtonEl.addEventListener("click", () => {

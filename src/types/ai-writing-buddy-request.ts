@@ -1,6 +1,6 @@
 import { EditorPosition } from "obsidian";
 
-export type AiDraftBenchRequest = {
+export type AiWritingBuddyRequest = {
 	instruction: string;
 	selectedText: string;
 	sourcePath: string;

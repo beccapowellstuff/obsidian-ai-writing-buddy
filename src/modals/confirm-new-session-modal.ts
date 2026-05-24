@@ -33,10 +33,10 @@ export class ConfirmNewSessionModal extends Modal {
 		});
 
 		inputEl.maxLength = SESSION_TITLE_MAX_LENGTH;
-		inputEl.addClass("ai-draft-bench-session-title-input");
+		inputEl.addClass("ai-writing-buddy-session-title-input");
 
 		const hintEl = contentEl.createEl("p", {
-			cls: "ai-draft-bench-session-title-hint",
+			cls: "ai-writing-buddy-session-title-hint",
 		});
 
 		const updateHint = (): void => {
@@ -47,7 +47,7 @@ export class ConfirmNewSessionModal extends Modal {
 		updateHint();
 
 		const buttonRow = contentEl.createEl("div", {
-			cls: "ai-draft-bench-modal-button-row",
+			cls: "ai-writing-buddy-modal-button-row",
 		});
 
 		const cancelButton = buttonRow.createEl("button", {

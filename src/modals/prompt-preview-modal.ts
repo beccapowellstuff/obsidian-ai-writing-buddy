@@ -22,7 +22,7 @@ export class PromptPreviewModal extends Modal {
 		});
 
 		const textAreaEl = contentEl.createEl("textarea", {
-			cls: "ai-draft-bench-prompt-preview-textarea",
+			cls: "ai-writing-buddy-prompt-preview-textarea",
 		});
 
 		textAreaEl.value = this.promptPreview;

@@ -1,23 +1,23 @@
-import { AiDraftBenchSelectionEntry } from "../types/ai-writing-buddy-entry";
+import { AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
 
-export class DraftBenchSourcePanelRenderer {
-	render(container: HTMLElement, entry: AiDraftBenchSelectionEntry): void {
+export class AiWritingBuddySourcePanelRenderer {
+	render(container: HTMLElement, entry: AiWritingBuddySelectionEntry): void {
 		const sourceEl = container.createEl("div", {
-			cls: "ai-draft-bench-source",
+			cls: "ai-writing-buddy-source",
 		});
 
 		sourceEl.createEl("div", {
-			cls: "ai-draft-bench-source-label",
+			cls: "ai-writing-buddy-source-label",
 			text: "Source",
 		});
 
 		sourceEl.createEl("div", {
-			cls: "ai-draft-bench-source-path",
+			cls: "ai-writing-buddy-source-path",
 			text: entry.request.sourcePath,
 		});
 
 		const selectedDetailsEl = sourceEl.createEl("details", {
-			cls: "ai-draft-bench-details",
+			cls: "ai-writing-buddy-details",
 		});
 
 		selectedDetailsEl.createEl("summary", {
@@ -25,7 +25,7 @@ export class DraftBenchSourcePanelRenderer {
 		});
 
 		selectedDetailsEl.createEl("div", {
-			cls: "ai-draft-bench-selected-text",
+			cls: "ai-writing-buddy-selected-text",
 			text: entry.request.selectedText,
 		});
 	}

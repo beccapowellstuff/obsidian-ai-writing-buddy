@@ -1,24 +1,24 @@
 import { setIcon, setTooltip } from "obsidian";
 import { PLUGIN_DISPLAY } from "../config/plugin-display";
-import { AiDraftBenchSessionListItem } from "../types/ai-writing-buddy-plugin-data";
+import { AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
 
-type DraftBenchHeaderRendererOptions = {
+type AiWritingBuddyHeaderRendererOptions = {
 	hasEntries: boolean;
 	currentSessionTitle?: string;
-	sessionListItems: AiDraftBenchSessionListItem[];
+	sessionListItems: AiWritingBuddySessionListItem[];
 	onClearSession: () => void;
 	onStartNewSession: () => void;
 	onRestoreSession: (sessionId: string) => void;
 	onManageSavedSessions: () => void;
 };
-export class DraftBenchHeaderRenderer {
-	render(container: HTMLElement, options: DraftBenchHeaderRendererOptions): void {
+export class AiWritingBuddyHeaderRenderer {
+	render(container: HTMLElement, options: AiWritingBuddyHeaderRendererOptions): void {
 		const headerEl = container.createEl("div", {
-			cls: "ai-draft-bench-header",
+			cls: "ai-writing-buddy-header",
 		});
 
 		const headerTopEl = headerEl.createEl("div", {
-			cls: "ai-draft-bench-header-top",
+			cls: "ai-writing-buddy-header-top",
 		});
 
 		this.renderTitle(headerTopEl);
@@ -32,11 +32,11 @@ export class DraftBenchHeaderRenderer {
 
 	private renderTitle(headerTopEl: HTMLElement): void {
 		const titleGroupEl = headerTopEl.createEl("div", {
-			cls: "ai-draft-bench-header-title-group",
+			cls: "ai-writing-buddy-header-title-group",
 		});
 
 		titleGroupEl.createEl("div", {
-			cls: "ai-draft-bench-header-kicker",
+			cls: "ai-writing-buddy-header-kicker",
 			text: PLUGIN_DISPLAY.headerKicker,
 		});
 
@@ -45,16 +45,16 @@ export class DraftBenchHeaderRenderer {
 		});
 	}
 
-	private renderActions(headerTopEl: HTMLElement, options: DraftBenchHeaderRendererOptions): void {
+	private renderActions(headerTopEl: HTMLElement, options: AiWritingBuddyHeaderRendererOptions): void {
 		const actionsEl = headerTopEl.createEl("div", {
-			cls: "ai-draft-bench-header-actions",
+			cls: "ai-writing-buddy-header-actions",
 		});
 
 		this.renderSessionHistory(actionsEl, options);
 		this.renderSessionManagerButton(actionsEl, options);
 
 		const newSessionButton = actionsEl.createEl("button", {
-			cls: "ai-draft-bench-session-icon-button",
+			cls: "ai-writing-buddy-session-icon-button",
 			attr: {
 				type: "button",
 				"aria-label": "Start a new session",
@@ -69,7 +69,7 @@ export class DraftBenchHeaderRenderer {
 		});
 
 		const clearButton = actionsEl.createEl("button", {
-			cls: "ai-draft-bench-session-icon-button",
+			cls: "ai-writing-buddy-session-icon-button",
 			attr: {
 				type: "button",
 				"aria-label": "Clear the current session",
@@ -85,7 +85,7 @@ export class DraftBenchHeaderRenderer {
 		});
 	}
 
-	private renderSessionHistory(actionsEl: HTMLElement, options: DraftBenchHeaderRendererOptions): void {
+	private renderSessionHistory(actionsEl: HTMLElement, options: AiWritingBuddyHeaderRendererOptions): void {
 		const currentSessionTitle = options.currentSessionTitle?.trim();
 		const hasCurrentSessionTitle = Boolean(currentSessionTitle && options.hasEntries);
 		const hasSavedSessions = options.sessionListItems.length > 0;
@@ -95,7 +95,7 @@ export class DraftBenchHeaderRenderer {
 		}
 
 		const sessionSelect = actionsEl.createEl("select", {
-			cls: "ai-draft-bench-session-history-select",
+			cls: "ai-writing-buddy-session-history-select",
 		});
 
 		sessionSelect.createEl("option", {
@@ -119,9 +119,9 @@ export class DraftBenchHeaderRenderer {
 		});
 	}
 
-	private renderSessionManagerButton(actionsEl: HTMLElement, options: DraftBenchHeaderRendererOptions): void {
+	private renderSessionManagerButton(actionsEl: HTMLElement, options: AiWritingBuddyHeaderRendererOptions): void {
 		const manageSessionsButton = actionsEl.createEl("button", {
-			cls: "ai-draft-bench-session-icon-button",
+			cls: "ai-writing-buddy-session-icon-button",
 			attr: {
 				type: "button",
 				"aria-label": "Open session manager",
@@ -136,7 +136,7 @@ export class DraftBenchHeaderRenderer {
 		});
 	}
 
-	private getSessionLabel(session: AiDraftBenchSessionListItem): string {
+	private getSessionLabel(session: AiWritingBuddySessionListItem): string {
 		if (session.userTitle?.trim()) {
 			return session.userTitle.trim();
 		}

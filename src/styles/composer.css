@@ -1,6 +1,6 @@
-/* AI Draft Bench: chat composer */
+/* AI Writing Buddy: chat composer */
 
-.ai-draft-bench-chat-composer {
+.ai-writing-buddy-chat-composer {
 	flex: 0 0 auto;
 	display: grid;
 	grid-template-columns: 1fr auto;
@@ -11,7 +11,7 @@
 	background: var(--background-primary);
 }
 
-.ai-draft-bench-chat-input {
+.ai-writing-buddy-chat-input {
 	flex: 1 1 auto;
 	min-height: 42px;
 	max-height: 120px;
@@ -20,7 +20,7 @@
 	padding: 8px 10px;
 }
 
-.ai-draft-bench-chat-send {
+.ai-writing-buddy-chat-send {
 	flex: 0 0 auto;
 	align-self: center;
 	border-radius: 999px;
@@ -28,7 +28,7 @@
 	font-weight: 700;
 }
 
-.ai-draft-bench-chat-send:disabled {
+.ai-writing-buddy-chat-send:disabled {
 	opacity: 0.45;
 	cursor: not-allowed;
 	color: var(--text-faint);
@@ -37,13 +37,13 @@
 	box-shadow: none;
 }
 
-.ai-draft-bench-chat-send:disabled:hover {
+.ai-writing-buddy-chat-send:disabled:hover {
 	color: var(--text-faint);
 	background: var(--background-modifier-border);
 	transform: none;
 }
 
-.ai-draft-bench-reply-context {
+.ai-writing-buddy-reply-context {
 	grid-column: 1 / -1;
 	display: flex;
 	align-items: center;
@@ -57,7 +57,7 @@
 	font-size: 0.82em;
 }
 
-.ai-draft-bench-reply-cancel {
+.ai-writing-buddy-reply-cancel {
 	border-radius: 999px;
 	padding: 2px 8px;
 	font-size: 0.85em;

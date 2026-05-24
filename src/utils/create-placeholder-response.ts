@@ -1,6 +1,6 @@
-import { AiDraftBenchResponse } from "../types/ai-writing-buddy-response";
+import { AiWritingBuddyResponse } from "../types/ai-writing-buddy-response";
 
-export function createPlaceholderResponse(text: string): AiDraftBenchResponse {
+export function createPlaceholderResponse(text: string): AiWritingBuddyResponse {
 	return {
 		text,
 		createdAt: new Date().toISOString(),

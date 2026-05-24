@@ -1,6 +1,6 @@
-/* AI Draft Bench: entries and selected source text */
+/* AI Writing Buddy: entries and selected source text */
 
-.ai-draft-bench-entry {
+.ai-writing-buddy-entry {
 	position: relative;
 	margin: 16px 0 22px 0;
 	padding: 20px 20px 20px 24px;
@@ -14,7 +14,7 @@
 	overflow: hidden;
 }
 
-.ai-draft-bench-entry::before {
+.ai-writing-buddy-entry::before {
 	content: "";
 	position: absolute;
 	top: 0;
@@ -27,7 +27,7 @@
 			rgba(155, 120, 255, 0.35));
 }
 
-.ai-draft-bench-entry h3 {
+.ai-writing-buddy-entry h3 {
 	margin-top: 18px;
 	margin-bottom: 7px;
 	font-size: 0.78em;
@@ -37,17 +37,17 @@
 	letter-spacing: 0.09em;
 }
 
-.ai-draft-bench-entry h3:first-child {
+.ai-writing-buddy-entry h3:first-child {
 	margin-top: 0;
 }
 
-.ai-draft-bench-entry > p {
+.ai-writing-buddy-entry > p {
 	margin-top: 4px;
 	margin-bottom: 12px;
 	line-height: 1.45;
 }
 
-.ai-draft-bench-source {
+.ai-writing-buddy-source {
 	margin-bottom: 18px;
 	padding: 12px 14px;
 	border: 1px solid var(--background-modifier-border);
@@ -58,7 +58,7 @@
 			var(--background-primary-alt));
 }
 
-.ai-draft-bench-source-label {
+.ai-writing-buddy-source-label {
 	margin-bottom: 4px;
 	font-size: 0.72em;
 	font-weight: 800;
@@ -67,7 +67,7 @@
 	letter-spacing: 0.1em;
 }
 
-.ai-draft-bench-source-path {
+.ai-writing-buddy-source-path {
 	display: inline-block;
 	margin-top: 2px;
 	padding: 3px 8px;
@@ -78,15 +78,15 @@
 	overflow-wrap: anywhere;
 }
 
-.ai-draft-bench-details {
+.ai-writing-buddy-details {
 	margin-top: 14px;
 }
 
-.ai-draft-bench-source .ai-draft-bench-details {
+.ai-writing-buddy-source .ai-writing-buddy-details {
 	margin-top: 10px;
 }
 
-.ai-draft-bench-details summary {
+.ai-writing-buddy-details summary {
 	cursor: pointer;
 	font-size: 0.78em;
 	font-weight: 800;
@@ -96,11 +96,11 @@
 	margin-bottom: 8px;
 }
 
-.ai-draft-bench-details summary:hover {
+.ai-writing-buddy-details summary:hover {
 	color: var(--text-normal);
 }
 
-.ai-draft-bench-selected-text {
+.ai-writing-buddy-selected-text {
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
 	user-select: text;
@@ -114,7 +114,7 @@
 	overflow-y: auto;
 }
 
-.ai-draft-bench-template-summary {
+.ai-writing-buddy-template-summary {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -122,14 +122,14 @@
 	margin: 10px 0 12px 0;
 }
 
-.ai-draft-bench-template-summary-text {
+.ai-writing-buddy-template-summary-text {
 	display: flex;
 	align-items: baseline;
 	gap: 6px;
 	min-width: 0;
 }
 
-.ai-draft-bench-template-summary-label {
+.ai-writing-buddy-template-summary-label {
 	color: var(--text-muted);
 	font-size: 0.82em;
 	font-weight: 800;
@@ -137,7 +137,7 @@
 	text-transform: uppercase;
 }
 
-.ai-draft-bench-template-summary-name {
+.ai-writing-buddy-template-summary-name {
 	color: var(--text-normal);
 	overflow: hidden;
 	text-overflow: ellipsis;

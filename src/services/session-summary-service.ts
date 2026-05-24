@@ -1,11 +1,11 @@
-import type { AiDraftBenchSettings } from "../config/default-settings";
-import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
-import type { AiDraftBenchMemorySummary } from "../types/ai-writing-buddy-plugin-data";
+import type { AiWritingBuddySettings } from "../config/default-settings";
+import type { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
+import type { AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 
-export class DraftBenchSessionSummaryService {
-	constructor(private readonly settings: AiDraftBenchSettings) {}
+export class AiWritingBuddySessionSummaryService {
+	constructor(private readonly settings: AiWritingBuddySettings) {}
 
-	createMemorySummary(entries: AiDraftBenchEntry[]): AiDraftBenchMemorySummary | undefined {
+	createMemorySummary(entries: AiWritingBuddyEntry[]): AiWritingBuddyMemorySummary | undefined {
 		if (!this.settings.memoryEnabled) {
 			return undefined;
 		}
@@ -32,7 +32,7 @@ export class DraftBenchSessionSummaryService {
 		};
 	}
 
-	private buildSummaryText(entries: AiDraftBenchEntry[]): string {
+	private buildSummaryText(entries: AiWritingBuddyEntry[]): string {
 		const maxSummaryCharacters = Math.max(1000, Math.floor(this.settings.memoryBudgetCharacters / 2));
 		const lines: string[] = ["Older session context summary:"];
 
@@ -57,7 +57,7 @@ export class DraftBenchSessionSummaryService {
 		return lines.join("\n\n");
 	}
 
-	private getEntryUserText(entry: AiDraftBenchEntry): string {
+	private getEntryUserText(entry: AiWritingBuddyEntry): string {
 		if (entry.type === "chat") {
 			return entry.message ?? "";
 		}

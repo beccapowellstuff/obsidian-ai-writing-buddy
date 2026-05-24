@@ -1,22 +1,22 @@
 import { App, Modal } from "obsidian";
-import { AiDraftBenchCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
+import { AiWritingBuddyCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
 import { SavedSessionPreviewModal } from "./saved-session-preview-modal";
 
 type SavedSessionsModalOptions = {
-	currentSession: AiDraftBenchCurrentSessionData | null;
-	savedSessions: AiDraftBenchCurrentSessionData[];
+	currentSession: AiWritingBuddyCurrentSessionData | null;
+	savedSessions: AiWritingBuddyCurrentSessionData[];
 	onOpenSession: (sessionId: string) => void;
-	onDeleteSavedSession: (sessionId: string) => AiDraftBenchCurrentSessionData[];
-	onRenameSavedSession: (sessionId: string, title: string) => AiDraftBenchCurrentSessionData[];
-	onRenameCurrentSession: (title: string) => AiDraftBenchCurrentSessionData;
-	onDeleteCurrentSession: () => AiDraftBenchCurrentSessionData | null;
+	onDeleteSavedSession: (sessionId: string) => AiWritingBuddyCurrentSessionData[];
+	onRenameSavedSession: (sessionId: string, title: string) => AiWritingBuddyCurrentSessionData[];
+	onRenameCurrentSession: (title: string) => AiWritingBuddyCurrentSessionData;
+	onDeleteCurrentSession: () => AiWritingBuddyCurrentSessionData | null;
 };
 
 type SessionRowKind = "current" | "saved";
 
 export class SavedSessionsModal extends Modal {
-	private currentSession: AiDraftBenchCurrentSessionData | null;
-	private savedSessions: AiDraftBenchCurrentSessionData[];
+	private currentSession: AiWritingBuddyCurrentSessionData | null;
+	private savedSessions: AiWritingBuddyCurrentSessionData[];
 	private editingSessionId: string | null = null;
 	private deletingSessionId: string | null = null;
 
@@ -54,12 +54,12 @@ export class SavedSessionsModal extends Modal {
 
 		if (this.currentSession) {
 			contentEl.createEl("h3", {
-				cls: "ai-draft-bench-session-manager-section-title",
+				cls: "ai-writing-buddy-session-manager-section-title",
 				text: "Current session",
 			});
 
 			const currentListEl = contentEl.createEl("div", {
-				cls: "ai-draft-bench-saved-sessions-list",
+				cls: "ai-writing-buddy-saved-sessions-list",
 			});
 
 			this.renderSessionRow(currentListEl, this.currentSession, "current");
@@ -67,12 +67,12 @@ export class SavedSessionsModal extends Modal {
 
 		if (this.savedSessions.length > 0) {
 			contentEl.createEl("h3", {
-				cls: "ai-draft-bench-session-manager-section-title",
+				cls: "ai-writing-buddy-session-manager-section-title",
 				text: "Saved sessions",
 			});
 
 			const savedListEl = contentEl.createEl("div", {
-				cls: "ai-draft-bench-saved-sessions-list",
+				cls: "ai-writing-buddy-saved-sessions-list",
 			});
 
 			for (const session of this.savedSessions) {
@@ -81,9 +81,9 @@ export class SavedSessionsModal extends Modal {
 		}
 	}
 
-	private renderSessionRow(container: HTMLElement, session: AiDraftBenchCurrentSessionData, kind: SessionRowKind): void {
+	private renderSessionRow(container: HTMLElement, session: AiWritingBuddyCurrentSessionData, kind: SessionRowKind): void {
 		const rowEl = container.createEl("div", {
-			cls: "ai-draft-bench-saved-session-row",
+			cls: "ai-writing-buddy-saved-session-row",
 		});
 
 		if (this.deletingSessionId === session.id) {
@@ -97,12 +97,12 @@ export class SavedSessionsModal extends Modal {
 		}
 
 		rowEl.createEl("div", {
-			cls: "ai-draft-bench-saved-session-label",
+			cls: "ai-writing-buddy-saved-session-label",
 			text: this.getSessionLabel(session),
 		});
 
 		const actionsEl = rowEl.createEl("div", {
-			cls: "ai-draft-bench-saved-session-actions",
+			cls: "ai-writing-buddy-saved-session-actions",
 		});
 
 		const renameButton = actionsEl.createEl("button", {
@@ -173,17 +173,17 @@ export class SavedSessionsModal extends Modal {
 		});
 	}
 
-	private renderRenameRow(rowEl: HTMLElement, session: AiDraftBenchCurrentSessionData, kind: SessionRowKind): void {
+	private renderRenameRow(rowEl: HTMLElement, session: AiWritingBuddyCurrentSessionData, kind: SessionRowKind): void {
 		const inputEl = rowEl.createEl("input", {
 			type: "text",
 			value: session.userTitle ?? "",
-			cls: "ai-draft-bench-saved-session-rename-input",
+			cls: "ai-writing-buddy-saved-session-rename-input",
 		});
 
 		inputEl.maxLength = 25;
 
 		const actionsEl = rowEl.createEl("div", {
-			cls: "ai-draft-bench-saved-session-actions",
+			cls: "ai-writing-buddy-saved-session-actions",
 		});
 
 		const saveButton = actionsEl.createEl("button", {
@@ -234,14 +234,14 @@ export class SavedSessionsModal extends Modal {
 		}, 0);
 	}
 
-	private renderDeleteConfirmationRow(rowEl: HTMLElement, session: AiDraftBenchCurrentSessionData, kind: SessionRowKind): void {
+	private renderDeleteConfirmationRow(rowEl: HTMLElement, session: AiWritingBuddyCurrentSessionData, kind: SessionRowKind): void {
 		rowEl.createEl("div", {
-			cls: "ai-draft-bench-saved-session-label ai-draft-bench-session-delete-warning",
+			cls: "ai-writing-buddy-saved-session-label ai-writing-buddy-session-delete-warning",
 			text: kind === "current" ? "Delete current session and start a new one?" : "Delete saved session?",
 		});
 
 		const actionsEl = rowEl.createEl("div", {
-			cls: "ai-draft-bench-saved-session-actions",
+			cls: "ai-writing-buddy-saved-session-actions",
 		});
 
 		const cancelButton = actionsEl.createEl("button", {
@@ -272,7 +272,7 @@ export class SavedSessionsModal extends Modal {
 		});
 	}
 
-	private getSessionLabel(session: AiDraftBenchCurrentSessionData): string {
+	private getSessionLabel(session: AiWritingBuddyCurrentSessionData): string {
 		if (session.userTitle?.trim()) {
 			return session.userTitle.trim();
 		}

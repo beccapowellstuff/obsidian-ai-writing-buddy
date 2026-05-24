@@ -1,8 +1,8 @@
-import { AiDraftBenchSettings } from "../config/default-settings";
+import { AiWritingBuddySettings } from "../config/default-settings";
 import { ConversationMemoryStrategy } from "../types/conversation-memory-strategy";
 
 export class ConversationMemoryStrategyService {
-	getStrategy(settings: AiDraftBenchSettings): ConversationMemoryStrategy {
+	getStrategy(settings: AiWritingBuddySettings): ConversationMemoryStrategy {
 		if (settings.provider === "mock") {
 			return {
 				mode: "none",

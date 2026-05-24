@@ -1,22 +1,22 @@
-import { AiDraftBenchRequest } from "./ai-writing-buddy-request";
-import { AiDraftBenchResponse } from "./ai-writing-buddy-response";
+import { AiWritingBuddyRequest } from "./ai-writing-buddy-request";
+import { AiWritingBuddyResponse } from "./ai-writing-buddy-response";
 
-export type AiDraftBenchSelectionEntry = {
+export type AiWritingBuddySelectionEntry = {
 	id: string;
 	type: "selection";
-	request: AiDraftBenchRequest;
-	response: AiDraftBenchResponse;
+	request: AiWritingBuddyRequest;
+	response: AiWritingBuddyResponse;
 	createdAt: string;
 };
 
-export type AiDraftBenchChatEntry = {
+export type AiWritingBuddyChatEntry = {
 	id: string;
 	type: "chat";
 	message: string;
-	response: AiDraftBenchResponse;
+	response: AiWritingBuddyResponse;
 	createdAt: string;
 	replyToEntryId?: string;
 	replyToSnippet?: string;
 };
 
-export type AiDraftBenchEntry = AiDraftBenchSelectionEntry | AiDraftBenchChatEntry;
+export type AiWritingBuddyEntry = AiWritingBuddySelectionEntry | AiWritingBuddyChatEntry;

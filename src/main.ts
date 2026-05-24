@@ -1,13 +1,13 @@
 import { Plugin, requestUrl } from "obsidian";
-import { AiDraftBenchSettings } from "./config/default-settings";
+import { AiWritingBuddySettings } from "./config/default-settings";
 import { PLUGIN_DISPLAY } from "./config/plugin-display";
-import { AiDraftBenchSettingTab } from "./settings/ai-writing-buddy-setting-tab";
-import { AiDraftBenchPluginDataService } from "./services/ai-writing-buddy-plugin-data-service";
+import { AiWritingBuddySettingTab } from "./settings/ai-writing-buddy-setting-tab";
+import { AiWritingBuddyPluginDataService } from "./services/ai-writing-buddy-plugin-data-service";
 import { createAiResponseService } from "./services/create-ai-response-service";
-import { DraftBenchViewService } from "./services/view-service";
+import { AiWritingBuddyViewService } from "./services/view-service";
 import { EditorMenuService } from "./services/editor-menu-service";
-import { AiDraftBenchCurrentSessionData, AiDraftBenchSessionListItem } from "./types/ai-writing-buddy-plugin-data";
-import { AI_DRAFT_BENCH_VIEW_TYPE, AiDraftBenchView } from "./views/ai-writing-buddy-view";
+import { AiWritingBuddyCurrentSessionData, AiWritingBuddySessionListItem } from "./types/ai-writing-buddy-plugin-data";
+import { AI_WRITING_BUDDY_VIEW_TYPE, AiWritingBuddyView } from "./views/ai-writing-buddy-view";
 
 type OpenAiModelsResponse = {
 	data?: Array<{
@@ -15,23 +15,23 @@ type OpenAiModelsResponse = {
 	}>;
 };
 
-export default class AiDraftBenchPlugin extends Plugin {
-	private readonly pluginDataService = new AiDraftBenchPluginDataService();
-	private draftBenchViewService!: DraftBenchViewService;
-	settings!: AiDraftBenchSettings;
-	currentSession: AiDraftBenchCurrentSessionData = this.pluginDataService.createEmptyCurrentSession();
-	savedSessions: AiDraftBenchCurrentSessionData[] = [];
+export default class AiWritingBuddyPlugin extends Plugin {
+	private readonly pluginDataService = new AiWritingBuddyPluginDataService();
+	private aiWritingBuddyViewService!: AiWritingBuddyViewService;
+	settings!: AiWritingBuddySettings;
+	currentSession: AiWritingBuddyCurrentSessionData = this.pluginDataService.createEmptyCurrentSession();
+	savedSessions: AiWritingBuddyCurrentSessionData[] = [];
 
 	async onload(): Promise<void> {
-		console.debug("AI Draft Bench loaded");
+		console.debug("AI Writing Buddy loaded");
 
 		await this.loadSettings();
-		this.addSettingTab(new AiDraftBenchSettingTab(this.app, this));
+		this.addSettingTab(new AiWritingBuddySettingTab(this.app, this));
 
-		this.draftBenchViewService = new DraftBenchViewService(this.app);
+		this.aiWritingBuddyViewService = new AiWritingBuddyViewService(this.app);
 
-		this.registerView(AI_DRAFT_BENCH_VIEW_TYPE, (leaf) => {
-			return new AiDraftBenchView(
+		this.registerView(AI_WRITING_BUDDY_VIEW_TYPE, (leaf) => {
+			return new AiWritingBuddyView(
 				leaf,
 				() => createAiResponseService(this.settings),
 				this.settings,
@@ -61,14 +61,14 @@ export default class AiDraftBenchPlugin extends Plugin {
 
 					return this.currentSession;
 				},
-				(sessionId): AiDraftBenchSessionListItem[] => {
+				(sessionId): AiWritingBuddySessionListItem[] => {
 					this.savedSessions = this.pluginDataService.deleteSavedSession(sessionId, this.savedSessions);
 					void this.savePluginData();
 
 					return this.pluginDataService.getSessionListItems(this.savedSessions);
 				},
 				() => this.savedSessions,
-				(sessionId, title): AiDraftBenchCurrentSessionData[] => {
+				(sessionId, title): AiWritingBuddyCurrentSessionData[] => {
 					this.savedSessions = this.pluginDataService.renameSavedSession(sessionId, title, this.savedSessions);
 					void this.savePluginData();
 
@@ -76,13 +76,13 @@ export default class AiDraftBenchPlugin extends Plugin {
 				},
 				() => this.currentSession.userTitle,
 				() => (this.currentSession.entryCount > 0 || this.currentSession.entries.length > 0 ? this.currentSession : null),
-				(title: string): AiDraftBenchCurrentSessionData => {
+				(title: string): AiWritingBuddyCurrentSessionData => {
 					this.currentSession = this.pluginDataService.renameCurrentSession(title, this.currentSession);
 					void this.savePluginData();
 
 					return this.currentSession;
 				},
-				(): AiDraftBenchCurrentSessionData => {
+				(): AiWritingBuddyCurrentSessionData => {
 					this.currentSession = this.pluginDataService.createEmptyCurrentSession();
 					void this.savePluginData();
 
@@ -92,16 +92,16 @@ export default class AiDraftBenchPlugin extends Plugin {
 		});
 
 		this.addRibbonIcon(PLUGIN_DISPLAY.ribbonIcon, PLUGIN_DISPLAY.ribbonTooltip, () => {
-			void this.draftBenchViewService.openView();
+			void this.aiWritingBuddyViewService.openView();
 		});
 
-		const editorMenuService = new EditorMenuService(this, this.draftBenchViewService);
+		const editorMenuService = new EditorMenuService(this, this.aiWritingBuddyViewService);
 
 		editorMenuService.register();
 	}
 
 	onunload(): void {
-		console.debug("AI Draft Bench unloaded");
+		console.debug("AI Writing Buddy unloaded");
 	}
 
 	async loadSettings(): Promise<void> {

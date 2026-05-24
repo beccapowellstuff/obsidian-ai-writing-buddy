@@ -1,6 +1,6 @@
-/* AI Draft Bench: header and session management */
+/* AI Writing Buddy: header and session management */
 
-.ai-draft-bench-header {
+.ai-writing-buddy-header {
 	flex: 0 0 auto;
 	margin-bottom: 10px;
 	padding: 10px 12px;
@@ -10,25 +10,25 @@
 	box-shadow: none;
 }
 
-.ai-draft-bench-header-top {
+.ai-writing-buddy-header-top {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 8px;
 }
 
-.ai-draft-bench-header-kicker {
+.ai-writing-buddy-header-kicker {
 	display: none;
 }
 
-.ai-draft-bench-header h2 {
+.ai-writing-buddy-header h2 {
 	margin: 0;
 	font-size: 1.05em;
 	line-height: 1.2;
 	letter-spacing: -0.01em;
 }
 
-.ai-draft-bench-header-actions {
+.ai-writing-buddy-header-actions {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -36,7 +36,7 @@
 	gap: 8px;
 }
 
-.ai-draft-bench-session-icon-button {
+.ai-writing-buddy-session-icon-button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -46,31 +46,31 @@
 	border-radius: 999px;
 }
 
-.ai-draft-bench-session-icon-button svg {
+.ai-writing-buddy-session-icon-button svg {
 	width: 16px;
 	height: 16px;
 }
 
-.ai-draft-bench-session-icon-button:disabled {
+.ai-writing-buddy-session-icon-button:disabled {
 	opacity: 0.45;
 	cursor: not-allowed;
 }
 
-.ai-draft-bench-session-history-select {
+.ai-writing-buddy-session-history-select {
 	min-width: 150px;
 	max-width: 220px;
 	border-radius: 999px;
 	font-size: 0.82em;
 }
 
-.ai-draft-bench-saved-sessions-list {
+.ai-writing-buddy-saved-sessions-list {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
 	margin-top: 12px;
 }
 
-.ai-draft-bench-saved-session-row {
+.ai-writing-buddy-saved-session-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -79,37 +79,37 @@
 	border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.ai-draft-bench-session-title-input {
+.ai-writing-buddy-session-title-input {
 	width: 100%;
 	margin-top: 4px;
 }
 
-.ai-draft-bench-session-title-hint {
+.ai-writing-buddy-session-title-hint {
 	margin-top: 6px;
 	color: var(--text-muted);
 	font-size: 0.85em;
 }
 
-.ai-draft-bench-saved-session-label {
+.ai-writing-buddy-saved-session-label {
 	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.ai-draft-bench-saved-session-actions {
+.ai-writing-buddy-saved-session-actions {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	flex: 0 0 auto;
 }
 
-.ai-draft-bench-saved-session-preview-meta {
+.ai-writing-buddy-saved-session-preview-meta {
 	color: var(--text-muted);
 	margin-bottom: 12px;
 }
 
-.ai-draft-bench-saved-session-preview-entries {
+.ai-writing-buddy-saved-session-preview-entries {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
@@ -119,7 +119,7 @@
 	margin-bottom: 14px;
 }
 
-.ai-draft-bench-saved-session-preview-entry {
+.ai-writing-buddy-saved-session-preview-entry {
 	overflow-wrap: anywhere;
 	padding: 12px 14px;
 	border: 1px solid var(--background-modifier-border);
@@ -127,7 +127,7 @@
 	background: var(--background-primary-alt);
 }
 
-.ai-draft-bench-saved-session-preview-entry h3 {
+.ai-writing-buddy-saved-session-preview-entry h3 {
 	margin: 0 0 6px 0;
 	color: var(--text-muted);
 	font-size: 0.78em;
@@ -136,26 +136,26 @@
 	text-transform: uppercase;
 }
 
-.ai-draft-bench-saved-session-preview-entry p {
+.ai-writing-buddy-saved-session-preview-entry p {
 	margin: 0 0 10px 0;
 	white-space: pre-wrap;
 }
 
-.ai-draft-bench-saved-session-preview-entry p:last-child {
+.ai-writing-buddy-saved-session-preview-entry p:last-child {
 	margin-bottom: 0;
 }
 
-.ai-draft-bench-saved-session-preview-template {
+.ai-writing-buddy-saved-session-preview-template {
 	color: var(--text-muted);
 	font-size: 0.9em;
 }
 
-.ai-draft-bench-saved-session-rename-input {
+.ai-writing-buddy-saved-session-rename-input {
 	min-width: 0;
 	width: 100%;
 }
 
-.ai-draft-bench-session-manager-section-title {
+.ai-writing-buddy-session-manager-section-title {
 	margin: 16px 0 8px 0;
 	color: var(--text-muted);
 	font-size: 0.78em;
@@ -164,7 +164,7 @@
 	text-transform: uppercase;
 }
 
-.ai-draft-bench-session-delete-warning {
+.ai-writing-buddy-session-delete-warning {
 	color: var(--text-error);
 	font-weight: 700;
 	white-space: normal;

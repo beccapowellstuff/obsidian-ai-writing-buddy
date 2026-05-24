@@ -1,14 +1,14 @@
-import { AiDraftBenchSettings } from "../config/default-settings";
-import { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
+import { AiWritingBuddySettings } from "../config/default-settings";
+import { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
 
 type RecentEntryOptions = {
 	excludeEntryId?: string;
 };
 
-export class DraftBenchSessionHistoryTrimmer {
-	constructor(private readonly settings: AiDraftBenchSettings) {}
+export class AiWritingBuddySessionHistoryTrimmer {
+	constructor(private readonly settings: AiWritingBuddySettings) {}
 
-	getRecentEntries(entries: AiDraftBenchEntry[], options: RecentEntryOptions = {}): AiDraftBenchEntry[] {
+	getRecentEntries(entries: AiWritingBuddyEntry[], options: RecentEntryOptions = {}): AiWritingBuddyEntry[] {
 		if (!this.settings.memoryEnabled) {
 			return [];
 		}
@@ -21,7 +21,7 @@ export class DraftBenchSessionHistoryTrimmer {
 		}
 
 		const completedEntries = entries.filter((entry) => !entry.response.isPlaceholder && entry.id !== options.excludeEntryId);
-		const selectedEntries: AiDraftBenchEntry[] = [];
+		const selectedEntries: AiWritingBuddyEntry[] = [];
 		let usedCharacters = 0;
 
 		for (const entry of completedEntries.slice(-maxEntries).reverse()) {
@@ -42,11 +42,11 @@ export class DraftBenchSessionHistoryTrimmer {
 		return selectedEntries.reverse();
 	}
 
-	private estimateEntryCharacters(entry: AiDraftBenchEntry): number {
+	private estimateEntryCharacters(entry: AiWritingBuddyEntry): number {
 		return [this.getEntryUserText(entry), entry.response.text].join("\n").length;
 	}
 
-	private getEntryUserText(entry: AiDraftBenchEntry): string {
+	private getEntryUserText(entry: AiWritingBuddyEntry): string {
 		if (entry.type === "chat") {
 			return entry.message ?? "";
 		}

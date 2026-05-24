@@ -1,33 +1,33 @@
-import type { AiDraftBenchSettings } from "../config/default-settings";
-import { DEFAULT_AI_DRAFT_BENCH_SETTINGS } from "../config/default-settings";
+import type { AiWritingBuddySettings } from "../config/default-settings";
+import { DEFAULT_AI_WRITING_BUDDY_SETTINGS } from "../config/default-settings";
 import { DEFAULT_PROMPT_TEMPLATES } from "../config/default-prompt-templates";
-import type { AiDraftBenchEntry } from "../types/ai-writing-buddy-entry";
-import type { AiDraftBenchCurrentSessionData, AiDraftBenchMemorySummary, AiDraftBenchPluginData, AiDraftBenchSessionListItem } from "../types/ai-writing-buddy-plugin-data";
+import type { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
+import type { AiWritingBuddyCurrentSessionData, AiWritingBuddyMemorySummary, AiWritingBuddyPluginData, AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
 
-type LegacyPluginData = Partial<AiDraftBenchSettings>;
-type SavedPluginData = Partial<AiDraftBenchPluginData> | LegacyPluginData | null;
+type LegacyPluginData = Partial<AiWritingBuddySettings>;
+type SavedPluginData = Partial<AiWritingBuddyPluginData> | LegacyPluginData | null;
 
 type LoadedPluginData = {
-	settings: AiDraftBenchSettings;
-	currentSession: AiDraftBenchCurrentSessionData;
-	savedSessions: AiDraftBenchCurrentSessionData[];
+	settings: AiWritingBuddySettings;
+	currentSession: AiWritingBuddyCurrentSessionData;
+	savedSessions: AiWritingBuddyCurrentSessionData[];
 };
 
 type SessionSwitchResult = {
-	currentSession: AiDraftBenchCurrentSessionData;
-	savedSessions: AiDraftBenchCurrentSessionData[];
+	currentSession: AiWritingBuddyCurrentSessionData;
+	savedSessions: AiWritingBuddyCurrentSessionData[];
 };
 
-type RawMemorySummary = Partial<AiDraftBenchMemorySummary> | undefined;
+type RawMemorySummary = Partial<AiWritingBuddyMemorySummary> | undefined;
 
-export class AiDraftBenchPluginDataService {
+export class AiWritingBuddyPluginDataService {
 	load(rawData: unknown): LoadedPluginData {
 		const savedData = rawData as SavedPluginData;
 		const savedSettings = this.getSavedSettings(savedData);
 
 		return {
 			settings: {
-				...DEFAULT_AI_DRAFT_BENCH_SETTINGS,
+				...DEFAULT_AI_WRITING_BUDDY_SETTINGS,
 				...(savedSettings ?? {}),
 				promptTemplates: this.mergePromptTemplates(savedSettings?.promptTemplates ?? []),
 			},
@@ -36,7 +36,7 @@ export class AiDraftBenchPluginDataService {
 		};
 	}
 
-	createSaveData(settings: AiDraftBenchSettings, currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[]): AiDraftBenchPluginData {
+	createSaveData(settings: AiWritingBuddySettings, currentSession: AiWritingBuddyCurrentSessionData, savedSessions: AiWritingBuddyCurrentSessionData[]): AiWritingBuddyPluginData {
 		return {
 			settings,
 			currentSession,
@@ -44,7 +44,7 @@ export class AiDraftBenchPluginDataService {
 		};
 	}
 
-	createEmptyCurrentSession(): AiDraftBenchCurrentSessionData {
+	createEmptyCurrentSession(): AiWritingBuddyCurrentSessionData {
 		const now = new Date().toISOString();
 
 		return {
@@ -61,7 +61,7 @@ export class AiDraftBenchPluginDataService {
 		return new Date().toLocaleString().slice(0, 25);
 	}
 
-	withUpdatedCurrentSessionEntries(currentSession: AiDraftBenchCurrentSessionData, entries: AiDraftBenchEntry[], memorySummary?: AiDraftBenchMemorySummary): AiDraftBenchCurrentSessionData {
+	withUpdatedCurrentSessionEntries(currentSession: AiWritingBuddyCurrentSessionData, entries: AiWritingBuddyEntry[], memorySummary?: AiWritingBuddyMemorySummary): AiWritingBuddyCurrentSessionData {
 		return {
 			...currentSession,
 			updatedAt: new Date().toISOString(),
@@ -71,7 +71,7 @@ export class AiDraftBenchPluginDataService {
 		};
 	}
 
-	getSessionListItems(savedSessions: AiDraftBenchCurrentSessionData[]): AiDraftBenchSessionListItem[] {
+	getSessionListItems(savedSessions: AiWritingBuddyCurrentSessionData[]): AiWritingBuddySessionListItem[] {
 		return savedSessions.map((session) => ({
 			id: session.id,
 			createdAt: session.createdAt,
@@ -81,14 +81,14 @@ export class AiDraftBenchPluginDataService {
 		}));
 	}
 
-	startNewSession(currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[], sessionTitle?: string): SessionSwitchResult {
+	startNewSession(currentSession: AiWritingBuddyCurrentSessionData, savedSessions: AiWritingBuddyCurrentSessionData[], sessionTitle?: string): SessionSwitchResult {
 		return {
 			currentSession: this.createEmptyCurrentSession(),
 			savedSessions: this.archiveSession(currentSession, savedSessions, sessionTitle),
 		};
 	}
 
-	restoreSavedSession(sessionId: string, currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[]): SessionSwitchResult | null {
+	restoreSavedSession(sessionId: string, currentSession: AiWritingBuddyCurrentSessionData, savedSessions: AiWritingBuddyCurrentSessionData[]): SessionSwitchResult | null {
 		const selectedSession = savedSessions.find((session) => session.id === sessionId);
 
 		if (!selectedSession) {
@@ -103,11 +103,11 @@ export class AiDraftBenchPluginDataService {
 		};
 	}
 
-	deleteSavedSession(sessionId: string, savedSessions: AiDraftBenchCurrentSessionData[]): AiDraftBenchCurrentSessionData[] {
+	deleteSavedSession(sessionId: string, savedSessions: AiWritingBuddyCurrentSessionData[]): AiWritingBuddyCurrentSessionData[] {
 		return savedSessions.filter((session) => session.id !== sessionId);
 	}
 
-	renameSavedSession(sessionId: string, title: string, savedSessions: AiDraftBenchCurrentSessionData[]): AiDraftBenchCurrentSessionData[] {
+	renameSavedSession(sessionId: string, title: string, savedSessions: AiWritingBuddyCurrentSessionData[]): AiWritingBuddyCurrentSessionData[] {
 		const trimmedTitle = title.trim().slice(0, 25);
 
 		return savedSessions.map((session) => {
@@ -123,7 +123,7 @@ export class AiDraftBenchPluginDataService {
 		});
 	}
 
-	renameCurrentSession(title: string, currentSession: AiDraftBenchCurrentSessionData): AiDraftBenchCurrentSessionData {
+	renameCurrentSession(title: string, currentSession: AiWritingBuddyCurrentSessionData): AiWritingBuddyCurrentSessionData {
 		const trimmedTitle = title.trim().slice(0, 25);
 
 		return {
@@ -133,13 +133,13 @@ export class AiDraftBenchPluginDataService {
 		};
 	}
 
-	private archiveSession(currentSession: AiDraftBenchCurrentSessionData, savedSessions: AiDraftBenchCurrentSessionData[], sessionTitle?: string): AiDraftBenchCurrentSessionData[] {
+	private archiveSession(currentSession: AiWritingBuddyCurrentSessionData, savedSessions: AiWritingBuddyCurrentSessionData[], sessionTitle?: string): AiWritingBuddyCurrentSessionData[] {
 		if (currentSession.entryCount === 0 && currentSession.entries.length === 0) {
 			return savedSessions;
 		}
 
 		const trimmedTitle = sessionTitle?.trim().slice(0, 25);
-		const sessionToArchive: AiDraftBenchCurrentSessionData = {
+		const sessionToArchive: AiWritingBuddyCurrentSessionData = {
 			...currentSession,
 			updatedAt: new Date().toISOString(),
 			userTitle: trimmedTitle || currentSession.userTitle,
@@ -148,7 +148,7 @@ export class AiDraftBenchPluginDataService {
 		return [sessionToArchive, ...savedSessions.filter((session) => session.id !== currentSession.id)];
 	}
 
-	private getSavedSettings(savedData: SavedPluginData): Partial<AiDraftBenchSettings> | null {
+	private getSavedSettings(savedData: SavedPluginData): Partial<AiWritingBuddySettings> | null {
 		if (!savedData) {
 			return null;
 		}
@@ -160,7 +160,7 @@ export class AiDraftBenchPluginDataService {
 		return savedData as LegacyPluginData;
 	}
 
-	private getSavedCurrentSession(savedData: SavedPluginData): AiDraftBenchCurrentSessionData {
+	private getSavedCurrentSession(savedData: SavedPluginData): AiWritingBuddyCurrentSessionData {
 		if (!savedData || !("currentSession" in savedData) || !savedData.currentSession) {
 			return this.createEmptyCurrentSession();
 		}
@@ -168,7 +168,7 @@ export class AiDraftBenchPluginDataService {
 		return this.normaliseSession(savedData.currentSession);
 	}
 
-	private getSavedSessions(savedData: SavedPluginData): AiDraftBenchCurrentSessionData[] {
+	private getSavedSessions(savedData: SavedPluginData): AiWritingBuddyCurrentSessionData[] {
 		if (!savedData || !("savedSessions" in savedData) || !Array.isArray(savedData.savedSessions)) {
 			return [];
 		}
@@ -176,9 +176,9 @@ export class AiDraftBenchPluginDataService {
 		return savedData.savedSessions.map((session) => this.normaliseSession(session)).filter((session) => session.entryCount > 0 || session.entries.length > 0);
 	}
 
-	private normaliseSession(session: Partial<AiDraftBenchCurrentSessionData>): AiDraftBenchCurrentSessionData {
+	private normaliseSession(session: Partial<AiWritingBuddyCurrentSessionData>): AiWritingBuddyCurrentSessionData {
 		const entries = Array.isArray(session.entries) ? session.entries : [];
-		const validEntries = entries.filter((entry): entry is AiDraftBenchEntry => Boolean(entry && entry.id && entry.type && entry.response));
+		const validEntries = entries.filter((entry): entry is AiWritingBuddyEntry => Boolean(entry && entry.id && entry.type && entry.response));
 		const fallbackSession = this.createEmptyCurrentSession();
 		const memorySummary = this.normaliseMemorySummary(session.memorySummary as RawMemorySummary);
 
@@ -193,7 +193,7 @@ export class AiDraftBenchPluginDataService {
 		};
 	}
 
-	private normaliseMemorySummary(summary: RawMemorySummary): AiDraftBenchMemorySummary | undefined {
+	private normaliseMemorySummary(summary: RawMemorySummary): AiWritingBuddyMemorySummary | undefined {
 		if (!summary || typeof summary.text !== "string" || !summary.text.trim()) {
 			return undefined;
 		}
@@ -211,7 +211,7 @@ export class AiDraftBenchPluginDataService {
 		};
 	}
 
-	private mergePromptTemplates(savedTemplates: AiDraftBenchSettings["promptTemplates"]): AiDraftBenchSettings["promptTemplates"] {
+	private mergePromptTemplates(savedTemplates: AiWritingBuddySettings["promptTemplates"]): AiWritingBuddySettings["promptTemplates"] {
 		const savedUserTemplates = savedTemplates.filter((template) => !template.isBuiltIn);
 		const savedBuiltInTemplates = savedTemplates.filter((template) => template.isBuiltIn);
 

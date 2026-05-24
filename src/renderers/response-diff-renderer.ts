@@ -30,7 +30,7 @@ export class ResponseDiffRenderer {
 			}
 
 			const changedEl = container.createSpan({
-				cls: segment.type === "removed" ? "ai-draft-bench-diff-removed" : "ai-draft-bench-diff-added",
+				cls: segment.type === "removed" ? "ai-writing-buddy-diff-removed" : "ai-writing-buddy-diff-added",
 				text: segment.token.text,
 			});
 

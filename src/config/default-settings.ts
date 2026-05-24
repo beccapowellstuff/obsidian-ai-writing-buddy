@@ -1,9 +1,9 @@
 import { PromptTemplate } from "../types/prompt-template";
 import { DEFAULT_PROMPT_TEMPLATES } from "./default-prompt-templates";
-export type AiDraftBenchProvider = "mock" | "openai-compatible";
+export type AiWritingBuddyProvider = "mock" | "openai-compatible";
 
-export type AiDraftBenchSettings = {
-	provider: AiDraftBenchProvider;
+export type AiWritingBuddySettings = {
+	provider: AiWritingBuddyProvider;
 	baseUrl: string;
 	modelName: string;
 	apiKey: string;
@@ -44,7 +44,7 @@ export const DEFAULT_MAX_PROMPT_CHARACTERS = 120000;
 export const DEFAULT_MEMORY_BUDGET_CHARACTERS = 6000;
 export const DEFAULT_RECENT_HISTORY_MAX_ENTRIES = 6;
 
-export const DEFAULT_AI_DRAFT_BENCH_SETTINGS: AiDraftBenchSettings = {
+export const DEFAULT_AI_WRITING_BUDDY_SETTINGS: AiWritingBuddySettings = {
 	provider: "mock",
 	baseUrl: "http://localhost:1234/v1",
 	modelName: "",

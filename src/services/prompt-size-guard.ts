@@ -1,9 +1,9 @@
-import { DraftBenchChatMessage } from "./prompt-builder";
+import { AiWritingBuddyChatMessage } from "./prompt-builder";
 
-export class DraftBenchPromptSizeGuard {
+export class AiWritingBuddyPromptSizeGuard {
 	constructor(private readonly maxPromptCharacters: number) {}
 
-	validate(messages: DraftBenchChatMessage[]): void {
+	validate(messages: AiWritingBuddyChatMessage[]): void {
 		const totalCharacters = this.getTotalContentLength(messages);
 
 		if (totalCharacters <= this.maxPromptCharacters) {
@@ -20,7 +20,7 @@ export class DraftBenchPromptSizeGuard {
 		);
 	}
 
-	private getTotalContentLength(messages: DraftBenchChatMessage[]): number {
+	private getTotalContentLength(messages: AiWritingBuddyChatMessage[]): number {
 		return messages.reduce((total, message) => {
 			return total + message.content.length;
 		}, 0);
