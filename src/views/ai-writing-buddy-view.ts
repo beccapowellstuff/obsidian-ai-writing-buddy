@@ -1,6 +1,6 @@
 import { ItemView, setIcon, setTooltip, WorkspaceLeaf } from "obsidian";
 import { AiWritingBuddySettings } from "../config/default-settings";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { PLUGIN_DISPLAY } from "../config/plugin-display";
 import { ConfirmClearSessionModal } from "../modals/confirm-clear-session-modal";
 import { ConfirmNewSessionModal } from "../modals/confirm-new-session-modal";

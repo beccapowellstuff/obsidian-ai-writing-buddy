@@ -1,5 +1,5 @@
 import { App, Notice, TFile } from "obsidian";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 
 type ValidatedSelectionContext = {

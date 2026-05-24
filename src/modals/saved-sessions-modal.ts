@@ -1,5 +1,5 @@
 import { App, Modal } from "obsidian";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { AiWritingBuddyCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
 import { SavedSessionPreviewModal } from "./saved-session-preview-modal";
 

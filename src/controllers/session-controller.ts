@@ -1,5 +1,5 @@
 import type { AiWritingBuddySettings } from "../config/default-settings";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type { AiResponseService } from "../services/ai-response-service";
 import { AiWritingBuddySessionHistoryTrimmer } from "../services/session-history-trimmer";
 import { AiWritingBuddySessionSummaryService } from "../services/session-summary-service";

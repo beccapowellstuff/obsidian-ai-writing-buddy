@@ -1,4 +1,4 @@
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 
 type SendChatHandler = (message: string) => void;
 type CancelReplyHandler = () => void;

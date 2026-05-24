@@ -1,5 +1,5 @@
 import { App, Modal } from "obsidian";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 
 const SESSION_TITLE_MAX_LENGTH = 25;
 

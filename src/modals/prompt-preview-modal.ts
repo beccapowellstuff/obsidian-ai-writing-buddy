@@ -1,5 +1,5 @@
 import { App, Modal, Setting } from "obsidian";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 
 export class PromptPreviewModal extends Modal {
 	constructor(

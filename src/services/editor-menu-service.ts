@@ -2,7 +2,7 @@ import { App, Editor, EditorPosition, EventRef, MarkdownView, Menu, Notice, Plug
 import { AiWritingBuddyPromptBuilder } from "./prompt-builder";
 import { AiPromptModal, AiPromptModalSubmitValue } from "../modals/ai-prompt-modal";
 import { AiWritingBuddySettings } from "../config/default-settings";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { AiWritingBuddyViewService } from "./view-service";
 
 type EditorMenuWorkspace = {

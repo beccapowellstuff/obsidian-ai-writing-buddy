@@ -1,6 +1,6 @@
 import { App, PluginSettingTab } from "obsidian";
 import type AiWritingBuddyPlugin from "../main";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { TemplateSettingsRenderer } from "./template-settings-renderer";
 import { ConnectionSettingsRenderer } from "./connection-settings-renderer";
 import { PromptSettingsRenderer } from "./prompt-settings-renderer";

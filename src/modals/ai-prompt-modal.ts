@@ -1,5 +1,5 @@
 import { App, Modal, Setting } from "obsidian";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { PromptTemplate } from "../types/prompt-template";
 
 export type AiPromptModalSubmitValue = {

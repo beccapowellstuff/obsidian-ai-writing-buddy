@@ -1,5 +1,5 @@
 import { AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 
 export class AiWritingBuddySourcePanelRenderer {
 	render(container: HTMLElement, entry: AiWritingBuddySelectionEntry): void {

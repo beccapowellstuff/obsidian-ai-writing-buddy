@@ -1,5 +1,5 @@
 import { setIcon, setTooltip } from "obsidian";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
 
 type AiWritingBuddyHeaderRendererOptions = {

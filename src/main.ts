@@ -1,6 +1,6 @@
 import { Plugin, requestUrl } from "obsidian";
 import { AiWritingBuddySettings } from "./config/default-settings";
-import { INTERFACE_TEXT } from "./config/interface-text";
+import { INTERFACE_TEXT } from "./config/language/en-gb";
 import { PLUGIN_DISPLAY } from "./config/plugin-display";
 import { AiWritingBuddySettingTab } from "./settings/ai-writing-buddy-setting-tab";
 import { AiWritingBuddyPluginDataService } from "./services/ai-writing-buddy-plugin-data-service";

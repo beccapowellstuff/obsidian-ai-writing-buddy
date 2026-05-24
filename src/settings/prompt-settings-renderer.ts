@@ -1,5 +1,5 @@
 import { Setting } from "obsidian";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type AiWritingBuddyPlugin from "../main";
 
 export class PromptSettingsRenderer {

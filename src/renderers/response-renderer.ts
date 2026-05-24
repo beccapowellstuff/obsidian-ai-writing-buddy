@@ -1,5 +1,5 @@
 import { setIcon } from "obsidian";
-import { INTERFACE_TEXT } from "../config/interface-text";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { ClipboardService } from "../services/clipboard-service";
 import { SelectionEditService } from "../services/selection-edit-service";
 import { AiWritingBuddyEntry, AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
