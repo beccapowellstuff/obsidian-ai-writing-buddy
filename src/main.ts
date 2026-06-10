@@ -1,5 +1,5 @@
 import { Plugin, requestUrl } from "obsidian";
-import { AiWritingBuddySettings } from "./config/default-settings";
+import type { AiWritingBuddySettings } from "./config/default-settings";
 import { INTERFACE_TEXT } from "./config/language/en-gb";
 import { PLUGIN_DISPLAY } from "./config/plugin-display";
 import { AiWritingBuddySettingTab } from "./settings/ai-writing-buddy-setting-tab";
@@ -121,12 +121,12 @@ export default class AiWritingBuddyPlugin extends Plugin {
 		await this.saveData(this.pluginDataService.createSaveData(this.settings, this.currentSession, this.savedSessions));
 	}
 
-	async listAvailableModels(): Promise<string[]> {
-		if (this.settings.provider === "mock") {
+	async listAvailableModels(settings: AiWritingBuddySettings = this.settings): Promise<string[]> {
+		if (settings.provider === "mock") {
 			return ["mock-model"];
 		}
 
-		const baseUrl = this.settings.baseUrl.trim().replace(/\/$/, "");
+		const baseUrl = settings.baseUrl.trim().replace(/\/$/, "");
 
 		if (!baseUrl) {
 			throw new Error("Server address is required.");
@@ -134,8 +134,8 @@ export default class AiWritingBuddyPlugin extends Plugin {
 
 		const headers: Record<string, string> = {};
 
-		if (this.settings.apiKey.trim()) {
-			headers.Authorization = `Bearer ${this.settings.apiKey.trim()}`;
+		if (settings.apiKey.trim()) {
+			headers.Authorization = `Bearer ${settings.apiKey.trim()}`;
 		}
 
 		const response = await requestUrl({
@@ -159,8 +159,8 @@ export default class AiWritingBuddyPlugin extends Plugin {
 		return modelNames;
 	}
 
-	async testProviderConnection(): Promise<string> {
-		const aiResponseService = createAiResponseService(this.settings);
+	async testProviderConnection(settings: AiWritingBuddySettings = this.settings): Promise<string> {
+		const aiResponseService = createAiResponseService(settings);
 
 		const response = await aiResponseService.createChatResponse({
 			message: "Connection test. Reply with a short confirmation.",
@@ -172,7 +172,7 @@ export default class AiWritingBuddyPlugin extends Plugin {
 			throw new Error("The provider returned an empty response.");
 		}
 
-		if (this.settings.provider === "mock") {
+		if (settings.provider === "mock") {
 			return INTERFACE_TEXT.errors.mockProviderTestSucceeded;
 		}
 

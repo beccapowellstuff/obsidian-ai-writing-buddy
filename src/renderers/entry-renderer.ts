@@ -2,22 +2,27 @@ import { App, setIcon, setTooltip } from "obsidian";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { ClipboardService } from "../services/clipboard-service";
 import { SelectionEditService } from "../services/selection-edit-service";
-import { AiWritingBuddyChatEntry, AiWritingBuddyEntry, AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
+import type { AiWritingBuddyChatEntry, AiWritingBuddyEntry, AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
 import { PromptPreviewModal } from "../modals/prompt-preview-modal";
 import { AiWritingBuddySourcePanelRenderer } from "./source-panel-renderer";
 import { AiWritingBuddyResponseRenderer } from "./response-renderer";
+import type { ResponseDiffChangeRejection } from "../types/response-diff-change";
 
 type ReplyHandler = (entryId: string) => void;
+type RejectChangeHandler = (entryId: string, change: ResponseDiffChangeRejection) => void;
+type CancelResponseHandler = (entryId: string) => void;
 
 export class AiWritingBuddyEntryRenderer {
 	private readonly sourcePanelRenderer = new AiWritingBuddySourcePanelRenderer();
-	private readonly responseRenderer = new AiWritingBuddyResponseRenderer(this.clipboardService, this.selectionEditService, this.onReply);
+	private readonly responseRenderer = new AiWritingBuddyResponseRenderer(this.clipboardService, this.selectionEditService, this.onReply, this.onRejectChange, this.onCancelResponse);
 
 	constructor(
 		private readonly app: App,
 		private readonly clipboardService: ClipboardService,
 		private readonly selectionEditService: SelectionEditService,
 		private readonly onReply: ReplyHandler,
+		private readonly onRejectChange: RejectChangeHandler,
+		private readonly onCancelResponse: CancelResponseHandler,
 	) {}
 
 	renderEntry(container: HTMLElement, entry: AiWritingBuddyEntry): void {

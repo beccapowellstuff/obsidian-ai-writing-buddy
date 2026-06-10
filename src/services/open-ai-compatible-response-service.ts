@@ -1,13 +1,12 @@
-import { requestUrl } from "obsidian";
 import { AiWritingBuddySettings } from "../config/default-settings";
 import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 import { AiWritingBuddyResponse } from "../types/ai-writing-buddy-response";
 import { ConversationMemoryStrategy } from "../types/conversation-memory-strategy";
-import { AiChatRequest, AiResponseService } from "./ai-response-service";
+import { AiChatRequest, AiResponseRequestOptions, AiResponseService } from "./ai-response-service";
 import { ConversationMemoryStrategyService } from "./conversation-memory-strategy-service";
 import { AiWritingBuddyChatMessage, AiWritingBuddyPromptBuilder } from "./prompt-builder";
 import { AiWritingBuddyPromptSizeGuard } from "./prompt-size-guard";
-import { withTimeout } from "../utils/with-timeout";
+import { parseSelectionResponseOutput } from "./selection-response-output";
 
 type OpenAiChatCompletionResponse = {
 	choices?: Array<{
@@ -33,23 +32,25 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 		this.memoryStrategy = this.memoryStrategyService.getStrategy(settings);
 	}
 
-	async createSelectionResponse(request: AiWritingBuddyRequest): Promise<AiWritingBuddyResponse> {
+	async createSelectionResponse(request: AiWritingBuddyRequest, options?: AiResponseRequestOptions): Promise<AiWritingBuddyResponse> {
 		const responseText = await this.sendChatCompletion(this.promptBuilder.buildSelectionPrompt(request), {
 			temperature: request.temperature ?? 0.7,
-		});
+		}, options?.signal);
 
-		return this.createResponse(responseText);
+		const output = parseSelectionResponseOutput(responseText);
+
+		return this.createResponse(output.contentText, output.commentText);
 	}
 
-	async createChatResponse(request: AiChatRequest): Promise<AiWritingBuddyResponse> {
+	async createChatResponse(request: AiChatRequest, options?: AiResponseRequestOptions): Promise<AiWritingBuddyResponse> {
 		const responseText = await this.sendChatCompletion(this.promptBuilder.buildChatPrompt(request), {
 			temperature: 0.7,
-		});
+		}, options?.signal);
 
 		return this.createResponse(responseText);
 	}
 
-	private async sendChatCompletion(messages: AiWritingBuddyChatMessage[], options: ChatCompletionOptions): Promise<string> {
+	private async sendChatCompletion(messages: AiWritingBuddyChatMessage[], options: ChatCompletionOptions, signal?: AbortSignal): Promise<string> {
 		this.promptSizeGuard.validate(messages);
 
 		if (this.memoryStrategy.mode === "provider-state") {
@@ -71,9 +72,23 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 			headers.Authorization = `Bearer ${this.settings.apiKey.trim()}`;
 		}
 
-		const response = await withTimeout(
-			requestUrl({
-				url,
+		const abortController = new AbortController();
+		const timeoutId = window.setTimeout(() => {
+			abortController.abort(new Error(`AI provider request timed out after ${this.settings.requestTimeoutMs}ms.`));
+		}, Math.max(1, this.settings.requestTimeoutMs));
+
+		const abortFromExternalSignal = (): void => {
+			abortController.abort(new DOMException("The request was cancelled.", "AbortError"));
+		};
+
+		try {
+			if (signal?.aborted) {
+				abortFromExternalSignal();
+			} else {
+				signal?.addEventListener("abort", abortFromExternalSignal, { once: true });
+			}
+
+			const response = await window.fetch(url, {
 				method: "POST",
 				headers,
 				body: JSON.stringify({
@@ -82,29 +97,37 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 					temperature: options.temperature,
 					stream: false,
 				}),
-				throw: false,
-			}),
-			this.settings.requestTimeoutMs,
-			`AI provider request timed out after ${this.settings.requestTimeoutMs}ms.`,
-		);
+				signal: abortController.signal,
+			});
 
-		if (response.status < 200 || response.status >= 300) {
-			throw new Error(`AI provider request failed with status ${response.status}.`);
+			if (response.status < 200 || response.status >= 300) {
+				throw new Error(`AI provider request failed with status ${response.status}.`);
+			}
+
+			const data = (await response.json()) as OpenAiChatCompletionResponse;
+			const content = data.choices?.[0]?.message?.content?.trim();
+
+			if (!content) {
+				throw new Error("AI provider returned an empty response.");
+			}
+
+			return content;
+		} catch (error) {
+			if (abortController.signal.reason instanceof Error) {
+				throw abortController.signal.reason;
+			}
+
+			throw error;
+		} finally {
+			window.clearTimeout(timeoutId);
+			signal?.removeEventListener("abort", abortFromExternalSignal);
 		}
-
-		const data = response.json as OpenAiChatCompletionResponse;
-		const content = data.choices?.[0]?.message?.content?.trim();
-
-		if (!content) {
-			throw new Error("AI provider returned an empty response.");
-		}
-
-		return content;
 	}
 
-	private createResponse(text: string): AiWritingBuddyResponse {
+	private createResponse(text: string, commentText?: string): AiWritingBuddyResponse {
 		return {
 			text,
+			commentText,
 			createdAt: new Date().toISOString(),
 			isPlaceholder: false,
 		};

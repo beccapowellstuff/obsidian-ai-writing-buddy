@@ -1,6 +1,11 @@
+import { INTERFACE_TEXT } from "../config/language/en-gb";
+import type { ResponseDiffChangeRejection } from "../types/response-diff-change";
+
 type DiffToken = {
 	text: string;
 	isWhitespace: boolean;
+	startIndex: number;
+	endIndex: number;
 };
 
 type DiffSegment =
@@ -17,34 +22,133 @@ type DiffSegment =
 			token: DiffToken;
 	  };
 
+type DiffChangeChunk = {
+	segments: DiffSegment[];
+	responseStartIndex: number;
+	responseEndIndex: number;
+	originalText: string;
+};
+
 export class ResponseDiffRenderer {
-	render(container: HTMLElement, originalText: string, responseText: string): void {
+	render(container: HTMLElement, originalText: string, responseText: string, onRejectChange?: (change: ResponseDiffChangeRejection) => void): void {
 		const originalTokens = this.tokenizeText(originalText);
 		const responseTokens = this.tokenizeText(responseText);
 		const diffSegments = this.createDiffSegments(originalTokens, responseTokens);
 
-		for (const segment of diffSegments) {
-			if (segment.type === "unchanged") {
-				container.appendChild(document.createTextNode(segment.token.text));
+		this.renderDiffSegments(container, diffSegments, Boolean(onRejectChange), (change) => {
+			onRejectChange?.(change);
+		});
+	}
+
+	private renderDiffSegments(container: HTMLElement, segments: DiffSegment[], canRejectChanges: boolean, onRejectChange: (change: ResponseDiffChangeRejection) => void): void {
+		let changedSegments: DiffSegment[] = [];
+		let responseCursor = 0;
+
+		const flushChangedSegments = () => {
+			if (changedSegments.length === 0) {
+				return;
+			}
+
+			const chunk = this.createDiffChangeChunk(changedSegments, responseCursor);
+			this.renderDiffChangeChunk(container, chunk, canRejectChanges, onRejectChange);
+			responseCursor = chunk.responseEndIndex;
+			changedSegments = [];
+		};
+
+		for (const segment of segments) {
+			if (segment.type !== "unchanged") {
+				changedSegments.push(segment);
 				continue;
 			}
 
-			const changedEl = container.createSpan({
-				cls: segment.type === "removed" ? "ai-writing-buddy-diff-removed" : "ai-writing-buddy-diff-added",
-				text: segment.token.text,
-			});
+			flushChangedSegments();
+			container.appendChild(document.createTextNode(segment.token.text));
+			responseCursor = segment.token.endIndex;
+		}
 
-			changedEl.setAttribute("title", segment.type === "removed" ? "Removed from selected text" : "Added or changed from selected text");
+		flushChangedSegments();
+	}
+
+	private createDiffChangeChunk(segments: DiffSegment[], responseCursor: number): DiffChangeChunk {
+		const addedSegments = segments.filter((segment) => segment.type === "added");
+		const removedText = segments
+			.filter((segment) => segment.type === "removed")
+			.map((segment) => segment.token.text)
+			.join("");
+
+		const firstAddedSegment = addedSegments[0];
+		const lastAddedSegment = addedSegments[addedSegments.length - 1];
+
+		return {
+			segments,
+			responseStartIndex: firstAddedSegment?.token.startIndex ?? responseCursor,
+			responseEndIndex: lastAddedSegment?.token.endIndex ?? responseCursor,
+			originalText: removedText,
+		};
+	}
+
+	private renderDiffChangeChunk(
+		container: HTMLElement,
+		chunk: DiffChangeChunk,
+		canRejectChanges: boolean,
+		onRejectChange: (change: ResponseDiffChangeRejection) => void,
+	): void {
+		const chunkEl = container.createSpan({
+			cls: canRejectChanges ? "ai-writing-buddy-diff-change ai-writing-buddy-diff-change-rejectable" : "ai-writing-buddy-diff-change",
+		});
+
+		if (canRejectChanges) {
+			chunkEl.setAttribute("role", "button");
+			chunkEl.setAttribute("tabindex", "0");
+			chunkEl.setAttribute("title", INTERFACE_TEXT.responses.rejectChange);
+			chunkEl.setAttribute("aria-label", INTERFACE_TEXT.responses.rejectChange);
+
+			const rejectChange = () => {
+				onRejectChange({
+					responseStartIndex: chunk.responseStartIndex,
+					responseEndIndex: chunk.responseEndIndex,
+					originalText: chunk.originalText,
+				});
+			};
+
+			chunkEl.addEventListener("click", rejectChange);
+			chunkEl.addEventListener("keydown", (event) => {
+				if (event.key !== "Enter" && event.key !== " ") {
+					return;
+				}
+
+				event.preventDefault();
+				rejectChange();
+			});
+		} else {
+			chunkEl.setAttribute("title", "Changed from selected text");
+		}
+
+		for (const segment of chunk.segments) {
+			chunkEl.createSpan({
+				cls: segment.type === "removed" ? "ai-writing-buddy-diff-removed" : "ai-writing-buddy-diff-added",
+				text: this.getReadableTokenText(segment.token),
+			});
 		}
 	}
 
 	private tokenizeText(text: string): DiffToken[] {
-		const matches = text.match(/\s+|[A-Za-z0-9_]+|[^\sA-Za-z0-9_]/g) ?? [];
+		const tokens: DiffToken[] = [];
+		const tokenPattern = /\s+|[A-Za-z0-9_]+|[^\sA-Za-z0-9_]/g;
+		let match: RegExpExecArray | null;
 
-		return matches.map((token) => ({
-			text: token,
-			isWhitespace: /^\s+$/.test(token),
-		}));
+		while ((match = tokenPattern.exec(text)) !== null) {
+			const tokenText = match[0];
+
+			tokens.push({
+				text: tokenText,
+				startIndex: match.index,
+				endIndex: match.index + tokenText.length,
+				isWhitespace: /^\s+$/.test(tokenText),
+			});
+		}
+
+		return tokens;
 	}
 
 	private createDiffSegments(originalTokens: DiffToken[], responseTokens: DiffToken[]): DiffSegment[] {
@@ -119,7 +223,7 @@ export class ResponseDiffRenderer {
 			responseIndex += 1;
 		}
 
-		return this.mergeReadableWhitespace(segments);
+		return segments;
 	}
 
 	private createLongestCommonSubsequenceTable(originalTokens: DiffToken[], responseTokens: DiffToken[]): number[][] {
@@ -145,19 +249,11 @@ export class ResponseDiffRenderer {
 		return table;
 	}
 
-	private mergeReadableWhitespace(segments: DiffSegment[]): DiffSegment[] {
-		return segments.map((segment) => {
-			if (segment.token.isWhitespace && segment.type !== "unchanged") {
-				return {
-					...segment,
-					token: {
-						...segment.token,
-						text: segment.token.text.replace(/\n/g, "↵\n").replace(/\t/g, "⇥"),
-					},
-				};
-			}
+	private getReadableTokenText(token: DiffToken): string {
+		if (!token.isWhitespace) {
+			return token.text;
+		}
 
-			return segment;
-		});
+		return token.text.replace(/\n/g, "\\n\n").replace(/\t/g, "\\t");
 	}
 }

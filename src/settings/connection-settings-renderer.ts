@@ -1,10 +1,12 @@
 import { Notice, Setting } from "obsidian";
+import type { AiWritingBuddySettings } from "../config/default-settings";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type AiWritingBuddyPlugin from "../main";
 
 export class ConnectionSettingsRenderer {
 	constructor(
 		private readonly plugin: AiWritingBuddyPlugin,
+		private readonly settings: AiWritingBuddySettings,
 		private readonly availableModels: string[],
 		private readonly refresh: () => void,
 	) {}
@@ -19,10 +21,9 @@ export class ConnectionSettingsRenderer {
 				dropdown
 					.addOption("mock", INTERFACE_TEXT.settings.connection.mockProvider)
 					.addOption("openai-compatible", INTERFACE_TEXT.settings.connection.compatibleProvider)
-					.setValue(this.plugin.settings.provider)
-					.onChange(async (value) => {
-						this.plugin.settings.provider = value === "openai-compatible" ? "openai-compatible" : "mock";
-						await this.plugin.saveSettings();
+					.setValue(this.settings.provider)
+					.onChange((value) => {
+						this.settings.provider = value === "openai-compatible" ? "openai-compatible" : "mock";
 					});
 			});
 
@@ -31,10 +32,9 @@ export class ConnectionSettingsRenderer {
 			.setDesc(INTERFACE_TEXT.settings.connection.serverAddressDescription)
 			.addText((text) => {
 				text.setPlaceholder(INTERFACE_TEXT.settings.connection.serverAddress)
-					.setValue(this.plugin.settings.baseUrl)
-					.onChange(async (value) => {
-						this.plugin.settings.baseUrl = value.trim();
-						await this.plugin.saveSettings();
+					.setValue(this.settings.baseUrl)
+					.onChange((value) => {
+						this.settings.baseUrl = value.trim();
 					});
 			});
 
@@ -46,10 +46,9 @@ export class ConnectionSettingsRenderer {
 			.setDesc(INTERFACE_TEXT.settings.connection.secretKeyDescription)
 			.addText((text) => {
 				text.setPlaceholder(INTERFACE_TEXT.settings.connection.optional)
-					.setValue(this.plugin.settings.apiKey)
-					.onChange(async (value) => {
-						this.plugin.settings.apiKey = value;
-						await this.plugin.saveSettings();
+					.setValue(this.settings.apiKey)
+					.onChange((value) => {
+						this.settings.apiKey = value;
 					});
 
 				text.inputEl.type = "password";
@@ -60,16 +59,15 @@ export class ConnectionSettingsRenderer {
 			.setDesc(INTERFACE_TEXT.settings.connection.requestTimeoutDescription)
 			.addText((text) => {
 				text.setPlaceholder(INTERFACE_TEXT.settings.connection.requestTimeoutPlaceholder)
-					.setValue(String(this.plugin.settings.requestTimeoutMs))
-					.onChange(async (value) => {
+					.setValue(String(this.settings.requestTimeoutMs))
+					.onChange((value) => {
 						const parsedValue = Number.parseInt(value, 10);
 
 						if (Number.isNaN(parsedValue) || parsedValue <= 0) {
 							return;
 						}
 
-						this.plugin.settings.requestTimeoutMs = parsedValue;
-						await this.plugin.saveSettings();
+						this.settings.requestTimeoutMs = parsedValue;
 					});
 			});
 
@@ -82,7 +80,7 @@ export class ConnectionSettingsRenderer {
 					button.setButtonText(INTERFACE_TEXT.settings.connection.testing);
 
 					try {
-						const message = await this.plugin.testProviderConnection();
+						const message = await this.plugin.testProviderConnection(this.settings);
 						new Notice(message);
 					} catch (error) {
 						console.error("AI Writing Buddy connection test failed", error);
@@ -107,9 +105,8 @@ export class ConnectionSettingsRenderer {
 						dropdown.addOption(modelName, modelName);
 					}
 
-					dropdown.setValue(this.plugin.settings.modelName).onChange(async (value) => {
-						this.plugin.settings.modelName = value;
-						await this.plugin.saveSettings();
+					dropdown.setValue(this.settings.modelName).onChange((value) => {
+						this.settings.modelName = value;
 					});
 				});
 
@@ -121,10 +118,9 @@ export class ConnectionSettingsRenderer {
 			.setDesc(INTERFACE_TEXT.settings.connection.modelEntryDescription)
 			.addText((text) => {
 				text.setPlaceholder(INTERFACE_TEXT.settings.connection.modelName)
-					.setValue(this.plugin.settings.modelName)
-					.onChange(async (value) => {
-						this.plugin.settings.modelName = value.trim();
-						await this.plugin.saveSettings();
+					.setValue(this.settings.modelName)
+					.onChange((value) => {
+						this.settings.modelName = value.trim();
 					});
 			});
 	}
@@ -146,11 +142,10 @@ export class ConnectionSettingsRenderer {
 
 					try {
 						this.availableModels.length = 0;
-						this.availableModels.push(...(await this.plugin.listAvailableModels()));
+						this.availableModels.push(...(await this.plugin.listAvailableModels(this.settings)));
 
-						if (!this.plugin.settings.modelName && this.availableModels[0]) {
-							this.plugin.settings.modelName = this.availableModels[0];
-							await this.plugin.saveSettings();
+						if (!this.settings.modelName && this.availableModels[0]) {
+							this.settings.modelName = this.availableModels[0];
 						}
 
 						new Notice(INTERFACE_TEXT.notices.modelsLoaded);

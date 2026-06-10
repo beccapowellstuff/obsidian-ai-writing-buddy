@@ -2,6 +2,7 @@ import type { AiWritingBuddySettings } from "../config/default-settings";
 import type { AiWritingBuddyChatEntry, AiWritingBuddyEntry, AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
 import type { AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 import type { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
+import { SELECTION_RESPONSE_OUTPUT_END, SELECTION_RESPONSE_OUTPUT_START } from "./selection-response-output";
 
 export type AiWritingBuddyChatMessage = {
 	role: "system" | "user" | "assistant";
@@ -24,6 +25,11 @@ export class AiWritingBuddyPromptBuilder {
 			{
 				role: "user",
 				content: [
+					"[OUTPUT FORMAT]",
+					`If you are proposing text that could be copied, inserted, or used to replace the selected note text, put only that proposed note text between ${SELECTION_RESPONSE_OUTPUT_START} and ${SELECTION_RESPONSE_OUTPUT_END}.`,
+					"Put comments, explanations, summaries, critique, greetings, caveats, and conversational framing outside those markers.",
+					"If you are only commenting on, summarising, or answering questions about the selected text, do not use those markers.",
+					"",
 					request.templatePrompt ? "[TEMPLATE INSTRUCTION]" : "",
 					request.templatePrompt ?? "",
 					request.templatePrompt ? "" : "",
@@ -147,7 +153,7 @@ export class AiWritingBuddyPromptBuilder {
 	}
 
 	private getEntryResponseText(entry: AiWritingBuddyEntry): string {
-		return entry.response.text ?? "";
+		return [entry.response.commentText, entry.response.text].filter(Boolean).join("\n\n");
 	}
 
 	private formatReplyContext(replyToEntry: AiWritingBuddyEntry | undefined): string {

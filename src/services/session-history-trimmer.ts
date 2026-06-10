@@ -43,7 +43,7 @@ export class AiWritingBuddySessionHistoryTrimmer {
 	}
 
 	private estimateEntryCharacters(entry: AiWritingBuddyEntry): number {
-		return [this.getEntryUserText(entry), entry.response.text].join("\n").length;
+		return [this.getEntryUserText(entry), entry.response.commentText, entry.response.text].filter(Boolean).join("\n").length;
 	}
 
 	private getEntryUserText(entry: AiWritingBuddyEntry): string {

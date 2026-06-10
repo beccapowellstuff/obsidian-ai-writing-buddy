@@ -29,6 +29,14 @@
 	line-height: 1.35;
 }
 
+.ai-writing-buddy-settings-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin: 0 0 14px 0;
+	padding: 0 2px;
+}
+
 .ai-writing-buddy-settings .setting-item-heading {
 	margin-top: 26px;
 	padding: 10px 0 8px 0;
@@ -88,4 +96,259 @@
 
 .ai-writing-buddy-settings .dropdown {
 	min-width: 220px;
+}
+
+.ai-writing-buddy-clickable-setting {
+	cursor: pointer;
+}
+
+.ai-writing-buddy-clickable-setting:hover {
+	border-color: var(--interactive-accent);
+}
+
+.ai-writing-buddy-settings .ai-writing-buddy-expand-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	padding: 0;
+	border-radius: 999px;
+}
+
+.ai-writing-buddy-settings .ai-writing-buddy-built-in-template-row {
+	margin-left: 18px;
+	padding: 14px 16px;
+	border-radius: 12px;
+}
+
+.menu-item-title .ai-writing-buddy-template-menu-title {
+	display: inline-block;
+	min-width: 170px;
+}
+
+.menu-item-title .ai-writing-buddy-template-menu-chevron {
+	float: right;
+	margin-left: 12px;
+	color: var(--text-muted);
+}
+
+.modal.ai-writing-buddy-user-templates-modal {
+	width: min(1225px, 96vw);
+	max-width: 96vw;
+}
+
+.ai-writing-buddy-user-templates-modal-content {
+	overflow-x: hidden;
+}
+
+.ai-writing-buddy-user-templates-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 14px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ai-writing-buddy-user-templates-modal-header h2 {
+	margin: 0;
+}
+
+.ai-writing-buddy-user-templates-modal-header p {
+	margin: 4px 0 0 0;
+	color: var(--text-muted);
+}
+
+.ai-writing-buddy-template-modal-header-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 8px;
+}
+
+.ai-writing-buddy-user-templates-modal-body {
+	display: grid;
+	grid-template-columns: minmax(220px, 30%) minmax(0, 1fr);
+	gap: 20px;
+	min-height: 520px;
+}
+
+.ai-writing-buddy-template-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.ai-writing-buddy-template-list-row {
+	display: grid;
+	grid-template-columns: 34px minmax(0, 1fr);
+	gap: 8px;
+	align-items: stretch;
+}
+
+.ai-writing-buddy-template-list-order-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	align-self: center;
+}
+
+.ai-writing-buddy-template-reorder-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	border-radius: 8px;
+}
+
+.ai-writing-buddy-template-reorder-button:disabled {
+	opacity: 0.35;
+	transform: none;
+}
+
+.ai-writing-buddy-template-list-item {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	width: 100%;
+	min-height: 64px;
+	padding: 12px 14px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	text-align: left;
+	white-space: normal;
+}
+
+.ai-writing-buddy-template-list-item:hover,
+.ai-writing-buddy-template-list-item:focus-visible,
+.ai-writing-buddy-template-list-row.is-selected .ai-writing-buddy-template-list-item {
+	border-color: var(--interactive-accent);
+	background: var(--background-primary-alt);
+	transform: none;
+}
+
+.ai-writing-buddy-template-list-name {
+	display: block;
+	font-weight: 750;
+	line-height: 1.25;
+}
+
+.ai-writing-buddy-template-list-description {
+	display: block;
+	margin-top: 6px;
+	color: var(--text-muted);
+	font-size: 0.88em;
+	line-height: 1.35;
+}
+
+.ai-writing-buddy-template-detail {
+	min-width: 0;
+	padding: 14px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-primary);
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+.ai-writing-buddy-template-detail h3 {
+	margin: 0;
+	font-size: 1.15em;
+}
+
+.ai-writing-buddy-template-detail > p {
+	margin: 4px 0 12px 0;
+	color: var(--text-muted);
+	font-size: 0.9em;
+}
+
+.ai-writing-buddy-template-detail .setting-item:not(.setting-item-heading) {
+	display: grid;
+	grid-template-columns: minmax(170px, 28%) minmax(360px, 1fr);
+	gap: 20px;
+	align-items: start;
+	margin: 0;
+	padding: 12px 0;
+	border-width: 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+.ai-writing-buddy-template-detail .setting-item-info,
+.ai-writing-buddy-template-detail .setting-item-control {
+	min-width: 0;
+	width: 100%;
+}
+
+.ai-writing-buddy-template-detail .setting-item-control {
+	justify-content: flex-end;
+}
+
+.ai-writing-buddy-template-detail input,
+.ai-writing-buddy-template-detail textarea {
+	width: 100%;
+	max-width: 100%;
+}
+
+.ai-writing-buddy-template-detail .setting-item:last-child {
+	border-bottom-width: 0;
+}
+
+.ai-writing-buddy-template-detail textarea {
+	min-height: 120px;
+}
+
+.ai-writing-buddy-template-modal-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.ai-writing-buddy-template-danger-zone {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-top: 28px;
+	padding-top: 18px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.ai-writing-buddy-template-danger-title {
+	font-weight: 750;
+}
+
+.ai-writing-buddy-template-danger-zone p {
+	margin: 4px 0 0 0;
+	color: var(--text-muted);
+	font-size: 0.9em;
+}
+
+@media (max-width: 720px) {
+	.modal.ai-writing-buddy-user-templates-modal {
+		width: 96vw;
+	}
+
+	.ai-writing-buddy-user-templates-modal-header {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.ai-writing-buddy-user-templates-modal-body {
+		grid-template-columns: 1fr;
+		min-height: 0;
+	}
+
+	.ai-writing-buddy-template-detail .setting-item:not(.setting-item-heading) {
+		grid-template-columns: 1fr;
+	}
 }

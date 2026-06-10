@@ -1,60 +1,103 @@
 import { Setting } from "obsidian";
+import {
+	DEFAULT_OPEN_CHAT_SYSTEM_PROMPT,
+	DEFAULT_PERSONALITY_PROMPT,
+	DEFAULT_SELECTION_SYSTEM_PROMPT,
+	type AiWritingBuddySettings,
+} from "../config/default-settings";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
-import type AiWritingBuddyPlugin from "../main";
 
 export class PromptSettingsRenderer {
-	constructor(private readonly plugin: AiWritingBuddyPlugin) {}
+	constructor(
+		private readonly settings: AiWritingBuddySettings,
+		private readonly refresh: () => void,
+	) {}
 
 	render(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName(INTERFACE_TEXT.settings.prompts.heading).setHeading();
 
-		new Setting(containerEl)
-			.setName(INTERFACE_TEXT.settings.prompts.openChatSystemPrompt)
-			.setDesc(INTERFACE_TEXT.settings.prompts.openChatDescription)
-			.addTextArea((text) => {
-				text.setValue(this.plugin.settings.openChatSystemPrompt).onChange(async (value) => {
-					this.plugin.settings.openChatSystemPrompt = value;
-					await this.plugin.saveSettings();
-				});
+		this.renderPromptTextSetting(
+			containerEl,
+			INTERFACE_TEXT.settings.prompts.openChatSystemPrompt,
+			INTERFACE_TEXT.settings.prompts.openChatDescription,
+			this.settings.openChatSystemPrompt,
+			DEFAULT_OPEN_CHAT_SYSTEM_PROMPT,
+			(value) => {
+				this.settings.openChatSystemPrompt = value;
+			},
+		);
 
-				text.inputEl.rows = 6;
-				text.inputEl.cols = 50;
-			});
-
-		new Setting(containerEl)
-			.setName(INTERFACE_TEXT.settings.prompts.selectedTextSystemPrompt)
-			.setDesc(INTERFACE_TEXT.settings.prompts.selectedTextDescription)
-			.addTextArea((text) => {
-				text.setValue(this.plugin.settings.selectionSystemPrompt).onChange(async (value) => {
-					this.plugin.settings.selectionSystemPrompt = value;
-					await this.plugin.saveSettings();
-				});
-
-				text.inputEl.rows = 6;
-				text.inputEl.cols = 50;
-			});
+		this.renderPromptTextSetting(
+			containerEl,
+			INTERFACE_TEXT.settings.prompts.selectedTextSystemPrompt,
+			INTERFACE_TEXT.settings.prompts.selectedTextDescription,
+			this.settings.selectionSystemPrompt,
+			DEFAULT_SELECTION_SYSTEM_PROMPT,
+			(value) => {
+				this.settings.selectionSystemPrompt = value;
+			},
+		);
 
 		new Setting(containerEl)
 			.setName(INTERFACE_TEXT.settings.prompts.enablePersonalityPrompt)
 			.setDesc(INTERFACE_TEXT.settings.prompts.enablePersonalityDescription)
 			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.personalityEnabled).onChange(async (value) => {
-					this.plugin.settings.personalityEnabled = value;
-					await this.plugin.saveSettings();
+				toggle.setValue(this.settings.personalityEnabled).onChange((value) => {
+					this.settings.personalityEnabled = value;
+					this.refresh();
 				});
 			});
 
+		if (this.settings.personalityEnabled) {
+			this.renderPromptTextSetting(
+				containerEl,
+				INTERFACE_TEXT.settings.prompts.personalityPrompt,
+				INTERFACE_TEXT.settings.prompts.personalityDescription,
+				this.settings.personalityPrompt,
+				DEFAULT_PERSONALITY_PROMPT,
+				(value) => {
+					this.settings.personalityPrompt = value;
+				},
+				5,
+			);
+		}
+	}
+
+	private renderPromptTextSetting(
+		containerEl: HTMLElement,
+		name: string,
+		description: string,
+		value: string,
+		defaultValue: string,
+		onChange: (value: string) => void,
+		rows = 6,
+	): void {
+		let currentValue = value;
+		let revertButton: { setDisabled(disabled: boolean): void } | null = null;
+		const updateRevertButton = (): void => {
+			revertButton?.setDisabled(currentValue === defaultValue);
+		};
+
 		new Setting(containerEl)
-			.setName(INTERFACE_TEXT.settings.prompts.personalityPrompt)
-			.setDesc(INTERFACE_TEXT.settings.prompts.personalityDescription)
+			.setName(name)
+			.setDesc(description)
 			.addTextArea((text) => {
-				text.setValue(this.plugin.settings.personalityPrompt).onChange(async (value) => {
-					this.plugin.settings.personalityPrompt = value;
-					await this.plugin.saveSettings();
+				text.setValue(value).onChange((newValue) => {
+					currentValue = newValue;
+					onChange(newValue);
+					updateRevertButton();
 				});
 
-				text.inputEl.rows = 5;
+				text.inputEl.rows = rows;
 				text.inputEl.cols = 50;
+			})
+			.addButton((button) => {
+				revertButton = button;
+				button.setButtonText(INTERFACE_TEXT.settings.prompts.revertToDefault).onClick(() => {
+					onChange(defaultValue);
+					this.refresh();
+				});
+				updateRevertButton();
 			});
 	}
 }

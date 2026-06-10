@@ -1,22 +1,23 @@
-import { AiResponseService, AiChatRequest } from "./ai-response-service";
+import { AiResponseService, AiChatRequest, AiResponseRequestOptions } from "./ai-response-service";
 import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 import { AiWritingBuddyResponse } from "../types/ai-writing-buddy-response";
+import { extractSelectionResponseOutput, SELECTION_RESPONSE_OUTPUT_END, SELECTION_RESPONSE_OUTPUT_START } from "./selection-response-output";
 
 const MOCK_RESPONSE_DELAY_MS = 1200;
 
 export class MockAiResponseService implements AiResponseService {
-	async createSelectionResponse(request: AiWritingBuddyRequest): Promise<AiWritingBuddyResponse> {
-		await this.waitForMockDelay();
+	async createSelectionResponse(request: AiWritingBuddyRequest, options?: AiResponseRequestOptions): Promise<AiWritingBuddyResponse> {
+		await this.waitForMockDelay(options?.signal);
 
 		return {
-			text: `Fake AI response for: ${request.instruction}`,
+			text: extractSelectionResponseOutput(`${SELECTION_RESPONSE_OUTPUT_START}\nFake AI response for: ${request.instruction}\n${SELECTION_RESPONSE_OUTPUT_END}`),
 			createdAt: new Date().toISOString(),
 			isPlaceholder: false,
 		};
 	}
 
-	async createChatResponse(request: AiChatRequest): Promise<AiWritingBuddyResponse> {
-		await this.waitForMockDelay();
+	async createChatResponse(request: AiChatRequest, options?: AiResponseRequestOptions): Promise<AiWritingBuddyResponse> {
+		await this.waitForMockDelay(options?.signal);
 
 		if (request.replyToEntry) {
 			const replyContext = this.getEntryContext(request.replyToEntry);
@@ -53,9 +54,22 @@ export class MockAiResponseService implements AiResponseService {
 		return `${text.slice(0, 67)}...`;
 	}
 
-	private async waitForMockDelay(): Promise<void> {
-		await new Promise<void>((resolve) => {
-			window.setTimeout(resolve, MOCK_RESPONSE_DELAY_MS);
+	private async waitForMockDelay(signal?: AbortSignal): Promise<void> {
+		if (signal?.aborted) {
+			throw new DOMException("The request was cancelled.", "AbortError");
+		}
+
+		await new Promise<void>((resolve, reject) => {
+			const timeoutId = window.setTimeout(resolve, MOCK_RESPONSE_DELAY_MS);
+
+			signal?.addEventListener(
+				"abort",
+				() => {
+					window.clearTimeout(timeoutId);
+					reject(new DOMException("The request was cancelled.", "AbortError"));
+				},
+				{ once: true },
+			);
 		});
 	}
 }

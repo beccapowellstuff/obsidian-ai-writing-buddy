@@ -6,6 +6,7 @@ import { AiWritingBuddySessionSummaryService } from "../services/session-summary
 import type { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
 import type { AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 import type { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
+import type { ResponseDiffChangeRejection } from "../types/response-diff-change";
 import { createPlaceholderResponse } from "../utils/create-placeholder-response";
 import { formatProviderErrorMessage } from "../utils/format-provider-error-message";
 
@@ -15,6 +16,8 @@ type NewSessionHandler = (sessionTitle?: string) => void;
 
 export class AiWritingBuddySessionController {
 	private entries: AiWritingBuddyEntry[];
+	private readonly cancelledEntryIds = new Set<string>();
+	private readonly activeResponseControllers = new Map<string, AbortController>();
 	private replyToEntryId: string | null = null;
 	private memorySummary: AiWritingBuddyMemorySummary | undefined;
 	private readonly sessionHistoryTrimmer: AiWritingBuddySessionHistoryTrimmer;
@@ -90,6 +93,33 @@ export class AiWritingBuddySessionController {
 		return INTERFACE_TEXT.chat.replyingTo(this.getEntrySnippet(replyToEntry));
 	}
 
+	rejectResponseChange(entryId: string, change: ResponseDiffChangeRejection): void {
+		const entry = this.entries.find((candidate) => candidate.id === entryId);
+
+		if (!entry || entry.response.isPlaceholder || !this.isValidChangeRejection(entry.response.text, change)) {
+			return;
+		}
+
+		entry.response.text = [entry.response.text.slice(0, change.responseStartIndex), change.originalText, entry.response.text.slice(change.responseEndIndex)].join("");
+		this.refreshMemorySummary();
+		this.saveSession();
+		this.onChange(false);
+	}
+
+	cancelResponse(entryId: string): void {
+		const entry = this.entries.find((candidate) => candidate.id === entryId);
+
+		if (!entry || !this.isPendingResponse(entry)) {
+			return;
+		}
+
+		this.cancelledEntryIds.add(entryId);
+		this.activeResponseControllers.get(entryId)?.abort();
+		entry.response = createPlaceholderResponse(INTERFACE_TEXT.responses.cancelled);
+		this.saveSession();
+		this.onChange(false);
+	}
+
 	async addSelectionEntry(request: AiWritingBuddyRequest): Promise<void> {
 		const entry: AiWritingBuddyEntry = {
 			id: crypto.randomUUID(),
@@ -100,15 +130,30 @@ export class AiWritingBuddySessionController {
 		};
 
 		this.entries.push(entry);
+		const abortController = this.registerActiveResponse(entry.id);
 		this.saveSession();
 		this.onChange(true);
 
 		try {
-			entry.response = await this.getAiResponseService().createSelectionResponse(request);
+			const response = await this.getAiResponseService().createSelectionResponse(request, {
+				signal: abortController.signal,
+			});
+
+			if (this.wasEntryCancelled(entry.id)) {
+				return;
+			}
+
+			entry.response = response;
 		} catch (error) {
+			if (this.wasEntryCancelled(entry.id)) {
+				return;
+			}
+
 			console.error("AI Writing Buddy selection response failed", error);
 
 			entry.response = createPlaceholderResponse([INTERFACE_TEXT.responses.providerErrorHeading, "", formatProviderErrorMessage(error)].join("\n"));
+		} finally {
+			this.activeResponseControllers.delete(entry.id);
 		}
 
 		this.refreshMemorySummary();
@@ -141,21 +186,36 @@ export class AiWritingBuddySessionController {
 		};
 
 		this.entries.push(entry);
+		const abortController = this.registerActiveResponse(entry.id);
 		this.replyToEntryId = null;
 		this.saveSession();
 		this.onChange(true);
 
 		try {
-			entry.response = await this.getAiResponseService().createChatResponse({
+			const response = await this.getAiResponseService().createChatResponse({
 				message: trimmedMessage,
 				replyToEntry,
 				recentEntries,
 				memorySummary: this.memorySummary,
+			}, {
+				signal: abortController.signal,
 			});
+
+			if (this.wasEntryCancelled(entry.id)) {
+				return;
+			}
+
+			entry.response = response;
 		} catch (error) {
+			if (this.wasEntryCancelled(entry.id)) {
+				return;
+			}
+
 			console.error("AI Writing Buddy chat response failed", error);
 
 			entry.response = createPlaceholderResponse([INTERFACE_TEXT.responses.providerErrorHeading, "", formatProviderErrorMessage(error)].join("\n"));
+		} finally {
+			this.activeResponseControllers.delete(entry.id);
 		}
 
 		this.refreshMemorySummary();
@@ -167,12 +227,43 @@ export class AiWritingBuddySessionController {
 		this.memorySummary = this.sessionSummaryService.createMemorySummary(this.entries);
 	}
 
+	private isPendingResponse(entry: AiWritingBuddyEntry): boolean {
+		return entry.response.isPlaceholder && entry.response.text === INTERFACE_TEXT.responses.thinking;
+	}
+
+	private registerActiveResponse(entryId: string): AbortController {
+		const abortController = new AbortController();
+
+		this.activeResponseControllers.set(entryId, abortController);
+
+		return abortController;
+	}
+
+	private wasEntryCancelled(entryId: string): boolean {
+		if (!this.cancelledEntryIds.has(entryId)) {
+			return false;
+		}
+
+		this.cancelledEntryIds.delete(entryId);
+		return true;
+	}
+
+	private isValidChangeRejection(responseText: string, change: ResponseDiffChangeRejection): boolean {
+		return (
+			Number.isInteger(change.responseStartIndex) &&
+			Number.isInteger(change.responseEndIndex) &&
+			change.responseStartIndex >= 0 &&
+			change.responseEndIndex >= change.responseStartIndex &&
+			change.responseEndIndex <= responseText.length
+		);
+	}
+
 	private saveSession(): void {
 		this.onSave([...this.entries], this.memorySummary);
 	}
 
 	private getEntrySnippet(entry: AiWritingBuddyEntry): string {
-		const text = entry.response.text.replace(/\s+/g, " ").trim();
+		const text = [entry.response.commentText, entry.response.text].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 
 		if (!text) {
 			return INTERFACE_TEXT.chat.emptyResponse;

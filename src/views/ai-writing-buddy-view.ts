@@ -81,11 +81,22 @@ export class AiWritingBuddyView extends ItemView {
 		this.clipboardService = new ClipboardService();
 		this.selectionEditService = new SelectionEditService(this.app);
 
-		this.entryRenderer = new AiWritingBuddyEntryRenderer(this.app, this.clipboardService, this.selectionEditService, (entryId) => {
-			this.sessionController.setReplyToEntry(entryId);
-			this.chatComposerRenderer.requestFocusOnNextRender();
-			this.render();
-		});
+		this.entryRenderer = new AiWritingBuddyEntryRenderer(
+			this.app,
+			this.clipboardService,
+			this.selectionEditService,
+			(entryId) => {
+				this.sessionController.setReplyToEntry(entryId);
+				this.chatComposerRenderer.requestFocusOnNextRender();
+				this.render();
+			},
+			(entryId, change) => {
+				this.sessionController.rejectResponseChange(entryId, change);
+			},
+			(entryId) => {
+				this.sessionController.cancelResponse(entryId);
+			},
+		);
 
 		this.chatComposerRenderer = new AiWritingBuddyChatComposerRenderer(
 			(message) => {

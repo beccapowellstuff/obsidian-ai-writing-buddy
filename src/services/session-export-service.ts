@@ -46,7 +46,7 @@ export class AiWritingBuddySessionExportService {
 				"",
 				INTERFACE_TEXT.sessionExport.assistantHeading,
 				"",
-				entry.response.text.trim() || INTERFACE_TEXT.sessionExport.noResponseRecorded,
+				...this.formatResponse(entry.response.commentText, entry.response.text),
 				"",
 				"---",
 				"",
@@ -78,10 +78,33 @@ export class AiWritingBuddySessionExportService {
 			"",
 			INTERFACE_TEXT.sessionExport.assistantHeading,
 			"",
-			entry.response.text.trim() || INTERFACE_TEXT.sessionExport.noResponseRecorded,
+			...this.formatResponse(entry.response.commentText, entry.response.text),
 			"",
 			"---",
 			"",
+		];
+	}
+
+	private formatResponse(commentText: string | undefined, responseText: string): string[] {
+		const trimmedCommentText = commentText?.trim();
+		const trimmedResponseText = responseText.trim();
+
+		if (!trimmedCommentText) {
+			return [trimmedResponseText || INTERFACE_TEXT.sessionExport.noResponseRecorded];
+		}
+
+		if (!trimmedResponseText) {
+			return [INTERFACE_TEXT.sessionExport.assistantCommentsHeading, "", trimmedCommentText];
+		}
+
+		return [
+			INTERFACE_TEXT.sessionExport.assistantCommentsHeading,
+			"",
+			trimmedCommentText,
+			"",
+			INTERFACE_TEXT.sessionExport.proposedContentHeading,
+			"",
+			trimmedResponseText,
 		];
 	}
 

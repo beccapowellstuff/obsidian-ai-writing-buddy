@@ -72,9 +72,17 @@ export class SavedSessionPreviewModal extends Modal {
 				text: INTERFACE_TEXT.entries.response,
 			});
 
-			entryEl.createEl("p", {
-				text: entry.response.text,
-			});
+			if (entry.response.commentText?.trim()) {
+				entryEl.createEl("p", {
+					text: entry.response.commentText,
+				});
+			}
+
+			if (entry.response.text.trim()) {
+				entryEl.createEl("p", {
+					text: entry.response.text,
+				});
+			}
 		}
 
 		const buttonRow = contentEl.createEl("div", {

@@ -10,7 +10,11 @@ export type AiChatRequest = {
 	memorySummary?: AiWritingBuddyMemorySummary;
 };
 
+export type AiResponseRequestOptions = {
+	signal?: AbortSignal;
+};
+
 export interface AiResponseService {
-	createSelectionResponse(request: AiWritingBuddyRequest): Promise<AiWritingBuddyResponse>;
-	createChatResponse(request: AiChatRequest): Promise<AiWritingBuddyResponse>;
+	createSelectionResponse(request: AiWritingBuddyRequest, options?: AiResponseRequestOptions): Promise<AiWritingBuddyResponse>;
+	createChatResponse(request: AiChatRequest, options?: AiResponseRequestOptions): Promise<AiWritingBuddyResponse>;
 }

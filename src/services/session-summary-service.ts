@@ -38,7 +38,7 @@ export class AiWritingBuddySessionSummaryService {
 
 		for (const entry of entries.slice(-8)) {
 			const userText = this.getEntryUserText(entry);
-			const assistantText = entry.response.text;
+			const assistantText = this.getEntryResponseText(entry);
 			const entrySummary = [userText ? `User: ${this.compactText(userText, 240)}` : "", assistantText ? `Assistant: ${this.compactText(assistantText, 360)}` : ""].filter(Boolean).join("\n");
 
 			if (!entrySummary) {
@@ -69,6 +69,10 @@ export class AiWritingBuddySessionSummaryService {
 		]
 			.filter(Boolean)
 			.join("\n");
+	}
+
+	private getEntryResponseText(entry: AiWritingBuddyEntry): string {
+		return [entry.response.commentText, entry.response.text].filter(Boolean).join("\n\n");
 	}
 
 	private compactText(text: string, maxCharacters: number): string {
