@@ -29,6 +29,10 @@ export class AiWritingBuddyPluginDataService {
 			settings: {
 				...DEFAULT_AI_WRITING_BUDDY_SETTINGS,
 				...(savedSettings ?? {}),
+				contextOptions: {
+					...DEFAULT_AI_WRITING_BUDDY_SETTINGS.contextOptions,
+					...(savedSettings?.contextOptions ?? {}),
+				},
 				promptTemplates: this.mergePromptTemplates(savedSettings?.promptTemplates ?? []),
 			},
 			currentSession: this.getSavedCurrentSession(savedData),

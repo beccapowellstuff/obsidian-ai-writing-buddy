@@ -1,5 +1,6 @@
 import { AiWritingBuddyRequest } from "./ai-writing-buddy-request";
 import { AiWritingBuddyResponse } from "./ai-writing-buddy-response";
+import type { AiWritingBuddyUsedContext } from "./ai-writing-buddy-context";
 
 export type AiWritingBuddySelectionEntry = {
 	id: string;
@@ -17,6 +18,7 @@ export type AiWritingBuddyChatEntry = {
 	createdAt: string;
 	replyToEntryId?: string;
 	replyToSnippet?: string;
+	usedContext?: AiWritingBuddyUsedContext;
 };
 
 export type AiWritingBuddyEntry = AiWritingBuddySelectionEntry | AiWritingBuddyChatEntry;

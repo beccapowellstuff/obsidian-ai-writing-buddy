@@ -4,10 +4,12 @@ import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { TemplateSettingsRenderer } from "./template-settings-renderer";
 import { ConnectionSettingsRenderer } from "./connection-settings-renderer";
 import { PromptSettingsRenderer } from "./prompt-settings-renderer";
+import { RagSettingsRenderer } from "./rag-settings-renderer";
 import type { AiWritingBuddySettings } from "../config/default-settings";
 
 export class AiWritingBuddySettingTab extends PluginSettingTab {
 	private availableModels: string[] = [];
+	private availableEmbeddingModels: string[] = [];
 	private readonly templateSettingsRenderer: TemplateSettingsRenderer;
 	private draftSettings: AiWritingBuddySettings;
 	private savedDraftSignature: string;
@@ -47,6 +49,7 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 		this.renderSettingsActions(containerEl);
 
 		new ConnectionSettingsRenderer(this.plugin, this.draftSettings, this.availableModels, () => this.display()).render(containerEl);
+		new RagSettingsRenderer(this.plugin, this.draftSettings, this.availableEmbeddingModels, () => this.display()).render(containerEl);
 		new PromptSettingsRenderer(this.draftSettings, () => this.display()).render(containerEl);
 		this.templateSettingsRenderer.render(containerEl, () => this.display());
 	}
@@ -115,6 +118,7 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 	private async saveDraftSettings(): Promise<void> {
 		this.plugin.settings = {
 			...this.cloneSettings(this.draftSettings),
+			contextOptions: this.plugin.settings.contextOptions,
 			promptTemplates: this.plugin.settings.promptTemplates,
 		};
 		await this.plugin.saveSettings();
@@ -152,6 +156,9 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 	private cloneSettings(settings: AiWritingBuddySettings): AiWritingBuddySettings {
 		return {
 			...settings,
+			contextOptions: {
+				...settings.contextOptions,
+			},
 			promptTemplates: settings.promptTemplates.map((template) => ({
 				...template,
 			})),
@@ -164,6 +171,9 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 			baseUrl: settings.baseUrl,
 			modelName: settings.modelName,
 			apiKey: settings.apiKey,
+			embeddingBaseUrl: settings.embeddingBaseUrl,
+			embeddingModelName: settings.embeddingModelName,
+			embeddingApiKey: settings.embeddingApiKey,
 			requestTimeoutMs: settings.requestTimeoutMs,
 			maxPromptCharacters: settings.maxPromptCharacters,
 			memoryEnabled: settings.memoryEnabled,

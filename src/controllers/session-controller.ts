@@ -3,6 +3,7 @@ import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type { AiResponseService } from "../services/ai-response-service";
 import { AiWritingBuddySessionHistoryTrimmer } from "../services/session-history-trimmer";
 import { AiWritingBuddySessionSummaryService } from "../services/session-summary-service";
+import type { AiWritingBuddyChatNoteContext, AiWritingBuddyUsedContext } from "../types/ai-writing-buddy-context";
 import type { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
 import type { AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 import type { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
@@ -13,6 +14,7 @@ import { formatProviderErrorMessage } from "../utils/format-provider-error-messa
 type SessionChangeHandler = (scrollToBottom: boolean) => void;
 type SessionSaveHandler = (entries: AiWritingBuddyEntry[], memorySummary?: AiWritingBuddyMemorySummary) => void;
 type NewSessionHandler = (sessionTitle?: string) => void;
+type NoteContextProvider = (message: string) => Promise<AiWritingBuddyChatNoteContext | undefined>;
 
 export class AiWritingBuddySessionController {
 	private entries: AiWritingBuddyEntry[];
@@ -28,6 +30,7 @@ export class AiWritingBuddySessionController {
 		private readonly onChange: SessionChangeHandler,
 		private readonly onSave: SessionSaveHandler,
 		private readonly onNewSession: NewSessionHandler,
+		private readonly getNoteContext: NoteContextProvider,
 		settings: AiWritingBuddySettings,
 		initialEntries: AiWritingBuddyEntry[] = [],
 		initialMemorySummary?: AiWritingBuddyMemorySummary,
@@ -174,6 +177,7 @@ export class AiWritingBuddySessionController {
 		const recentEntries = this.sessionHistoryTrimmer.getRecentEntries(this.entries, {
 			excludeEntryId: replyToEntryId ?? undefined,
 		});
+		const noteContext = await this.getNoteContext(trimmedMessage);
 
 		const entry: AiWritingBuddyEntry = {
 			id: crypto.randomUUID(),
@@ -183,6 +187,7 @@ export class AiWritingBuddySessionController {
 			createdAt: new Date().toISOString(),
 			replyToEntryId: replyToEntryId ?? undefined,
 			replyToSnippet,
+			usedContext: this.createUsedContext(noteContext),
 		};
 
 		this.entries.push(entry);
@@ -197,6 +202,7 @@ export class AiWritingBuddySessionController {
 				replyToEntry,
 				recentEntries,
 				memorySummary: this.memorySummary,
+				noteContext,
 			}, {
 				signal: abortController.signal,
 			});
@@ -246,6 +252,29 @@ export class AiWritingBuddySessionController {
 
 		this.cancelledEntryIds.delete(entryId);
 		return true;
+	}
+
+	private createUsedContext(noteContext: AiWritingBuddyChatNoteContext | undefined): AiWritingBuddyUsedContext | undefined {
+		if (!noteContext || noteContext.notes.length === 0) {
+			return undefined;
+		}
+
+		return {
+			scope: noteContext.scope,
+			retrievalMode: noteContext.retrievalMode,
+			usedKeywordFallback: noteContext.usedKeywordFallback,
+			includeIndexedRag: noteContext.includeIndexedRag,
+			notes: noteContext.notes.map((note) => ({
+				title: note.title,
+				path: note.path,
+				contentIncluded: note.content.trim().length > 0,
+				wasTruncated: note.wasTruncated,
+				contentSource: note.contentSource,
+				retrievalMode: note.retrievalMode,
+				retrievedChunkCount: note.retrievedChunkCount,
+				totalChunkCount: note.totalChunkCount,
+			})),
+		};
 	}
 
 	private isValidChangeRejection(responseText: string, change: ResponseDiffChangeRejection): boolean {

@@ -9,7 +9,9 @@ import { AiWritingBuddyEntryRenderer } from "../renderers/entry-renderer";
 import { AiWritingBuddyHeaderRenderer } from "../renderers/header-renderer";
 import type { AiResponseService } from "../services/ai-response-service";
 import { ClipboardService } from "../services/clipboard-service";
+import { RagService } from "../services/rag-service";
 import { SelectionEditService } from "../services/selection-edit-service";
+import type { AiWritingBuddyChatNoteContext, AiWritingBuddyContextScope } from "../types/ai-writing-buddy-context";
 import { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
 import { AiWritingBuddyCurrentSessionData, AiWritingBuddyMemorySummary, AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
 import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
@@ -29,11 +31,13 @@ type RenameSavedSessionHandler = (sessionId: string, title: string) => AiWriting
 type CurrentSessionProvider = () => AiWritingBuddyCurrentSessionData | null;
 type RenameCurrentSessionHandler = (title: string) => AiWritingBuddyCurrentSessionData;
 type DeleteCurrentSessionHandler = () => AiWritingBuddyCurrentSessionData;
+type SettingsSaveHandler = () => Promise<void>;
 
 export class AiWritingBuddyView extends ItemView {
 	private readonly sessionController: AiWritingBuddySessionController;
 	private readonly clipboardService: ClipboardService;
 	private readonly selectionEditService: SelectionEditService;
+	private readonly ragService: RagService;
 	private readonly entryRenderer: AiWritingBuddyEntryRenderer;
 	private readonly headerRenderer = new AiWritingBuddyHeaderRenderer();
 	private readonly chatComposerRenderer: AiWritingBuddyChatComposerRenderer;
@@ -56,6 +60,8 @@ export class AiWritingBuddyView extends ItemView {
 		private readonly onGetCurrentSession: CurrentSessionProvider,
 		private readonly onRenameCurrentSession: RenameCurrentSessionHandler,
 		private readonly onDeleteCurrentSession: DeleteCurrentSessionHandler,
+		private readonly onSaveSettings: SettingsSaveHandler,
+		pluginRootPath: string,
 	) {
 		super(leaf);
 
@@ -73,6 +79,7 @@ export class AiWritingBuddyView extends ItemView {
 
 			onSaveSession,
 			onNewSession,
+			(message) => this.getChatNoteContext(message),
 			this.settings,
 			initialEntries,
 			initialMemorySummary,
@@ -80,6 +87,7 @@ export class AiWritingBuddyView extends ItemView {
 
 		this.clipboardService = new ClipboardService();
 		this.selectionEditService = new SelectionEditService(this.app);
+		this.ragService = new RagService(this.app, this.settings, pluginRootPath);
 
 		this.entryRenderer = new AiWritingBuddyEntryRenderer(
 			this.app,
@@ -173,6 +181,18 @@ export class AiWritingBuddyView extends ItemView {
 			},
 			onManageSavedSessions: () => {
 				this.manageSavedSessions();
+			},
+			contextEnabled: this.settings.contextOptions.enabled,
+			contextScope: this.settings.contextOptions.scope,
+			contextIncludeIndexedRag: this.settings.contextOptions.includeIndexedRag,
+			onContextEnabledChange: (enabled) => {
+				void this.setContextEnabled(enabled);
+			},
+			onContextScopeChange: (scope) => {
+				void this.setContextScope(scope);
+			},
+			onContextIncludeIndexedRagChange: (enabled) => {
+				void this.setContextIncludeIndexedRag(enabled);
 			},
 		});
 
@@ -277,6 +297,49 @@ export class AiWritingBuddyView extends ItemView {
 				return newSession.entryCount > 0 || newSession.entries.length > 0 ? newSession : null;
 			},
 		}).open();
+	}
+
+	private async setContextEnabled(enabled: boolean): Promise<void> {
+		this.settings.contextOptions = {
+			...this.settings.contextOptions,
+			enabled,
+		};
+
+		await this.onSaveSettings();
+		this.renderPreservingScroll();
+	}
+
+	private async setContextScope(scope: AiWritingBuddyContextScope): Promise<void> {
+		this.settings.contextOptions = {
+			...this.settings.contextOptions,
+			scope,
+		};
+
+		await this.onSaveSettings();
+		this.renderPreservingScroll();
+	}
+
+	private async setContextIncludeIndexedRag(includeIndexedRag: boolean): Promise<void> {
+		this.settings.contextOptions = {
+			...this.settings.contextOptions,
+			includeIndexedRag,
+		};
+
+		await this.onSaveSettings();
+		this.renderPreservingScroll();
+	}
+
+	private async getChatNoteContext(message: string): Promise<AiWritingBuddyChatNoteContext | undefined> {
+		if (!this.settings.contextOptions.enabled) {
+			return undefined;
+		}
+
+		try {
+			return await this.ragService.getContext(this.settings.contextOptions.scope, message, this.settings.contextOptions.includeIndexedRag);
+		} catch (error) {
+			console.error("AI Writing Buddy RAG context failed", error);
+			return undefined;
+		}
 	}
 
 	private renderScrollToBottomButton(container: HTMLElement, entriesEl: HTMLElement): void {

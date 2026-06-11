@@ -40,6 +40,9 @@ const scriptContext = await esbuild.context({
 		...builtinModules],
 	format: "cjs",
 	target: "es2018",
+	loader: {
+		".wasm": "binary",
+	},
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,

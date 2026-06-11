@@ -3,7 +3,7 @@
 .ai-writing-buddy-header {
 	flex: 0 0 auto;
 	margin-bottom: 10px;
-	padding: 10px 12px;
+	padding: 8px 10px;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 12px;
 	background: var(--background-primary-alt);
@@ -12,9 +12,15 @@
 
 .ai-writing-buddy-header-top {
 	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 6px;
+}
+
+.ai-writing-buddy-header-title-group {
+	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	gap: 8px;
+	min-width: 0;
 }
 
 .ai-writing-buddy-header-kicker {
@@ -23,25 +29,67 @@
 
 .ai-writing-buddy-header h2 {
 	margin: 0;
-	font-size: 1.05em;
-	line-height: 1.2;
-	letter-spacing: -0.01em;
+	font-size: 0.95em;
+	line-height: 1.15;
+	letter-spacing: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .ai-writing-buddy-header-actions {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	justify-content: flex-end;
-	gap: 8px;
+	justify-content: flex-start;
+	gap: 6px;
+	min-width: 0;
+}
+
+.ai-writing-buddy-context-control {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 30px;
+	padding: 2px 4px 2px 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 999px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: 0.82em;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.ai-writing-buddy-context-control.is-disabled {
+	color: var(--text-muted);
+	opacity: 0.72;
+}
+
+.ai-writing-buddy-context-control input {
+	margin: 0;
+}
+
+.ai-writing-buddy-context-scope-select {
+	max-width: 132px;
+	min-width: 108px;
+	min-height: 26px;
+	border-radius: 999px;
+	font-size: 1em;
+}
+
+.ai-writing-buddy-context-control.is-disabled .ai-writing-buddy-context-scope-select {
+	background: var(--background-modifier-border);
+	color: var(--text-muted);
+	cursor: not-allowed;
 }
 
 .ai-writing-buddy-session-icon-button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 32px;
-	height: 32px;
+	width: 30px;
+	height: 30px;
 	padding: 0;
 	border-radius: 999px;
 }
@@ -61,6 +109,25 @@
 	max-width: 220px;
 	border-radius: 999px;
 	font-size: 0.82em;
+}
+
+@container (max-width: 420px) {
+	.ai-writing-buddy-header {
+		padding: 8px;
+	}
+
+	.ai-writing-buddy-header h2 {
+		font-size: 0.9em;
+	}
+
+	.ai-writing-buddy-context-control {
+		font-size: 0.78em;
+	}
+
+	.ai-writing-buddy-context-scope-select {
+		min-width: 96px;
+		max-width: 116px;
+	}
 }
 
 .ai-writing-buddy-saved-sessions-list {

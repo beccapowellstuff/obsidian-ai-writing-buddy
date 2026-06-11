@@ -1,4 +1,5 @@
-import { Plugin, requestUrl } from "obsidian";
+import { FileSystemAdapter, Plugin, requestUrl } from "obsidian";
+import { join } from "path";
 import type { AiWritingBuddySettings } from "./config/default-settings";
 import { INTERFACE_TEXT } from "./config/language/en-gb";
 import { PLUGIN_DISPLAY } from "./config/plugin-display";
@@ -7,6 +8,7 @@ import { AiWritingBuddyPluginDataService } from "./services/ai-writing-buddy-plu
 import { createAiResponseService } from "./services/create-ai-response-service";
 import { AiWritingBuddyViewService } from "./services/view-service";
 import { EditorMenuService } from "./services/editor-menu-service";
+import { EmbeddingService } from "./services/embedding-service";
 import { AiWritingBuddyCurrentSessionData, AiWritingBuddySessionListItem } from "./types/ai-writing-buddy-plugin-data";
 import { AI_WRITING_BUDDY_VIEW_TYPE, AiWritingBuddyView } from "./views/ai-writing-buddy-view";
 
@@ -89,6 +91,8 @@ export default class AiWritingBuddyPlugin extends Plugin {
 
 					return this.currentSession;
 				},
+				() => this.saveSettings(),
+				this.getPluginRootPath(),
 			);
 		});
 
@@ -126,7 +130,15 @@ export default class AiWritingBuddyPlugin extends Plugin {
 			return ["mock-model"];
 		}
 
-		const baseUrl = settings.baseUrl.trim().replace(/\/$/, "");
+		return this.listModelsFromProvider(settings.baseUrl, settings.apiKey);
+	}
+
+	async listAvailableEmbeddingModels(settings: AiWritingBuddySettings = this.settings): Promise<string[]> {
+		return this.listModelsFromProvider(settings.embeddingBaseUrl.trim() || settings.baseUrl, settings.embeddingApiKey.trim() || settings.apiKey);
+	}
+
+	private async listModelsFromProvider(baseUrlSetting: string, apiKeySetting: string): Promise<string[]> {
+		const baseUrl = baseUrlSetting.trim().replace(/\/$/, "");
 
 		if (!baseUrl) {
 			throw new Error("Server address is required.");
@@ -134,8 +146,8 @@ export default class AiWritingBuddyPlugin extends Plugin {
 
 		const headers: Record<string, string> = {};
 
-		if (settings.apiKey.trim()) {
-			headers.Authorization = `Bearer ${settings.apiKey.trim()}`;
+		if (apiKeySetting.trim()) {
+			headers.Authorization = `Bearer ${apiKeySetting.trim()}`;
 		}
 
 		const response = await requestUrl({
@@ -177,5 +189,19 @@ export default class AiWritingBuddyPlugin extends Plugin {
 		}
 
 		return INTERFACE_TEXT.errors.connectionTestSucceeded;
+	}
+
+	async testEmbeddingConnection(settings: AiWritingBuddySettings = this.settings): Promise<string> {
+		return new EmbeddingService(settings).testConnection();
+	}
+
+	getPluginRootPath(): string {
+		const adapter = this.app.vault.adapter;
+
+		if (!(adapter instanceof FileSystemAdapter)) {
+			throw new Error("AI Writing Buddy RAG indexing requires a desktop vault file system adapter.");
+		}
+
+		return join(adapter.getBasePath(), this.app.vault.configDir, "plugins", this.manifest.id);
 	}
 }

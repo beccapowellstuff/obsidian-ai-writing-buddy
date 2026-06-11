@@ -1,15 +1,22 @@
 import { setIcon, setTooltip } from "obsidian";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
+import type { AiWritingBuddyContextScope } from "../types/ai-writing-buddy-context";
 import { AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
 
 type AiWritingBuddyHeaderRendererOptions = {
 	hasEntries: boolean;
 	currentSessionTitle?: string;
 	sessionListItems: AiWritingBuddySessionListItem[];
+	contextEnabled: boolean;
+	contextScope: AiWritingBuddyContextScope;
+	contextIncludeIndexedRag: boolean;
 	onClearSession: () => void;
 	onStartNewSession: () => void;
 	onRestoreSession: (sessionId: string) => void;
 	onManageSavedSessions: () => void;
+	onContextEnabledChange: (enabled: boolean) => void;
+	onContextScopeChange: (scope: AiWritingBuddyContextScope) => void;
+	onContextIncludeIndexedRagChange: (enabled: boolean) => void;
 };
 export class AiWritingBuddyHeaderRenderer {
 	render(container: HTMLElement, options: AiWritingBuddyHeaderRendererOptions): void {
@@ -51,6 +58,7 @@ export class AiWritingBuddyHeaderRenderer {
 		});
 
 		this.renderSessionHistory(actionsEl, options);
+		this.renderContextControls(actionsEl, options);
 		this.renderSessionManagerButton(actionsEl, options);
 
 		const newSessionButton = actionsEl.createEl("button", {
@@ -82,6 +90,65 @@ export class AiWritingBuddyHeaderRenderer {
 		clearButton.disabled = !options.hasEntries;
 		clearButton.addEventListener("click", () => {
 			options.onClearSession();
+		});
+	}
+
+	private renderContextControls(actionsEl: HTMLElement, options: AiWritingBuddyHeaderRendererOptions): void {
+		const controlEl = actionsEl.createEl("label", {
+			cls: options.contextEnabled ? "ai-writing-buddy-context-control" : "ai-writing-buddy-context-control is-disabled",
+		});
+
+		const checkboxEl = controlEl.createEl("input", {
+			attr: {
+				type: "checkbox",
+			},
+		});
+		checkboxEl.checked = options.contextEnabled;
+
+		controlEl.createEl("span", {
+			text: INTERFACE_TEXT.header.context,
+		});
+
+		const selectEl = controlEl.createEl("select", {
+			cls: "ai-writing-buddy-context-scope-select",
+		});
+		selectEl.disabled = !options.contextEnabled;
+
+		selectEl.createEl("option", {
+			text: INTERFACE_TEXT.header.contextCurrentNote,
+			value: "current-note",
+		});
+		selectEl.createEl("option", {
+			text: INTERFACE_TEXT.header.contextOpenNotes,
+			value: "open-notes",
+		});
+		selectEl.value = options.contextScope === "indexed-notes" ? "open-notes" : options.contextScope;
+
+		const ragControlEl = actionsEl.createEl("label", {
+			cls: options.contextEnabled ? "ai-writing-buddy-context-control ai-writing-buddy-rag-control" : "ai-writing-buddy-context-control ai-writing-buddy-rag-control is-disabled",
+		});
+		const ragCheckboxEl = ragControlEl.createEl("input", {
+			attr: {
+				type: "checkbox",
+			},
+		});
+		ragCheckboxEl.checked = options.contextIncludeIndexedRag;
+		ragCheckboxEl.disabled = !options.contextEnabled;
+
+		ragControlEl.createEl("span", {
+			text: INTERFACE_TEXT.header.contextRag,
+		});
+
+		checkboxEl.addEventListener("change", () => {
+			options.onContextEnabledChange(checkboxEl.checked);
+		});
+
+		selectEl.addEventListener("change", () => {
+			options.onContextScopeChange(selectEl.value as AiWritingBuddyContextScope);
+		});
+
+		ragCheckboxEl.addEventListener("change", () => {
+			options.onContextIncludeIndexedRagChange(ragCheckboxEl.checked);
 		});
 	}
 

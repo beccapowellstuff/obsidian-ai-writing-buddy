@@ -74,6 +74,37 @@
 	background: var(--background-secondary);
 }
 
+.ai-writing-buddy-used-context {
+	margin-top: 10px;
+	padding: 8px 10px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 10px;
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: 0.86em;
+}
+
+.ai-writing-buddy-used-context-heading {
+	margin: 0;
+	font-weight: 800;
+	color: var(--text-normal);
+	cursor: pointer;
+	user-select: none;
+}
+
+.ai-writing-buddy-used-context[open] .ai-writing-buddy-used-context-heading {
+	margin-bottom: 6px;
+}
+
+.ai-writing-buddy-used-context ul {
+	margin: 0;
+	padding-left: 18px;
+}
+
+.ai-writing-buddy-used-context-note-meta {
+	color: var(--text-faint);
+}
+
 .ai-writing-buddy-diff-added {
 	padding: 0 3px;
 	border-radius: 5px;

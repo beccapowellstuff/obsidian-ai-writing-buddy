@@ -1,5 +1,7 @@
 import type { AiWritingBuddySettings } from "../config/default-settings";
+import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type { AiWritingBuddyChatEntry, AiWritingBuddyEntry, AiWritingBuddySelectionEntry } from "../types/ai-writing-buddy-entry";
+import type { AiWritingBuddyChatNoteContext } from "../types/ai-writing-buddy-context";
 import type { AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 import type { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 import { SELECTION_RESPONSE_OUTPUT_END, SELECTION_RESPONSE_OUTPUT_START } from "./selection-response-output";
@@ -14,6 +16,7 @@ export type AiWritingBuddyChatPromptRequest = {
 	replyToEntry?: AiWritingBuddyEntry;
 	recentEntries?: AiWritingBuddyEntry[];
 	memorySummary?: AiWritingBuddyMemorySummary;
+	noteContext?: AiWritingBuddyChatNoteContext;
 };
 
 export class AiWritingBuddyPromptBuilder {
@@ -61,6 +64,15 @@ export class AiWritingBuddyPromptBuilder {
 			messages.push({
 				role: "system",
 				content: recentUserMessageIndex,
+			});
+		}
+
+		const noteContext = this.formatNoteContext(request.noteContext);
+
+		if (noteContext) {
+			messages.push({
+				role: "system",
+				content: noteContext,
 			});
 		}
 
@@ -154,6 +166,54 @@ export class AiWritingBuddyPromptBuilder {
 
 	private getEntryResponseText(entry: AiWritingBuddyEntry): string {
 		return [entry.response.commentText, entry.response.text].filter(Boolean).join("\n\n");
+	}
+
+	private formatNoteContext(noteContext: AiWritingBuddyChatNoteContext | undefined): string {
+		if (!noteContext || noteContext.notes.length === 0) {
+			return "";
+		}
+
+		return [
+			"The user is chatting inside Obsidian.",
+			"The following excerpts were retrieved from the user's Obsidian notes. Use only these excerpts as evidence.",
+			"If the answer cannot be determined from the retrieved excerpts, say that the available retrieved context is insufficient.",
+			"Do not claim to have read note sections that were not provided in these excerpts.",
+			"Do not modify or rewrite the note unless the user explicitly asks for draft text in the chat response.",
+			"This side-panel chat response must not directly alter any Obsidian file.",
+			"",
+			"Context scope:",
+			this.formatContextScope(noteContext),
+			`Retrieval mode: ${noteContext.usedKeywordFallback ? "keyword fallback" : "embedding similarity"}`,
+			"",
+			"Retrieved excerpts:",
+			...noteContext.notes.flatMap((note, index) => [
+				`[Source ${index + 1}]`,
+				`File: ${note.path || note.title}`,
+				`Chunks used: ${note.retrievedChunkCount ?? 0}/${note.totalChunkCount ?? 0}`,
+				`Retrieval: ${note.retrievalMode === "keyword" ? "keyword fallback" : "embedding similarity"}`,
+				note.content,
+				"",
+			]),
+		].join("\n");
+	}
+
+	private formatContextScope(noteContext: AiWritingBuddyChatNoteContext): string {
+		const scope = noteContext.scope;
+		const baseLabel = this.formatBaseContextScope(scope);
+
+		if (noteContext.includeIndexedRag && scope !== "indexed-notes") {
+			return `${baseLabel} + ${INTERFACE_TEXT.header.contextRag}`;
+		}
+
+		return baseLabel;
+	}
+
+	private formatBaseContextScope(scope: AiWritingBuddyChatNoteContext["scope"]): string {
+		if (scope === "indexed-notes") {
+			return INTERFACE_TEXT.header.contextIndexedNotes;
+		}
+
+		return scope === "open-notes" ? INTERFACE_TEXT.header.contextOpenNotes : INTERFACE_TEXT.header.contextCurrentNote;
 	}
 
 	private formatReplyContext(replyToEntry: AiWritingBuddyEntry | undefined): string {

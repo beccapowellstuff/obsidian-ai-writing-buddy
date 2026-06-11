@@ -1,6 +1,7 @@
 /* AI Writing Buddy: panel layout */
 
 .ai-writing-buddy-view {
+	container-type: inline-size;
 	position: relative;
 	display: flex;
 	flex-direction: column;

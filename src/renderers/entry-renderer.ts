@@ -7,6 +7,7 @@ import { PromptPreviewModal } from "../modals/prompt-preview-modal";
 import { AiWritingBuddySourcePanelRenderer } from "./source-panel-renderer";
 import { AiWritingBuddyResponseRenderer } from "./response-renderer";
 import type { ResponseDiffChangeRejection } from "../types/response-diff-change";
+import type { AiWritingBuddyUsedContext } from "../types/ai-writing-buddy-context";
 
 type ReplyHandler = (entryId: string) => void;
 type RejectChangeHandler = (entryId: string, change: ResponseDiffChangeRejection) => void;
@@ -56,6 +57,73 @@ export class AiWritingBuddyEntryRenderer {
 		entryEl.createEl("p", { text: entry.message });
 
 		this.responseRenderer.render(entryEl, entry.response, entry);
+		this.renderUsedContext(entryEl, entry);
+	}
+
+	private renderUsedContext(container: HTMLElement, entry: AiWritingBuddyChatEntry): void {
+		if (!entry.usedContext || entry.usedContext.notes.length === 0) {
+			return;
+		}
+
+		const contextEl = container.createEl("details", {
+			cls: "ai-writing-buddy-used-context",
+		});
+
+		contextEl.createEl("summary", {
+			cls: "ai-writing-buddy-used-context-heading",
+			text: this.getUsedContextSummary(entry.usedContext),
+		});
+
+		const listEl = contextEl.createEl("ul");
+
+		for (const note of entry.usedContext.notes) {
+			const noteEl = listEl.createEl("li");
+			noteEl.createSpan({
+				text: note.path || note.title,
+			});
+
+			if (note.wasTruncated) {
+				noteEl.createSpan({
+					cls: "ai-writing-buddy-used-context-note-meta",
+					text: ` (${INTERFACE_TEXT.entries.contextTruncated})`,
+				});
+			}
+
+			if (note.contentSource === "retrieved-chunks" && note.retrievedChunkCount && note.totalChunkCount) {
+				noteEl.createSpan({
+					cls: "ai-writing-buddy-used-context-note-meta",
+					text: ` (${INTERFACE_TEXT.entries.contextRetrievedChunks(note.retrievedChunkCount, note.totalChunkCount)})`,
+				});
+			}
+		}
+	}
+
+	private getContextScopeLabel(usedContext: AiWritingBuddyUsedContext): string {
+		const baseLabel = this.getBaseContextScopeLabel(usedContext.scope);
+
+		if (usedContext.includeIndexedRag && usedContext.scope !== "indexed-notes") {
+			return `${baseLabel} + ${INTERFACE_TEXT.header.contextRag}`;
+		}
+
+		return baseLabel;
+	}
+
+	private getUsedContextSummary(usedContext: AiWritingBuddyUsedContext): string {
+		const scopeLabel = this.getContextScopeLabel(usedContext);
+		const chunkCount = usedContext.notes.reduce((total, note) => total + (note.retrievedChunkCount ?? 0), 0);
+		const noteCount = usedContext.notes.length;
+		const detailText = chunkCount > 0 ? `${noteCount} notes, ${chunkCount} chunks` : `${noteCount} notes`;
+		const label = usedContext.usedKeywordFallback ? INTERFACE_TEXT.entries.usedContextScopeWithFallback(scopeLabel) : INTERFACE_TEXT.entries.usedContextScope(scopeLabel);
+
+		return `${label} (${detailText})`;
+	}
+
+	private getBaseContextScopeLabel(scope: AiWritingBuddyUsedContext["scope"]): string {
+		if (scope === "indexed-notes") {
+			return INTERFACE_TEXT.header.contextIndexedNotes;
+		}
+
+		return scope === "open-notes" ? INTERFACE_TEXT.header.contextOpenNotes : INTERFACE_TEXT.header.contextCurrentNote;
 	}
 
 	private renderTemplateAndInstruction(container: HTMLElement, entry: AiWritingBuddySelectionEntry): void {

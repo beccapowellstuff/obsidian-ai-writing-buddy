@@ -1,4 +1,5 @@
 import { PromptTemplate } from "../types/prompt-template";
+import type { AiWritingBuddyContextOptions } from "../types/ai-writing-buddy-context";
 import { DEFAULT_PROMPT_TEMPLATES } from "./default-prompt-templates";
 export type AiWritingBuddyProvider = "mock" | "openai-compatible";
 
@@ -7,6 +8,9 @@ export type AiWritingBuddySettings = {
 	baseUrl: string;
 	modelName: string;
 	apiKey: string;
+	embeddingBaseUrl: string;
+	embeddingModelName: string;
+	embeddingApiKey: string;
 	requestTimeoutMs: number;
 	maxPromptCharacters: number;
 	memoryEnabled: boolean;
@@ -16,6 +20,7 @@ export type AiWritingBuddySettings = {
 	selectionSystemPrompt: string;
 	personalityEnabled: boolean;
 	personalityPrompt: string;
+	contextOptions: AiWritingBuddyContextOptions;
 	promptTemplates: PromptTemplate[];
 };
 
@@ -43,12 +48,20 @@ export const DEFAULT_PERSONALITY_PROMPT = [
 export const DEFAULT_MAX_PROMPT_CHARACTERS = 120000;
 export const DEFAULT_MEMORY_BUDGET_CHARACTERS = 6000;
 export const DEFAULT_RECENT_HISTORY_MAX_ENTRIES = 6;
+export const DEFAULT_CONTEXT_OPTIONS: AiWritingBuddyContextOptions = {
+	enabled: false,
+	scope: "current-note",
+	includeIndexedRag: false,
+};
 
 export const DEFAULT_AI_WRITING_BUDDY_SETTINGS: AiWritingBuddySettings = {
 	provider: "mock",
 	baseUrl: "http://localhost:1234/v1",
 	modelName: "",
 	apiKey: "",
+	embeddingBaseUrl: "",
+	embeddingModelName: "",
+	embeddingApiKey: "",
 	requestTimeoutMs: 60000,
 	maxPromptCharacters: DEFAULT_MAX_PROMPT_CHARACTERS,
 	memoryEnabled: true,
@@ -58,5 +71,6 @@ export const DEFAULT_AI_WRITING_BUDDY_SETTINGS: AiWritingBuddySettings = {
 	selectionSystemPrompt: DEFAULT_SELECTION_SYSTEM_PROMPT,
 	personalityEnabled: false,
 	personalityPrompt: DEFAULT_PERSONALITY_PROMPT,
+	contextOptions: DEFAULT_CONTEXT_OPTIONS,
 	promptTemplates: DEFAULT_PROMPT_TEMPLATES,
 };
