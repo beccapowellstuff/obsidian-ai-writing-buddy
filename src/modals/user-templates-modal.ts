@@ -2,6 +2,8 @@ import { App, Modal, Notice, Setting, setIcon } from "obsidian";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type AiWritingBuddyPlugin from "../main";
 import type { PromptTemplate } from "../types/prompt-template";
+import { ConfirmationModal } from "./confirmation-modal";
+import { UnsavedChangesModal } from "./unsaved-changes-modal";
 
 type EditableTemplateFields = Pick<PromptTemplate, "name" | "description" | "prompt" | "returnsReplacementTextOnly" | "highlightChanges" | "temperature">;
 
@@ -321,8 +323,13 @@ export class UserTemplatesModal extends Modal {
 	}
 
 	private openUnsavedChangesModal(afterSaveOrDiscard: () => void): void {
-		new UnsavedTemplateChangesModal(this.app, {
-			onSave: async () => {
+		new UnsavedChangesModal(this.app, {
+			title: INTERFACE_TEXT.settings.templates.unsavedChangesTitle,
+			description: INTERFACE_TEXT.settings.templates.unsavedChangesDescription,
+			cancelText: INTERFACE_TEXT.sessionManager.cancel,
+			discardText: INTERFACE_TEXT.settings.templates.discardChanges,
+			saveText: INTERFACE_TEXT.settings.templates.saveChanges,
+			onSave: async (): Promise<void> => {
 				await this.saveCurrentDraft();
 				afterSaveOrDiscard();
 			},
@@ -485,115 +492,15 @@ export class UserTemplatesModal extends Modal {
 	}
 }
 
-class UnsavedTemplateChangesModal extends Modal {
-	constructor(
-		app: App,
-		private readonly options: {
-			onSave: () => Promise<void>;
-			onDiscard: () => void;
-			onCancel: () => void;
-		},
-	) {
-		super(app);
-	}
-
-	onOpen(): void {
-		const { contentEl } = this;
-		contentEl.empty();
-
-		contentEl.createEl("h2", {
-			text: INTERFACE_TEXT.settings.templates.unsavedChangesTitle,
+class ConfirmDeleteTemplateModal extends ConfirmationModal {
+	constructor(app: App, templateName: string, onConfirm: () => void) {
+		super(app, {
+			title: INTERFACE_TEXT.settings.templates.deleteTemplateTitle,
+			description: INTERFACE_TEXT.settings.templates.deleteTemplateConfirmation(templateName),
+			confirmText: INTERFACE_TEXT.settings.templates.delete,
+			cancelText: INTERFACE_TEXT.sessionManager.cancel,
+			confirmClass: "mod-warning",
+			onConfirm,
 		});
-
-		contentEl.createEl("p", {
-			text: INTERFACE_TEXT.settings.templates.unsavedChangesDescription,
-		});
-
-		const buttonRowEl = contentEl.createEl("div", {
-			cls: "ai-writing-buddy-modal-button-row",
-		});
-
-		const cancelButtonEl = buttonRowEl.createEl("button", {
-			text: INTERFACE_TEXT.sessionManager.cancel,
-		});
-		cancelButtonEl.type = "button";
-		cancelButtonEl.addEventListener("click", () => {
-			this.options.onCancel();
-			this.close();
-		});
-
-		const discardButtonEl = buttonRowEl.createEl("button", {
-			text: INTERFACE_TEXT.settings.templates.discardChanges,
-			cls: "mod-warning",
-		});
-		discardButtonEl.type = "button";
-		discardButtonEl.addEventListener("click", () => {
-			this.options.onDiscard();
-			this.close();
-		});
-
-		const saveButtonEl = buttonRowEl.createEl("button", {
-			text: INTERFACE_TEXT.settings.templates.saveChanges,
-			cls: "mod-cta",
-		});
-		saveButtonEl.type = "button";
-		saveButtonEl.addEventListener("click", () => {
-			void this.options.onSave().then(() => {
-				this.close();
-			});
-		});
-	}
-
-	onClose(): void {
-		this.contentEl.empty();
-	}
-}
-
-class ConfirmDeleteTemplateModal extends Modal {
-	constructor(
-		app: App,
-		private readonly templateName: string,
-		private readonly onConfirm: () => void,
-	) {
-		super(app);
-	}
-
-	onOpen(): void {
-		const { contentEl } = this;
-		contentEl.empty();
-
-		contentEl.createEl("h2", {
-			text: INTERFACE_TEXT.settings.templates.deleteTemplateTitle,
-		});
-
-		contentEl.createEl("p", {
-			text: INTERFACE_TEXT.settings.templates.deleteTemplateConfirmation(this.templateName),
-		});
-
-		const buttonRowEl = contentEl.createEl("div", {
-			cls: "ai-writing-buddy-modal-button-row",
-		});
-
-		const cancelButtonEl = buttonRowEl.createEl("button", {
-			text: INTERFACE_TEXT.sessionManager.cancel,
-		});
-		cancelButtonEl.type = "button";
-		cancelButtonEl.addEventListener("click", () => {
-			this.close();
-		});
-
-		const deleteButtonEl = buttonRowEl.createEl("button", {
-			text: INTERFACE_TEXT.settings.templates.delete,
-			cls: "mod-warning",
-		});
-		deleteButtonEl.type = "button";
-		deleteButtonEl.addEventListener("click", () => {
-			this.onConfirm();
-			this.close();
-		});
-	}
-
-	onClose(): void {
-		this.contentEl.empty();
 	}
 }

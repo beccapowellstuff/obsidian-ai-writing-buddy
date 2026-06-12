@@ -3,6 +3,7 @@ import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { AiWritingBuddyCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
 import { SavedSessionPreviewModal } from "./saved-session-preview-modal";
 import { AiWritingBuddySessionExportService } from "../services/session-export-service";
+import { formatSessionLabel } from "../utils/format-session-label";
 
 type SavedSessionsModalOptions = {
 	currentSession: AiWritingBuddyCurrentSessionData | null;
@@ -293,16 +294,6 @@ export class SavedSessionsModal extends Modal {
 	}
 
 	private getSessionLabel(session: AiWritingBuddyCurrentSessionData): string {
-		if (session.userTitle?.trim()) {
-			return session.userTitle.trim();
-		}
-
-		const updatedAt = new Date(session.updatedAt);
-
-		if (Number.isNaN(updatedAt.getTime())) {
-			return INTERFACE_TEXT.sessionManager.sessionLabel(null, session.entryCount);
-		}
-
-		return INTERFACE_TEXT.sessionManager.sessionLabel(updatedAt.toLocaleString(), session.entryCount);
+		return formatSessionLabel(session);
 	}
 }

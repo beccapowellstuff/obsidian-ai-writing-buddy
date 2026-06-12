@@ -53,23 +53,6 @@ export class RagIndexStore {
 		return rows.map((row) => this.mapIndexedFile(row));
 	}
 
-	async getChunksForFile(filePath: string): Promise<AiWritingBuddyRagChunk[]> {
-		const db = await this.getDatabase();
-		const rows = this.selectRows<ChunkRow>(
-			db,
-			[
-				"SELECT rag_chunks.*, indexed_files.file_title, indexed_files.file_hash, indexed_files.chunk_count AS total_chunk_count",
-				"FROM rag_chunks",
-				"JOIN indexed_files ON indexed_files.file_path = rag_chunks.file_path",
-				"WHERE rag_chunks.file_path = ?",
-				"ORDER BY rag_chunks.chunk_index ASC",
-			].join(" "),
-			[filePath],
-		);
-
-		return rows.map((row) => this.mapChunk(row));
-	}
-
 	async upsertFileIndex(file: AiWritingBuddyRagIndexedFile, chunks: AiWritingBuddyRagChunk[]): Promise<void> {
 		const db = await this.getDatabase();
 
@@ -116,22 +99,6 @@ export class RagIndexStore {
 				statement.free();
 			}
 
-			db.run("COMMIT");
-		} catch (error) {
-			db.run("ROLLBACK");
-			throw error;
-		}
-
-		await this.saveDatabase(db);
-	}
-
-	async deleteFileIndex(filePath: string): Promise<void> {
-		const db = await this.getDatabase();
-
-		db.run("BEGIN TRANSACTION");
-		try {
-			db.run("DELETE FROM rag_chunks WHERE file_path = ?", [filePath]);
-			db.run("DELETE FROM indexed_files WHERE file_path = ?", [filePath]);
 			db.run("COMMIT");
 		} catch (error) {
 			db.run("ROLLBACK");

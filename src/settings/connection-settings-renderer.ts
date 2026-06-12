@@ -2,6 +2,7 @@ import { Notice, Setting } from "obsidian";
 import type { AiWritingBuddySettings } from "../config/default-settings";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type AiWritingBuddyPlugin from "../main";
+import { runSettingsButtonTask } from "./run-settings-button-task";
 
 export class ConnectionSettingsRenderer {
 	constructor(
@@ -137,28 +138,25 @@ export class ConnectionSettingsRenderer {
 				setIdleButtonText();
 
 				button.onClick(async () => {
-					button.setDisabled(true);
-					button.setButtonText(INTERFACE_TEXT.settings.connection.loading);
+					await runSettingsButtonTask({
+						button,
+						busyText: INTERFACE_TEXT.settings.connection.loading,
+						restoreButtonText: setIdleButtonText,
+						logMessage: "AI Writing Buddy model loading failed",
+						fallbackErrorMessage: INTERFACE_TEXT.errors.modelLoadingFailed,
+						formatFailureNotice: INTERFACE_TEXT.errors.modelLoadingFailure,
+						run: async () => {
+							this.availableModels.length = 0;
+							this.availableModels.push(...(await this.plugin.listAvailableModels(this.settings)));
 
-					try {
-						this.availableModels.length = 0;
-						this.availableModels.push(...(await this.plugin.listAvailableModels(this.settings)));
+							if (!this.settings.modelName && this.availableModels[0]) {
+								this.settings.modelName = this.availableModels[0];
+							}
 
-						if (!this.settings.modelName && this.availableModels[0]) {
-							this.settings.modelName = this.availableModels[0];
-						}
-
-						new Notice(INTERFACE_TEXT.notices.modelsLoaded);
-						this.refresh();
-					} catch (error) {
-						console.error("AI Writing Buddy model loading failed", error);
-
-						const message = error instanceof Error ? error.message : INTERFACE_TEXT.errors.modelLoadingFailed;
-						new Notice(INTERFACE_TEXT.errors.modelLoadingFailure(message));
-					} finally {
-						button.setDisabled(false);
-						setIdleButtonText();
-					}
+							new Notice(INTERFACE_TEXT.notices.modelsLoaded);
+							this.refresh();
+						},
+					});
 				});
 			});
 	}

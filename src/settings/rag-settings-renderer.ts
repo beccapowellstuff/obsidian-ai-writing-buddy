@@ -2,6 +2,7 @@ import { Notice, Setting } from "obsidian";
 import type { AiWritingBuddySettings } from "../config/default-settings";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type AiWritingBuddyPlugin from "../main";
+import { runSettingsButtonTask } from "./run-settings-button-task";
 
 export class RagSettingsRenderer {
 	constructor(
@@ -107,28 +108,25 @@ export class RagSettingsRenderer {
 				setIdleButtonText();
 
 				button.onClick(async () => {
-					button.setDisabled(true);
-					button.setButtonText(INTERFACE_TEXT.settings.connection.loading);
+					await runSettingsButtonTask({
+						button,
+						busyText: INTERFACE_TEXT.settings.connection.loading,
+						restoreButtonText: setIdleButtonText,
+						logMessage: "AI Writing Buddy embedding model loading failed",
+						fallbackErrorMessage: INTERFACE_TEXT.errors.modelLoadingFailed,
+						formatFailureNotice: INTERFACE_TEXT.errors.modelLoadingFailure,
+						run: async () => {
+							this.availableEmbeddingModels.length = 0;
+							this.availableEmbeddingModels.push(...(await this.plugin.listAvailableEmbeddingModels(this.settings)));
 
-					try {
-						this.availableEmbeddingModels.length = 0;
-						this.availableEmbeddingModels.push(...(await this.plugin.listAvailableEmbeddingModels(this.settings)));
+							if (!this.settings.embeddingModelName && this.availableEmbeddingModels[0]) {
+								this.settings.embeddingModelName = this.availableEmbeddingModels[0];
+							}
 
-						if (!this.settings.embeddingModelName && this.availableEmbeddingModels[0]) {
-							this.settings.embeddingModelName = this.availableEmbeddingModels[0];
-						}
-
-						new Notice(INTERFACE_TEXT.notices.modelsLoaded);
-						this.refresh();
-					} catch (error) {
-						console.error("AI Writing Buddy embedding model loading failed", error);
-
-						const message = error instanceof Error ? error.message : INTERFACE_TEXT.errors.modelLoadingFailed;
-						new Notice(INTERFACE_TEXT.errors.modelLoadingFailure(message));
-					} finally {
-						button.setDisabled(false);
-						setIdleButtonText();
-					}
+							new Notice(INTERFACE_TEXT.notices.modelsLoaded);
+							this.refresh();
+						},
+					});
 				});
 			});
 	}

@@ -1,7 +1,8 @@
-import { App, Notice, TFolder, normalizePath } from "obsidian";
+import { App, Notice, normalizePath } from "obsidian";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
 import { AiWritingBuddyCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
+import { ensureVaultFolderExists } from "../utils/ensure-vault-folder-exists";
 
 export class AiWritingBuddySessionExportService {
 	constructor(private readonly app: App) {}
@@ -12,7 +13,7 @@ export class AiWritingBuddySessionExportService {
 		const filePath = await this.getAvailableFilePath(`${folderPath}/${fileName}`);
 		const content = this.buildSessionMarkdown(session, sessionLabel);
 
-		await this.ensureFolderExists(folderPath);
+		await ensureVaultFolderExists(this.app, folderPath, INTERFACE_TEXT.sessionExport.folderPathBlocked);
 		await this.app.vault.create(filePath, content);
 
 		new Notice(INTERFACE_TEXT.sessionExport.saveSucceeded(filePath));
@@ -106,28 +107,6 @@ export class AiWritingBuddySessionExportService {
 			"",
 			trimmedResponseText,
 		];
-	}
-
-	private async ensureFolderExists(folderPath: string): Promise<void> {
-		const normalisedFolderPath = normalizePath(folderPath);
-		const parts = normalisedFolderPath.split("/");
-		let currentPath = "";
-
-		for (const part of parts) {
-			currentPath = currentPath ? `${currentPath}/${part}` : part;
-
-			const existingFile = this.app.vault.getAbstractFileByPath(currentPath);
-
-			if (existingFile instanceof TFolder) {
-				continue;
-			}
-
-			if (existingFile) {
-				throw new Error(INTERFACE_TEXT.sessionExport.folderPathBlocked(currentPath));
-			}
-
-			await this.app.vault.createFolder(currentPath);
-		}
 	}
 
 	private async getAvailableFilePath(filePath: string): Promise<string> {

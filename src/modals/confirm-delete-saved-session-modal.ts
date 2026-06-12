@@ -1,53 +1,16 @@
-import { App, Modal } from "obsidian";
+import { App } from "obsidian";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
+import { ConfirmationModal } from "./confirmation-modal";
 
-export class ConfirmDeleteSavedSessionModal extends Modal {
-	constructor(
-		app: App,
-		private readonly sessionLabel: string,
-		private readonly onConfirm: () => void,
-	) {
-		super(app);
-	}
-
-	onOpen(): void {
-		const { contentEl } = this;
-		contentEl.empty();
-
-		contentEl.createEl("h2", {
-			text: INTERFACE_TEXT.sessionManager.deleteTitle,
+export class ConfirmDeleteSavedSessionModal extends ConfirmationModal {
+	constructor(app: App, sessionLabel: string, onConfirm: () => void) {
+		super(app, {
+			title: INTERFACE_TEXT.sessionManager.deleteTitle,
+			description: INTERFACE_TEXT.sessionManager.deleteDescription(sessionLabel),
+			confirmText: INTERFACE_TEXT.sessionManager.deleteSavedSession,
+			cancelText: INTERFACE_TEXT.sessionManager.cancel,
+			confirmClass: "mod-warning",
+			onConfirm,
 		});
-
-		contentEl.createEl("p", {
-			text: INTERFACE_TEXT.sessionManager.deleteDescription(this.sessionLabel),
-		});
-
-		const buttonRow = contentEl.createEl("div", {
-			cls: "ai-writing-buddy-modal-button-row",
-		});
-
-		const cancelButton = buttonRow.createEl("button", {
-			text: INTERFACE_TEXT.sessionManager.cancel,
-		});
-
-		cancelButton.type = "button";
-		cancelButton.addEventListener("click", () => {
-			this.close();
-		});
-
-		const deleteButton = buttonRow.createEl("button", {
-			text: INTERFACE_TEXT.sessionManager.deleteSavedSession,
-			cls: "mod-warning",
-		});
-
-		deleteButton.type = "button";
-		deleteButton.addEventListener("click", () => {
-			this.onConfirm();
-			this.close();
-		});
-	}
-
-	onClose(): void {
-		this.contentEl.empty();
 	}
 }

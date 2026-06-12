@@ -1,8 +1,7 @@
-import { App, Notice, TFile, TFolder, normalizePath } from "obsidian";
+import { App, Notice, TFile, normalizePath } from "obsidian";
 import {
 	AI_MEMORY_END_MARKER,
 	AI_MEMORY_START_MARKER,
-	DEFAULT_AI_MEMORY_FILE_NAME,
 	DEFAULT_AI_MEMORY_MANAGED_BLOCK,
 	DEFAULT_AI_MEMORY_NOTE_CONTENT,
 	MIN_AI_MEMORY_CLEANUP_WRITE_THRESHOLD,
@@ -15,6 +14,8 @@ import type {
 	AiWritingBuddyManagedMemoryWriteResult,
 	AiWritingBuddyVisibleMemoryContext,
 } from "../types/ai-writing-buddy-visible-memory";
+import { ensureVaultFolderExists } from "../utils/ensure-vault-folder-exists";
+import { normaliseAiMemoryFileName } from "../utils/normalise-ai-memory-file-name";
 
 type ManagedBlockRange = {
 	startIndex: number;
@@ -27,7 +28,7 @@ export class AiMemoryService {
 
 	resolveMemoryNotePath(settings: AiWritingBuddySettings): string {
 		const folderPath = normalizePath(settings.aiMemoryFolderPath.trim()).replace(/^\/+|\/+$/g, "");
-		const fileName = this.ensureMarkdownExtension(this.sanitiseFileName(settings.aiMemoryFileName));
+		const fileName = normaliseAiMemoryFileName(settings.aiMemoryFileName);
 
 		return normalizePath(folderPath ? `${folderPath}/${fileName}` : fileName);
 	}
@@ -36,7 +37,7 @@ export class AiMemoryService {
 		return {
 			...settings,
 			aiMemoryFolderPath: normalizePath(settings.aiMemoryFolderPath.trim()).replace(/^\/+|\/+$/g, ""),
-			aiMemoryFileName: this.ensureMarkdownExtension(this.sanitiseFileName(settings.aiMemoryFileName)),
+			aiMemoryFileName: normaliseAiMemoryFileName(settings.aiMemoryFileName),
 			aiMemoryMaxPromptCharacters: this.getMinimumNumber(settings.aiMemoryMaxPromptCharacters, MIN_AI_MEMORY_MAX_PROMPT_CHARACTERS),
 			aiMemoryCleanupWriteThreshold: this.getMinimumNumber(settings.aiMemoryCleanupWriteThreshold, MIN_AI_MEMORY_CLEANUP_WRITE_THRESHOLD),
 		};
@@ -59,7 +60,7 @@ export class AiMemoryService {
 		const folderPath = this.getFolderPath(filePath);
 
 		if (folderPath) {
-			await this.ensureFolderExists(folderPath);
+			await ensureVaultFolderExists(this.app, folderPath, INTERFACE_TEXT.settings.aiMemory.memoryFolderPathBlocked);
 		}
 
 		const file = await this.app.vault.create(filePath, `${DEFAULT_AI_MEMORY_NOTE_CONTENT}\n`);
@@ -68,11 +69,9 @@ export class AiMemoryService {
 	}
 
 	async openMemoryNote(settings: AiWritingBuddySettings): Promise<void> {
-		const filePath = this.resolveMemoryNotePath(settings);
-		const file = this.app.vault.getAbstractFileByPath(filePath);
+		const file = this.getExistingMemoryNoteFile(settings);
 
-		if (!(file instanceof TFile)) {
-			new Notice(INTERFACE_TEXT.settings.aiMemory.memoryNoteMissing);
+		if (!file) {
 			return;
 		}
 
@@ -80,11 +79,9 @@ export class AiMemoryService {
 	}
 
 	async repairMemoryNoteManagedBlock(settings: AiWritingBuddySettings): Promise<void> {
-		const filePath = this.resolveMemoryNotePath(settings);
-		const file = this.app.vault.getAbstractFileByPath(filePath);
+		const file = this.getExistingMemoryNoteFile(settings);
 
-		if (!(file instanceof TFile)) {
-			new Notice(INTERFACE_TEXT.settings.aiMemory.memoryNoteMissing);
+		if (!file) {
 			return;
 		}
 
@@ -237,26 +234,16 @@ export class AiMemoryService {
 		return startIndex >= 0 && endIndex > startIndex;
 	}
 
-	private async ensureFolderExists(folderPath: string): Promise<void> {
-		const normalisedFolderPath = normalizePath(folderPath);
-		const parts = normalisedFolderPath.split("/").filter(Boolean);
-		let currentPath = "";
+	private getExistingMemoryNoteFile(settings: AiWritingBuddySettings): TFile | null {
+		const filePath = this.resolveMemoryNotePath(settings);
+		const file = this.app.vault.getAbstractFileByPath(filePath);
 
-		for (const part of parts) {
-			currentPath = currentPath ? `${currentPath}/${part}` : part;
-
-			const existingFile = this.app.vault.getAbstractFileByPath(currentPath);
-
-			if (existingFile instanceof TFolder) {
-				continue;
-			}
-
-			if (existingFile) {
-				throw new Error(INTERFACE_TEXT.settings.aiMemory.memoryFolderPathBlocked(currentPath));
-			}
-
-			await this.app.vault.createFolder(currentPath);
+		if (file instanceof TFile) {
+			return file;
 		}
+
+		new Notice(INTERFACE_TEXT.settings.aiMemory.memoryNoteMissing);
+		return null;
 	}
 
 	private async openFile(file: TFile): Promise<void> {
@@ -267,19 +254,6 @@ export class AiMemoryService {
 		const slashIndex = filePath.lastIndexOf("/");
 
 		return slashIndex >= 0 ? filePath.slice(0, slashIndex) : "";
-	}
-
-	private sanitiseFileName(fileName: string): string {
-		const cleanedFileName = fileName
-			.replace(/[\\/]/g, " ")
-			.replace(/\s+/g, " ")
-			.trim();
-
-		return cleanedFileName || DEFAULT_AI_MEMORY_FILE_NAME;
-	}
-
-	private ensureMarkdownExtension(fileName: string): string {
-		return fileName.toLowerCase().endsWith(".md") ? fileName : `${fileName}.md`;
 	}
 
 	private getMinimumNumber(value: number, minimum: number): number {

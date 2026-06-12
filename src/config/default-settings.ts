@@ -60,10 +60,10 @@ export const DEFAULT_PERSONALITY_PROMPT = [
 	"Challenge unclear writing when needed, but stay kind.",
 ].join("\n");
 
-export const DEFAULT_MAX_PROMPT_CHARACTERS = 120000;
-export const DEFAULT_MEMORY_BUDGET_CHARACTERS = 6000;
-export const DEFAULT_RECENT_HISTORY_MAX_ENTRIES = 6;
-export const DEFAULT_CONTEXT_OPTIONS: AiWritingBuddyContextOptions = {
+const DEFAULT_MAX_PROMPT_CHARACTERS = 120000;
+const DEFAULT_MEMORY_BUDGET_CHARACTERS = 6000;
+const DEFAULT_RECENT_HISTORY_MAX_ENTRIES = 6;
+const DEFAULT_CONTEXT_OPTIONS: AiWritingBuddyContextOptions = {
 	enabled: false,
 	scope: "current-note",
 	includeIndexedRag: false,

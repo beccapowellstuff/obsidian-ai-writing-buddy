@@ -153,13 +153,9 @@ export class AiWritingBuddySessionController {
 
 			entry.response = response;
 		} catch (error) {
-			if (this.wasEntryCancelled(entry.id)) {
+			if (!this.setProviderErrorResponse(entry, error, "AI Writing Buddy selection response failed")) {
 				return;
 			}
-
-			console.error("AI Writing Buddy selection response failed", error);
-
-			entry.response = createPlaceholderResponse([INTERFACE_TEXT.responses.providerErrorHeading, "", formatProviderErrorMessage(error)].join("\n"));
 		} finally {
 			this.activeResponseControllers.delete(entry.id);
 		}
@@ -223,13 +219,9 @@ export class AiWritingBuddySessionController {
 			entry.response = response;
 			completedChatResponseText = [response.commentText, response.text].filter(Boolean).join("\n\n").trim();
 		} catch (error) {
-			if (this.wasEntryCancelled(entry.id)) {
+			if (!this.setProviderErrorResponse(entry, error, "AI Writing Buddy chat response failed")) {
 				return;
 			}
-
-			console.error("AI Writing Buddy chat response failed", error);
-
-			entry.response = createPlaceholderResponse([INTERFACE_TEXT.responses.providerErrorHeading, "", formatProviderErrorMessage(error)].join("\n"));
 		} finally {
 			this.activeResponseControllers.delete(entry.id);
 		}
@@ -265,6 +257,17 @@ export class AiWritingBuddySessionController {
 		}
 
 		this.cancelledEntryIds.delete(entryId);
+		return true;
+	}
+
+	private setProviderErrorResponse(entry: AiWritingBuddyEntry, error: unknown, logMessage: string): boolean {
+		if (this.wasEntryCancelled(entry.id)) {
+			return false;
+		}
+
+		console.error(logMessage, error);
+		entry.response = createPlaceholderResponse([INTERFACE_TEXT.responses.providerErrorHeading, "", formatProviderErrorMessage(error)].join("\n"));
+
 		return true;
 	}
 

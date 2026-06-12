@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "ignorePatterns": [
+    "src/styles/**"
+  ],
+  "ignoreDependencies": [
+    "tslib"
+  ],
+  "usedClassMembers": [
+    "isConfigured",
+    {
+      "implements": "AiResponseService",
+      "members": [
+        "createSelectionResponse",
+        "createChatResponse",
+        "createMemoryUpdateResponse"
+      ]
+    },
+    {
+      "extends": "ItemView",
+      "members": [
+        "setRequest"
+      ]
+    }
+  ],
+  "health": {
+    "ignore": [
+      "npm/fallow/scripts/**"
+    ]
+  },
+  "duplicates": {
+    "ignore": [
+      "npm/fallow/scripts/**"
+    ]
+  }
+}

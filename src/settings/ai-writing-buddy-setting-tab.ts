@@ -1,4 +1,4 @@
-import { App, Modal, Notice, PluginSettingTab } from "obsidian";
+import { App, Notice, PluginSettingTab } from "obsidian";
 import type AiWritingBuddyPlugin from "../main";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { AiMemoryService } from "../services/ai-memory-service";
@@ -8,6 +8,7 @@ import { PromptSettingsRenderer } from "./prompt-settings-renderer";
 import { RagSettingsRenderer } from "./rag-settings-renderer";
 import { AiMemorySettingsRenderer } from "./ai-memory-settings-renderer";
 import type { AiWritingBuddySettings } from "../config/default-settings";
+import { UnsavedChangesModal } from "../modals/unsaved-changes-modal";
 
 export class AiWritingBuddySettingTab extends PluginSettingTab {
 	private availableModels: string[] = [];
@@ -105,8 +106,13 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 	}
 
 	private openUnsavedSettingsModal(afterSaveOrDiscard: () => void): void {
-		new UnsavedSettingsModal(this.app, {
-			onSave: async () => {
+		new UnsavedChangesModal(this.app, {
+			title: INTERFACE_TEXT.settings.actions.unsavedChangesTitle,
+			description: INTERFACE_TEXT.settings.actions.unsavedChangesDescription,
+			cancelText: INTERFACE_TEXT.sessionManager.cancel,
+			discardText: INTERFACE_TEXT.settings.actions.discardChanges,
+			saveText: INTERFACE_TEXT.settings.actions.saveChanges,
+			onSave: async (): Promise<void> => {
 				await this.saveDraftSettings();
 				afterSaveOrDiscard();
 			},
@@ -212,69 +218,5 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 			personalityEnabled: settings.personalityEnabled,
 			personalityPrompt: settings.personalityPrompt,
 		});
-	}
-}
-
-class UnsavedSettingsModal extends Modal {
-	constructor(
-		app: App,
-		private readonly options: {
-			onSave: () => Promise<void>;
-			onDiscard: () => void;
-			onCancel: () => void;
-		},
-	) {
-		super(app);
-	}
-
-	onOpen(): void {
-		const { contentEl } = this;
-		contentEl.empty();
-
-		contentEl.createEl("h2", {
-			text: INTERFACE_TEXT.settings.actions.unsavedChangesTitle,
-		});
-
-		contentEl.createEl("p", {
-			text: INTERFACE_TEXT.settings.actions.unsavedChangesDescription,
-		});
-
-		const buttonRowEl = contentEl.createEl("div", {
-			cls: "ai-writing-buddy-modal-button-row",
-		});
-
-		const cancelButtonEl = buttonRowEl.createEl("button", {
-			text: INTERFACE_TEXT.sessionManager.cancel,
-		});
-		cancelButtonEl.type = "button";
-		cancelButtonEl.addEventListener("click", () => {
-			this.options.onCancel();
-			this.close();
-		});
-
-		const discardButtonEl = buttonRowEl.createEl("button", {
-			text: INTERFACE_TEXT.settings.actions.discardChanges,
-			cls: "mod-warning",
-		});
-		discardButtonEl.type = "button";
-		discardButtonEl.addEventListener("click", () => {
-			this.options.onDiscard();
-			this.close();
-		});
-
-		const saveButtonEl = buttonRowEl.createEl("button", {
-			text: INTERFACE_TEXT.settings.actions.saveChanges,
-			cls: "mod-cta",
-		});
-		saveButtonEl.type = "button";
-		saveButtonEl.addEventListener("click", () => {
-			void this.options.onSave().then(() => {
-				this.close();
-			});
-		});
-	}
-
-	onClose(): void {
-		this.contentEl.empty();
 	}
 }

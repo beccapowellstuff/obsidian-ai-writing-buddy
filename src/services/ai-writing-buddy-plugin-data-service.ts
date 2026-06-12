@@ -9,6 +9,7 @@ import { DEFAULT_AI_WRITING_BUDDY_SETTINGS } from "../config/default-settings";
 import { DEFAULT_PROMPT_TEMPLATES } from "../config/default-prompt-templates";
 import type { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
 import type { AiWritingBuddyCurrentSessionData, AiWritingBuddyMemorySummary, AiWritingBuddyPluginData, AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
+import { normaliseAiMemoryFileName } from "../utils/normalise-ai-memory-file-name";
 
 type LegacyPluginData = Partial<AiWritingBuddySettings>;
 type SavedPluginData = Partial<AiWritingBuddyPluginData> | LegacyPluginData | null;
@@ -175,7 +176,7 @@ export class AiWritingBuddyPluginDataService {
 		return {
 			...settings,
 			aiMemoryFolderPath: this.normaliseFolderPath(settings.aiMemoryFolderPath),
-			aiMemoryFileName: this.ensureMarkdownExtension(this.sanitiseMemoryFileName(settings.aiMemoryFileName)),
+			aiMemoryFileName: this.normaliseMemoryFileName(settings.aiMemoryFileName),
 			aiMemoryMaxPromptCharacters: this.getMinimumNumber(settings.aiMemoryMaxPromptCharacters, MIN_AI_MEMORY_MAX_PROMPT_CHARACTERS),
 			aiMemoryCleanupWriteThreshold: this.getMinimumNumber(settings.aiMemoryCleanupWriteThreshold, MIN_AI_MEMORY_CLEANUP_WRITE_THRESHOLD),
 		};
@@ -189,21 +190,12 @@ export class AiWritingBuddyPluginDataService {
 		return normalizePath(folderPath.trim()).replace(/^\/+|\/+$/g, "");
 	}
 
-	private sanitiseMemoryFileName(fileName: unknown): string {
+	private normaliseMemoryFileName(fileName: unknown): string {
 		if (typeof fileName !== "string") {
 			return DEFAULT_AI_MEMORY_FILE_NAME;
 		}
 
-		const cleanedFileName = fileName
-			.replace(/[\\/]/g, " ")
-			.replace(/\s+/g, " ")
-			.trim();
-
-		return cleanedFileName || DEFAULT_AI_MEMORY_FILE_NAME;
-	}
-
-	private ensureMarkdownExtension(fileName: string): string {
-		return fileName.toLowerCase().endsWith(".md") ? fileName : `${fileName}.md`;
+		return normaliseAiMemoryFileName(fileName);
 	}
 
 	private getMinimumNumber(value: unknown, minimum: number): number {

@@ -2,6 +2,7 @@ import { setIcon, setTooltip } from "obsidian";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type { AiWritingBuddyContextScope } from "../types/ai-writing-buddy-context";
 import { AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
+import { formatSessionLabel } from "../utils/format-session-label";
 
 type AiWritingBuddyHeaderRendererOptions = {
 	hasEntries: boolean;
@@ -204,16 +205,6 @@ export class AiWritingBuddyHeaderRenderer {
 	}
 
 	private getSessionLabel(session: AiWritingBuddySessionListItem): string {
-		if (session.userTitle?.trim()) {
-			return session.userTitle.trim();
-		}
-
-		const updatedAt = new Date(session.updatedAt);
-
-		if (Number.isNaN(updatedAt.getTime())) {
-			return INTERFACE_TEXT.sessionManager.sessionLabel(null, session.entryCount);
-		}
-
-		return INTERFACE_TEXT.sessionManager.sessionLabel(updatedAt.toLocaleString(), session.entryCount);
+		return formatSessionLabel(session);
 	}
 }
