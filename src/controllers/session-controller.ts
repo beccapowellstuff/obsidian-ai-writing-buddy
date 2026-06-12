@@ -4,9 +4,10 @@ import type { AiResponseService } from "../services/ai-response-service";
 import { AiWritingBuddySessionHistoryTrimmer } from "../services/session-history-trimmer";
 import { AiWritingBuddySessionSummaryService } from "../services/session-summary-service";
 import type { AiWritingBuddyChatNoteContext, AiWritingBuddyUsedContext } from "../types/ai-writing-buddy-context";
-import type { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
+import type { AiWritingBuddyChatEntry, AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
 import type { AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 import type { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
+import type { AiWritingBuddyUsedMemory, AiWritingBuddyVisibleMemoryContext } from "../types/ai-writing-buddy-visible-memory";
 import type { ResponseDiffChangeRejection } from "../types/response-diff-change";
 import { createPlaceholderResponse } from "../utils/create-placeholder-response";
 import { formatProviderErrorMessage } from "../utils/format-provider-error-message";
@@ -15,6 +16,8 @@ type SessionChangeHandler = (scrollToBottom: boolean) => void;
 type SessionSaveHandler = (entries: AiWritingBuddyEntry[], memorySummary?: AiWritingBuddyMemorySummary) => void;
 type NewSessionHandler = (sessionTitle?: string) => void;
 type NoteContextProvider = (message: string) => Promise<AiWritingBuddyChatNoteContext | undefined>;
+type VisibleMemoryProvider = () => Promise<AiWritingBuddyVisibleMemoryContext | undefined>;
+type ChatResponseCompletedHandler = (entry: AiWritingBuddyChatEntry, assistantResponseText: string) => void;
 
 export class AiWritingBuddySessionController {
 	private entries: AiWritingBuddyEntry[];
@@ -31,6 +34,8 @@ export class AiWritingBuddySessionController {
 		private readonly onSave: SessionSaveHandler,
 		private readonly onNewSession: NewSessionHandler,
 		private readonly getNoteContext: NoteContextProvider,
+		private readonly getVisibleMemory: VisibleMemoryProvider,
+		private readonly onChatResponseCompleted: ChatResponseCompletedHandler,
 		settings: AiWritingBuddySettings,
 		initialEntries: AiWritingBuddyEntry[] = [],
 		initialMemorySummary?: AiWritingBuddyMemorySummary,
@@ -178,8 +183,9 @@ export class AiWritingBuddySessionController {
 			excludeEntryId: replyToEntryId ?? undefined,
 		});
 		const noteContext = await this.getNoteContext(trimmedMessage);
+		const visibleMemory = await this.getVisibleMemory();
 
-		const entry: AiWritingBuddyEntry = {
+		const entry: AiWritingBuddyChatEntry = {
 			id: crypto.randomUUID(),
 			type: "chat",
 			message: trimmedMessage,
@@ -187,12 +193,14 @@ export class AiWritingBuddySessionController {
 			createdAt: new Date().toISOString(),
 			replyToEntryId: replyToEntryId ?? undefined,
 			replyToSnippet,
+			usedMemory: this.createUsedMemory(visibleMemory),
 			usedContext: this.createUsedContext(noteContext),
 		};
 
 		this.entries.push(entry);
 		const abortController = this.registerActiveResponse(entry.id);
 		this.replyToEntryId = null;
+		let completedChatResponseText: string | null = null;
 		this.saveSession();
 		this.onChange(true);
 
@@ -202,6 +210,7 @@ export class AiWritingBuddySessionController {
 				replyToEntry,
 				recentEntries,
 				memorySummary: this.memorySummary,
+				visibleMemory,
 				noteContext,
 			}, {
 				signal: abortController.signal,
@@ -212,6 +221,7 @@ export class AiWritingBuddySessionController {
 			}
 
 			entry.response = response;
+			completedChatResponseText = [response.commentText, response.text].filter(Boolean).join("\n\n").trim();
 		} catch (error) {
 			if (this.wasEntryCancelled(entry.id)) {
 				return;
@@ -227,6 +237,10 @@ export class AiWritingBuddySessionController {
 		this.refreshMemorySummary();
 		this.saveSession();
 		this.onChange(true);
+
+		if (completedChatResponseText) {
+			this.onChatResponseCompleted(entry, completedChatResponseText);
+		}
 	}
 
 	private refreshMemorySummary(): void {
@@ -274,6 +288,17 @@ export class AiWritingBuddySessionController {
 				retrievedChunkCount: note.retrievedChunkCount,
 				totalChunkCount: note.totalChunkCount,
 			})),
+		};
+	}
+
+	private createUsedMemory(visibleMemory: AiWritingBuddyVisibleMemoryContext | undefined): AiWritingBuddyUsedMemory | undefined {
+		if (!visibleMemory || !visibleMemory.content.trim()) {
+			return undefined;
+		}
+
+		return {
+			filePath: visibleMemory.filePath,
+			wasTruncated: visibleMemory.wasTruncated,
 		};
 	}
 

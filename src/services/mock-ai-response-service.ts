@@ -1,4 +1,4 @@
-import { AiResponseService, AiChatRequest, AiResponseRequestOptions } from "./ai-response-service";
+import { AiResponseService, AiChatRequest, AiMemoryUpdateRequest, AiResponseRequestOptions } from "./ai-response-service";
 import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 import { AiWritingBuddyResponse } from "../types/ai-writing-buddy-response";
 import { extractSelectionResponseOutput, SELECTION_RESPONSE_OUTPUT_END, SELECTION_RESPONSE_OUTPUT_START } from "./selection-response-output";
@@ -34,6 +34,12 @@ export class MockAiResponseService implements AiResponseService {
 			createdAt: new Date().toISOString(),
 			isPlaceholder: false,
 		};
+	}
+
+	async createMemoryUpdateResponse(_request: AiMemoryUpdateRequest, options?: AiResponseRequestOptions): Promise<string> {
+		await this.waitForMockDelay(options?.signal);
+
+		return "NO_CHANGE";
 	}
 
 	private getEntryContext(entry: AiChatRequest["replyToEntry"]): string {

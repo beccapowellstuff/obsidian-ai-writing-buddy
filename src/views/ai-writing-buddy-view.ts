@@ -10,13 +10,16 @@ import { AiWritingBuddyHeaderRenderer } from "../renderers/header-renderer";
 import type { AiResponseService } from "../services/ai-response-service";
 import { ClipboardService } from "../services/clipboard-service";
 import { RagService } from "../services/rag-service";
+import { AiMemoryService } from "../services/ai-memory-service";
 import { SelectionEditService } from "../services/selection-edit-service";
+import { AiVisibleMemoryUpdateService } from "../services/visible-memory-update-service";
 import type { AiWritingBuddyChatNoteContext, AiWritingBuddyContextScope } from "../types/ai-writing-buddy-context";
 import { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
 import { AiWritingBuddyCurrentSessionData, AiWritingBuddyMemorySummary, AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
 import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 import { AiWritingBuddySessionController } from "../controllers/session-controller";
 import { SavedSessionsModal } from "../modals/saved-sessions-modal";
+import type { AiWritingBuddyVisibleMemoryContext } from "../types/ai-writing-buddy-visible-memory";
 
 export const AI_WRITING_BUDDY_VIEW_TYPE = "ai-writing-buddy-view";
 
@@ -38,6 +41,8 @@ export class AiWritingBuddyView extends ItemView {
 	private readonly clipboardService: ClipboardService;
 	private readonly selectionEditService: SelectionEditService;
 	private readonly ragService: RagService;
+	private readonly aiMemoryService: AiMemoryService;
+	private readonly visibleMemoryUpdateService: AiVisibleMemoryUpdateService;
 	private readonly entryRenderer: AiWritingBuddyEntryRenderer;
 	private readonly headerRenderer = new AiWritingBuddyHeaderRenderer();
 	private readonly chatComposerRenderer: AiWritingBuddyChatComposerRenderer;
@@ -65,10 +70,22 @@ export class AiWritingBuddyView extends ItemView {
 	) {
 		super(leaf);
 
+		this.clipboardService = new ClipboardService();
+		this.selectionEditService = new SelectionEditService(this.app);
+		this.ragService = new RagService(this.app, this.settings, pluginRootPath);
+		this.aiMemoryService = new AiMemoryService(this.app);
+		this.visibleMemoryUpdateService = new AiVisibleMemoryUpdateService(
+			this.aiMemoryService,
+			this.getAiResponseService,
+			this.settings,
+			this.onSaveSettings,
+		);
+
 		this.sessionController = new AiWritingBuddySessionController(
 			this.getAiResponseService,
 			(scrollToBottom) => {
 				if (scrollToBottom) {
+					this.restoreComposerFocusAfterNextRenderIfNeeded();
 					this.render();
 					this.scrollToBottom();
 					return;
@@ -80,14 +97,17 @@ export class AiWritingBuddyView extends ItemView {
 			onSaveSession,
 			onNewSession,
 			(message) => this.getChatNoteContext(message),
+			() => this.getChatVisibleMemory(),
+			(entry, assistantResponseText) => {
+				void this.visibleMemoryUpdateService.updateAfterChatResponse({
+					entry,
+					assistantResponseText,
+				});
+			},
 			this.settings,
 			initialEntries,
 			initialMemorySummary,
 		);
-
-		this.clipboardService = new ClipboardService();
-		this.selectionEditService = new SelectionEditService(this.app);
-		this.ragService = new RagService(this.app, this.settings, pluginRootPath);
 
 		this.entryRenderer = new AiWritingBuddyEntryRenderer(
 			this.app,
@@ -143,6 +163,7 @@ export class AiWritingBuddyView extends ItemView {
 	private renderPreservingScroll(): void {
 		const entriesEl = this.contentEl.querySelector(".ai-writing-buddy-entries");
 		const previousScrollTop = entriesEl instanceof HTMLElement ? entriesEl.scrollTop : null;
+		this.restoreComposerFocusAfterNextRenderIfNeeded();
 
 		this.render();
 
@@ -339,6 +360,25 @@ export class AiWritingBuddyView extends ItemView {
 		} catch (error) {
 			console.error("AI Writing Buddy RAG context failed", error);
 			return undefined;
+		}
+	}
+
+	private async getChatVisibleMemory(): Promise<AiWritingBuddyVisibleMemoryContext | undefined> {
+		if (!this.settings.aiMemoryEnabled) {
+			return undefined;
+		}
+
+		try {
+			return await this.aiMemoryService.readMemoryNote(this.settings);
+		} catch (error) {
+			console.warn("AI Writing Buddy visible memory read failed", error);
+			return undefined;
+		}
+	}
+
+	private restoreComposerFocusAfterNextRenderIfNeeded(): void {
+		if (this.chatComposerRenderer.isInputFocused(this.contentEl)) {
+			this.chatComposerRenderer.requestFocusOnNextRender();
 		}
 	}
 

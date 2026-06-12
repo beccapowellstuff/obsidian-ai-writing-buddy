@@ -1,10 +1,12 @@
 import { App, Modal, Notice, PluginSettingTab } from "obsidian";
 import type AiWritingBuddyPlugin from "../main";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
+import { AiMemoryService } from "../services/ai-memory-service";
 import { TemplateSettingsRenderer } from "./template-settings-renderer";
 import { ConnectionSettingsRenderer } from "./connection-settings-renderer";
 import { PromptSettingsRenderer } from "./prompt-settings-renderer";
 import { RagSettingsRenderer } from "./rag-settings-renderer";
+import { AiMemorySettingsRenderer } from "./ai-memory-settings-renderer";
 import type { AiWritingBuddySettings } from "../config/default-settings";
 
 export class AiWritingBuddySettingTab extends PluginSettingTab {
@@ -50,6 +52,7 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 
 		new ConnectionSettingsRenderer(this.plugin, this.draftSettings, this.availableModels, () => this.display()).render(containerEl);
 		new RagSettingsRenderer(this.plugin, this.draftSettings, this.availableEmbeddingModels, () => this.display()).render(containerEl);
+		new AiMemorySettingsRenderer(this.plugin, this.draftSettings, () => this.display(), () => this.saveDraftSettings(false, false)).render(containerEl);
 		new PromptSettingsRenderer(this.draftSettings, () => this.display()).render(containerEl);
 		this.templateSettingsRenderer.render(containerEl, () => this.display());
 	}
@@ -115,16 +118,32 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 		}).open();
 	}
 
-	private async saveDraftSettings(): Promise<void> {
-		this.plugin.settings = {
-			...this.cloneSettings(this.draftSettings),
+	private async saveDraftSettings(showNotice = true, refreshAfterSave = true): Promise<void> {
+		const normalisedDraftSettings = new AiMemoryService(this.app).normaliseMemorySettings(this.draftSettings);
+
+		const nextSettings: AiWritingBuddySettings = {
+			...this.cloneSettings(normalisedDraftSettings),
 			contextOptions: this.plugin.settings.contextOptions,
 			promptTemplates: this.plugin.settings.promptTemplates,
 		};
+
+		Object.assign(this.plugin.settings, nextSettings);
+
 		await this.plugin.saveSettings();
-		this.resetDraftFromSaved();
-		new Notice(INTERFACE_TEXT.settings.actions.saved);
-		this.display();
+
+		if (refreshAfterSave) {
+			this.resetDraftFromSaved();
+		} else {
+			this.savedDraftSignature = this.getSettingsSignature(this.draftSettings);
+		}
+
+		if (showNotice) {
+			new Notice(INTERFACE_TEXT.settings.actions.saved);
+		}
+
+		if (refreshAfterSave) {
+			this.display();
+		}
 	}
 
 	private resetDraftFromSaved(): void {
@@ -179,6 +198,15 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 			memoryEnabled: settings.memoryEnabled,
 			memoryBudgetCharacters: settings.memoryBudgetCharacters,
 			recentHistoryMaxEntries: settings.recentHistoryMaxEntries,
+			aiMemoryEnabled: settings.aiMemoryEnabled,
+			aiMemoryAutoUpdateEnabled: settings.aiMemoryAutoUpdateEnabled,
+			aiMemoryFolderPath: settings.aiMemoryFolderPath,
+			aiMemoryFileName: settings.aiMemoryFileName,
+			aiMemoryMaxPromptCharacters: settings.aiMemoryMaxPromptCharacters,
+			aiMemoryShowUpdateNotice: settings.aiMemoryShowUpdateNotice,
+			aiMemoryWriteCount: settings.aiMemoryWriteCount,
+			aiMemoryCleanupEnabled: settings.aiMemoryCleanupEnabled,
+			aiMemoryCleanupWriteThreshold: settings.aiMemoryCleanupWriteThreshold,
 			openChatSystemPrompt: settings.openChatSystemPrompt,
 			selectionSystemPrompt: settings.selectionSystemPrompt,
 			personalityEnabled: settings.personalityEnabled,

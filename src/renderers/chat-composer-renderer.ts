@@ -5,6 +5,7 @@ type CancelReplyHandler = () => void;
 
 export class AiWritingBuddyChatComposerRenderer {
 	private shouldFocusOnNextRender = false;
+	private draftMessage = "";
 
 	constructor(
 		private readonly onSendChat: SendChatHandler,
@@ -13,6 +14,12 @@ export class AiWritingBuddyChatComposerRenderer {
 
 	requestFocusOnNextRender(): void {
 		this.shouldFocusOnNextRender = true;
+	}
+
+	isInputFocused(container: HTMLElement): boolean {
+		const activeElement = document.activeElement;
+
+		return activeElement instanceof HTMLTextAreaElement && activeElement.hasClass("ai-writing-buddy-chat-input") && container.contains(activeElement);
 	}
 
 	render(container: HTMLElement, replyContextText: string | null): void {
@@ -31,6 +38,7 @@ export class AiWritingBuddyChatComposerRenderer {
 				rows: "2",
 			},
 		});
+		inputEl.value = this.draftMessage;
 
 		const sendButtonEl = composerEl.createEl("button", {
 			cls: "ai-writing-buddy-chat-send",
@@ -51,6 +59,7 @@ export class AiWritingBuddyChatComposerRenderer {
 			}
 
 			this.shouldFocusOnNextRender = true;
+			this.draftMessage = "";
 			this.onSendChat(message);
 			inputEl.value = "";
 			updateSendButtonState();
@@ -58,7 +67,10 @@ export class AiWritingBuddyChatComposerRenderer {
 
 		updateSendButtonState();
 
-		inputEl.addEventListener("input", updateSendButtonState);
+		inputEl.addEventListener("input", () => {
+			this.draftMessage = inputEl.value;
+			updateSendButtonState();
+		});
 
 		sendButtonEl.addEventListener("click", () => {
 			sendMessage();
@@ -74,9 +86,11 @@ export class AiWritingBuddyChatComposerRenderer {
 		if (this.shouldFocusOnNextRender) {
 			this.shouldFocusOnNextRender = false;
 
-			window.setTimeout(() => {
-				inputEl.focus();
-			}, 0);
+			window.requestAnimationFrame(() => {
+				inputEl.focus({
+					preventScroll: true,
+				});
+			});
 		}
 	}
 

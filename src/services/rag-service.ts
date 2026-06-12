@@ -30,7 +30,7 @@ export class RagService {
 
 		const files = this.getScopeFiles(scope);
 
-		if (files.length === 0) {
+		if (files.length === 0 && !includeIndexedRag) {
 			return undefined;
 		}
 
@@ -66,6 +66,11 @@ export class RagService {
 
 		const scopedIndexedFiles = [...fileMetadataByPath.values()];
 		const scopeFilePaths = scopedIndexedFiles.map((file) => file.filePath);
+
+		if (scopeFilePaths.length === 0) {
+			return undefined;
+		}
+
 		const retrievalMode = usedKeywordFallback ? "keyword" : "embedding";
 		let searchResults: AiWritingBuddyRagSearchResult[] = [];
 

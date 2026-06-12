@@ -1,5 +1,11 @@
 import { PromptTemplate } from "../types/prompt-template";
 import type { AiWritingBuddyContextOptions } from "../types/ai-writing-buddy-context";
+import {
+	DEFAULT_AI_MEMORY_CLEANUP_WRITE_THRESHOLD,
+	DEFAULT_AI_MEMORY_FILE_NAME,
+	DEFAULT_AI_MEMORY_FOLDER_PATH,
+	DEFAULT_AI_MEMORY_MAX_PROMPT_CHARACTERS,
+} from "./ai-memory";
 import { DEFAULT_PROMPT_TEMPLATES } from "./default-prompt-templates";
 export type AiWritingBuddyProvider = "mock" | "openai-compatible";
 
@@ -16,6 +22,15 @@ export type AiWritingBuddySettings = {
 	memoryEnabled: boolean;
 	memoryBudgetCharacters: number;
 	recentHistoryMaxEntries: number;
+	aiMemoryEnabled: boolean;
+	aiMemoryAutoUpdateEnabled: boolean;
+	aiMemoryFolderPath: string;
+	aiMemoryFileName: string;
+	aiMemoryMaxPromptCharacters: number;
+	aiMemoryShowUpdateNotice: boolean;
+	aiMemoryWriteCount: number;
+	aiMemoryCleanupEnabled: boolean;
+	aiMemoryCleanupWriteThreshold: number;
 	openChatSystemPrompt: string;
 	selectionSystemPrompt: string;
 	personalityEnabled: boolean;
@@ -67,6 +82,15 @@ export const DEFAULT_AI_WRITING_BUDDY_SETTINGS: AiWritingBuddySettings = {
 	memoryEnabled: true,
 	memoryBudgetCharacters: DEFAULT_MEMORY_BUDGET_CHARACTERS,
 	recentHistoryMaxEntries: DEFAULT_RECENT_HISTORY_MAX_ENTRIES,
+	aiMemoryEnabled: false,
+	aiMemoryAutoUpdateEnabled: false,
+	aiMemoryFolderPath: DEFAULT_AI_MEMORY_FOLDER_PATH,
+	aiMemoryFileName: DEFAULT_AI_MEMORY_FILE_NAME,
+	aiMemoryMaxPromptCharacters: DEFAULT_AI_MEMORY_MAX_PROMPT_CHARACTERS,
+	aiMemoryShowUpdateNotice: true,
+	aiMemoryWriteCount: 0,
+	aiMemoryCleanupEnabled: true,
+	aiMemoryCleanupWriteThreshold: DEFAULT_AI_MEMORY_CLEANUP_WRITE_THRESHOLD,
 	openChatSystemPrompt: DEFAULT_OPEN_CHAT_SYSTEM_PROMPT,
 	selectionSystemPrompt: DEFAULT_SELECTION_SYSTEM_PROMPT,
 	personalityEnabled: false,

@@ -54,10 +54,27 @@ export class AiWritingBuddyEntryRenderer {
 			text: entry.replyToEntryId ? INTERFACE_TEXT.entries.followUp : INTERFACE_TEXT.entries.chat,
 		});
 
-		entryEl.createEl("p", { text: entry.message });
+		entryEl.createEl("div", {
+			cls: "ai-writing-buddy-chat-message",
+			text: entry.message,
+		});
 
 		this.responseRenderer.render(entryEl, entry.response, entry);
+		this.renderUsedMemory(entryEl, entry);
 		this.renderUsedContext(entryEl, entry);
+	}
+
+	private renderUsedMemory(container: HTMLElement, entry: AiWritingBuddyChatEntry): void {
+		if (!entry.usedMemory) {
+			return;
+		}
+
+		container.createEl("div", {
+			cls: "ai-writing-buddy-used-context ai-writing-buddy-used-memory",
+			text: entry.usedMemory.wasTruncated
+				? INTERFACE_TEXT.entries.usedMemoryTruncated(this.getFileName(entry.usedMemory.filePath))
+				: INTERFACE_TEXT.entries.usedMemory(this.getFileName(entry.usedMemory.filePath)),
+		});
 	}
 
 	private renderUsedContext(container: HTMLElement, entry: AiWritingBuddyChatEntry): void {
@@ -116,6 +133,10 @@ export class AiWritingBuddyEntryRenderer {
 		const label = usedContext.usedKeywordFallback ? INTERFACE_TEXT.entries.usedContextScopeWithFallback(scopeLabel) : INTERFACE_TEXT.entries.usedContextScope(scopeLabel);
 
 		return `${label} (${detailText})`;
+	}
+
+	private getFileName(filePath: string): string {
+		return filePath.split("/").pop() || filePath;
 	}
 
 	private getBaseContextScopeLabel(scope: AiWritingBuddyUsedContext["scope"]): string {

@@ -2,7 +2,7 @@ import { AiWritingBuddySettings } from "../config/default-settings";
 import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 import { AiWritingBuddyResponse } from "../types/ai-writing-buddy-response";
 import { ConversationMemoryStrategy } from "../types/conversation-memory-strategy";
-import { AiChatRequest, AiResponseRequestOptions, AiResponseService } from "./ai-response-service";
+import { AiChatRequest, AiMemoryUpdateRequest, AiResponseRequestOptions, AiResponseService } from "./ai-response-service";
 import { ConversationMemoryStrategyService } from "./conversation-memory-strategy-service";
 import { AiWritingBuddyChatMessage, AiWritingBuddyPromptBuilder } from "./prompt-builder";
 import { AiWritingBuddyPromptSizeGuard } from "./prompt-size-guard";
@@ -48,6 +48,12 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 		}, options?.signal);
 
 		return this.createResponse(responseText);
+	}
+
+	async createMemoryUpdateResponse(request: AiMemoryUpdateRequest, options?: AiResponseRequestOptions): Promise<string> {
+		return await this.sendChatCompletion(this.promptBuilder.buildMemoryUpdatePrompt(request), {
+			temperature: 0.2,
+		}, options?.signal);
 	}
 
 	private async sendChatCompletion(messages: AiWritingBuddyChatMessage[], options: ChatCompletionOptions, signal?: AbortSignal): Promise<string> {

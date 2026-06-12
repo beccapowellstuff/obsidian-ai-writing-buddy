@@ -1,3 +1,9 @@
+import { normalizePath } from "obsidian";
+import {
+	DEFAULT_AI_MEMORY_FILE_NAME,
+	MIN_AI_MEMORY_CLEANUP_WRITE_THRESHOLD,
+	MIN_AI_MEMORY_MAX_PROMPT_CHARACTERS,
+} from "../config/ai-memory";
 import type { AiWritingBuddySettings } from "../config/default-settings";
 import { DEFAULT_AI_WRITING_BUDDY_SETTINGS } from "../config/default-settings";
 import { DEFAULT_PROMPT_TEMPLATES } from "../config/default-prompt-templates";
@@ -24,17 +30,18 @@ export class AiWritingBuddyPluginDataService {
 	load(rawData: unknown): LoadedPluginData {
 		const savedData = rawData as SavedPluginData;
 		const savedSettings = this.getSavedSettings(savedData);
+		const mergedSettings = {
+			...DEFAULT_AI_WRITING_BUDDY_SETTINGS,
+			...(savedSettings ?? {}),
+			contextOptions: {
+				...DEFAULT_AI_WRITING_BUDDY_SETTINGS.contextOptions,
+				...(savedSettings?.contextOptions ?? {}),
+			},
+			promptTemplates: this.mergePromptTemplates(savedSettings?.promptTemplates ?? []),
+		};
 
 		return {
-			settings: {
-				...DEFAULT_AI_WRITING_BUDDY_SETTINGS,
-				...(savedSettings ?? {}),
-				contextOptions: {
-					...DEFAULT_AI_WRITING_BUDDY_SETTINGS.contextOptions,
-					...(savedSettings?.contextOptions ?? {}),
-				},
-				promptTemplates: this.mergePromptTemplates(savedSettings?.promptTemplates ?? []),
-			},
+			settings: this.normaliseSettings(mergedSettings),
 			currentSession: this.getSavedCurrentSession(savedData),
 			savedSessions: this.getSavedSessions(savedData),
 		};
@@ -162,6 +169,53 @@ export class AiWritingBuddyPluginDataService {
 		}
 
 		return savedData as LegacyPluginData;
+	}
+
+	private normaliseSettings(settings: AiWritingBuddySettings): AiWritingBuddySettings {
+		return {
+			...settings,
+			aiMemoryFolderPath: this.normaliseFolderPath(settings.aiMemoryFolderPath),
+			aiMemoryFileName: this.ensureMarkdownExtension(this.sanitiseMemoryFileName(settings.aiMemoryFileName)),
+			aiMemoryMaxPromptCharacters: this.getMinimumNumber(settings.aiMemoryMaxPromptCharacters, MIN_AI_MEMORY_MAX_PROMPT_CHARACTERS),
+			aiMemoryCleanupWriteThreshold: this.getMinimumNumber(settings.aiMemoryCleanupWriteThreshold, MIN_AI_MEMORY_CLEANUP_WRITE_THRESHOLD),
+		};
+	}
+
+	private normaliseFolderPath(folderPath: unknown): string {
+		if (typeof folderPath !== "string") {
+			return DEFAULT_AI_WRITING_BUDDY_SETTINGS.aiMemoryFolderPath;
+		}
+
+		return normalizePath(folderPath.trim()).replace(/^\/+|\/+$/g, "");
+	}
+
+	private sanitiseMemoryFileName(fileName: unknown): string {
+		if (typeof fileName !== "string") {
+			return DEFAULT_AI_MEMORY_FILE_NAME;
+		}
+
+		const cleanedFileName = fileName
+			.replace(/[\\/]/g, " ")
+			.replace(/\s+/g, " ")
+			.trim();
+
+		return cleanedFileName || DEFAULT_AI_MEMORY_FILE_NAME;
+	}
+
+	private ensureMarkdownExtension(fileName: string): string {
+		return fileName.toLowerCase().endsWith(".md") ? fileName : `${fileName}.md`;
+	}
+
+	private getMinimumNumber(value: unknown, minimum: number): number {
+		if (typeof value !== "number") {
+			return minimum;
+		}
+
+		if (!Number.isFinite(value)) {
+			return minimum;
+		}
+
+		return Math.max(minimum, Math.floor(value));
 	}
 
 	private getSavedCurrentSession(savedData: SavedPluginData): AiWritingBuddyCurrentSessionData {

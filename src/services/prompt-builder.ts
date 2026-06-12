@@ -4,6 +4,8 @@ import type { AiWritingBuddyChatEntry, AiWritingBuddyEntry, AiWritingBuddySelect
 import type { AiWritingBuddyChatNoteContext } from "../types/ai-writing-buddy-context";
 import type { AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 import type { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
+import type { AiWritingBuddyVisibleMemoryContext } from "../types/ai-writing-buddy-visible-memory";
+import type { AiMemoryUpdateRequest } from "./ai-response-service";
 import { SELECTION_RESPONSE_OUTPUT_END, SELECTION_RESPONSE_OUTPUT_START } from "./selection-response-output";
 
 export type AiWritingBuddyChatMessage = {
@@ -16,6 +18,7 @@ export type AiWritingBuddyChatPromptRequest = {
 	replyToEntry?: AiWritingBuddyEntry;
 	recentEntries?: AiWritingBuddyEntry[];
 	memorySummary?: AiWritingBuddyMemorySummary;
+	visibleMemory?: AiWritingBuddyVisibleMemoryContext;
 	noteContext?: AiWritingBuddyChatNoteContext;
 };
 
@@ -50,8 +53,16 @@ export class AiWritingBuddyPromptBuilder {
 
 	buildChatPrompt(request: AiWritingBuddyChatPromptRequest): AiWritingBuddyChatMessage[] {
 		const messages = this.buildSystemMessages(this.settings.openChatSystemPrompt);
+		const visibleMemory = this.formatVisibleMemory(request.visibleMemory);
 		const memorySummary = this.formatMemorySummary(request.memorySummary);
 		const recentUserMessageIndex = this.formatRecentUserMessageIndex(request.recentEntries);
+
+		if (visibleMemory) {
+			messages.push({
+				role: "system",
+				content: visibleMemory,
+			});
+		}
 
 		if (memorySummary) {
 			messages.push({
@@ -86,6 +97,123 @@ export class AiWritingBuddyPromptBuilder {
 		});
 
 		return messages;
+	}
+
+	buildMemoryUpdatePrompt(request: AiMemoryUpdateRequest): AiWritingBuddyChatMessage[] {
+		return [
+			{
+				role: "system",
+				content: [
+					"You update AI Writing Buddy's visible memory note.",
+					"",
+					"The memory note is user-editable Markdown. You may update only the managed memory block.",
+					"",
+					"Compare the latest exchange against the current managed memory block.",
+					"Only update memory when the latest user message or assistant response adds, corrects, removes, or meaningfully clarifies durable information.",
+					"Preserve existing durable memory unless the latest exchange clearly contradicts it or the user explicitly asks you to forget, remove, clean up, or rewrite it.",
+					"Do not duplicate existing memory.",
+					"Do not treat content repeated from visible memory as new information.",
+					"Do not re-save existing memory merely because it appeared in the latest assistant response.",
+					"Do not summarise the whole memory block down to only the latest topic.",
+					"",
+					"Save only durable information that will likely help future chats, such as:",
+					"- user preferences",
+					"- writing style preferences",
+					"- ongoing projects",
+					"- project-specific facts",
+					"- recurring instructions",
+					"- things the user wants avoided",
+					"",
+					"Do not save:",
+					"- temporary chat details",
+					"- ordinary facts from retrieved note context unless they are useful ongoing project memory",
+					"- guesses",
+					"- private or sensitive details unless the user clearly asked for them to be remembered",
+					"- duplicates",
+					"",
+					"You may reorganise the managed memory block using whatever Markdown headings and groups make the memory clearer.",
+					"You may create new headings, rename headings, merge headings, remove empty headings, and move memory items between headings.",
+					"",
+					"Keep the memory useful for future conversations. Prefer clear grouped bullets over a long unstructured list.",
+					"",
+					"If no update is needed, return exactly:",
+					"NO_CHANGE",
+					"",
+					"Otherwise return one strict raw JSON object with exactly these three arrays:",
+					'{ "add": [], "update": [], "remove": [] }',
+					"",
+					"Add operations have this shape:",
+					'{ "heading": "User preferences", "text": "User prefers British English." }',
+					"",
+					"Update operations have this shape:",
+					'{ "heading": "Current projects", "match": "User is considering visible AI memory.", "replacement": "User has implemented visible AI memory in AI Writing Buddy." }',
+					"",
+					"Remove operations have this shape:",
+					'{ "heading": "User preferences", "match": "User prefers American English." }',
+					"",
+					"All three arrays must be present, even when empty.",
+					"Each operation applies to one Markdown bullet only.",
+					"Use bullet text without the leading dash.",
+					"Use heading text without Markdown # characters.",
+					"Do not submit an operation when the same memory is already represented accurately.",
+					"Prefer update over remove-plus-add when correcting or clarifying existing memory.",
+					"Use remove only when the latest user message clearly asks to forget, remove, or retract that memory.",
+					"Limit the response to no more than 5 additions, 3 updates, 3 removals, and 8 total operations.",
+					"",
+					"Do not include the outer marker comments.",
+					"Do not include explanations or commentary.",
+					"Do not wrap the response in a code fence.",
+				].join("\n"),
+			},
+			{
+				role: "user",
+				content: [
+					"Current managed memory:",
+					request.currentManagedMemory.trim() || "_No managed memory content yet._",
+					"",
+					"Latest user message:",
+					request.latestUserMessage,
+					"",
+					"Latest assistant response:",
+					request.latestAssistantResponse,
+					"",
+					request.usedContextSummary ? "Used context summary:" : "",
+					request.usedContextSummary ?? "",
+				]
+					.filter(Boolean)
+					.join("\n"),
+			},
+		];
+	}
+
+	private formatVisibleMemory(memory: AiWritingBuddyVisibleMemoryContext | undefined): string {
+		if (!memory || !memory.content.trim()) {
+			return "";
+		}
+
+		const lines = [
+			"Visible AI memory:",
+			"The following memory comes from the user's editable AI memory note.",
+			"Use it as background preference and project context, not as evidence from notes.",
+			"RAG note excerpts, when present, are the evidence-bearing note context.",
+			"Do not treat memory as more important than the user's latest message.",
+			"Do not claim the user said something today just because it appears in memory.",
+			"Do not modify the memory note from this response.",
+		];
+
+		if (memory.wasTruncated) {
+			lines.push("Memory content was shortened because it exceeded the configured memory character limit.");
+		}
+
+		return [
+			...lines,
+			"",
+			"Memory note:",
+			memory.filePath,
+			"",
+			"Memory content:",
+			memory.content,
+		].join("\n");
 	}
 
 	private formatMemorySummary(summary: AiWritingBuddyMemorySummary | undefined): string {
