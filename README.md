@@ -232,7 +232,7 @@ Known limitations include:
 * Mobile compatibility has not been fully validated.
 * The RAG database is written through sql.js and should be treated as local plugin data, not as a human-edited file.
 
-See `TASKS.md` for the current build plan.
+See [Issues](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues?page=1) for present outstanding work and [project](https://github.com/users/beccapowellstuff/projects/2) for build present build plan.
 
 ## Development setup
 
