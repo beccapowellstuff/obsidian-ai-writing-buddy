@@ -100,4 +100,25 @@ describe("formatProviderErrorMessage", () => {
 			].join("\n"),
 		);
 	});
+	it("formats a missing model name", () => {
+		const result = formatProviderErrorMessage(new Error("Model name is required."));
+
+		expect(result).toBe(["No model is selected.", "", "Choose a model in AI Writing Buddy settings, then try again.", "", "Technical detail: Model name is required."].join("\n"));
+	});
+
+	it("formats unavailable provider-side memory", () => {
+		const technicalMessage = "Provider-side conversation state is not implemented for OpenAI-compatible chat completions yet.";
+
+		const result = formatProviderErrorMessage(new Error(technicalMessage));
+
+		expect(result).toBe(
+			[
+				"Provider-side conversation memory is not available yet.",
+				"",
+				"Switch the conversation memory strategy back to plugin-managed memory, then try again.",
+				"",
+				`Technical detail: ${technicalMessage}`,
+			].join("\n"),
+		);
+	});
 });
