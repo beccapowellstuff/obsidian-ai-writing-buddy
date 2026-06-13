@@ -5,6 +5,7 @@ import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type { AiResponseService } from "./ai-response-service";
 import { AiMemoryService } from "./ai-memory-service";
 import type { AiWritingBuddyChatEntry } from "../types/ai-writing-buddy-entry";
+import { AiMemoryRemovalPolicy } from "./ai-memory-removal-policy";
 import {
 	AiMemoryOperationParser,
 	MEMORY_UPDATE_NO_CHANGE,
@@ -33,6 +34,7 @@ const MAX_MEMORY_OPERATION_TEXT_CHARACTERS = 1000;
 export class AiVisibleMemoryUpdateService {
 	private readonly activeEntryIds = new Set<string>();
 	private readonly operationParser = new AiMemoryOperationParser();
+	private readonly removalPolicy = new AiMemoryRemovalPolicy();
 
 	constructor(
 		private readonly aiMemoryService: AiMemoryService,
@@ -112,7 +114,7 @@ export class AiVisibleMemoryUpdateService {
 
 	private applyOperations(currentManagedMemory: string, operations: AiMemoryOperationResponse, latestUserMessage: string): string | null {
 		const lines = currentManagedMemory.replace(/\r\n/g, "\n").split("\n");
-		const removalAllowed = this.isExplicitMemoryRemovalRequest(latestUserMessage);
+		const removalAllowed = this.removalPolicy.allowsRemoval(latestUserMessage);
 		let appliedOperationCount = 0;
 
 		for (const operation of operations.update) {
@@ -394,10 +396,6 @@ export class AiVisibleMemoryUpdateService {
 
 	private getBulletIndent(line: string): string {
 		return line.match(/^\s*/)?.[0] ?? "";
-	}
-
-	private isExplicitMemoryRemovalRequest(text: string): boolean {
-		return /\b(forget|remove|delete|clear|clean up|cleanup|prune|drop|stop remembering|no longer remember|no longer true|was wrong|replace the old)\b/i.test(text);
 	}
 
 	private formatUsedContextSummary(entry: AiWritingBuddyChatEntry): string | undefined {
