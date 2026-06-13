@@ -27,15 +27,15 @@ function createEntry() {
 	};
 }
 
-function createService(providerResponse: string) {
+function createService(providerResponse: string, currentMemory = "## Preferences\n- Likes quiet writing sessions.") {
 	const settings = createSettings();
 
 	const aiMemoryService = {
 		readManagedBlockForUpdate: vi.fn().mockResolvedValue({
-			content: "## Preferences\n- Likes quiet writing sessions.",
+			content: currentMemory,
 			filePath: "AI Memory.md",
 		}),
-		replaceManagedBlockIfUnchanged: vi.fn(),
+		replaceManagedBlockIfUnchanged: vi.fn().mockResolvedValue("updated"),
 	};
 
 	const aiResponseService = {
@@ -159,6 +159,63 @@ describe("AiVisibleMemoryUpdateService", () => {
 		const { service, aiMemoryService, onSaveSettings } = createService(JSON.stringify({ add: [{ heading: "Preferences", text: "Likes quiet writing sessions" }], update: [], remove: [] }));
 		await service.updateAfterChatResponse({ entry: createEntry(), assistantResponseText: "Of course." });
 		expect(warning).toHaveBeenCalledWith("AI Writing Buddy memory add skipped", { reason: "duplicate" });
+		expect(aiMemoryService.replaceManagedBlockIfUnchanged).not.toHaveBeenCalled();
+		expect(onSaveSettings).not.toHaveBeenCalled();
+	});
+	it("updates memory when exactly one bullet matches", async () => {
+		const { service, aiMemoryService, onSaveSettings } = createService(
+			JSON.stringify({
+				add: [],
+				update: [
+					{
+						heading: "Preferences",
+						match: "Likes quiet writing sessions",
+						replacement: "Prefers calm writing sessions.",
+					},
+				],
+				remove: [],
+			}),
+		);
+
+		await service.updateAfterChatResponse({
+			entry: createEntry(),
+			assistantResponseText: "Of course.",
+		});
+
+		expect(aiMemoryService.replaceManagedBlockIfUnchanged).toHaveBeenCalledWith(
+			expect.any(Object),
+			"## Preferences\n- Likes quiet writing sessions.",
+			"## Preferences\n- Prefers calm writing sessions.",
+		);
+		expect(onSaveSettings).toHaveBeenCalledOnce();
+	});
+	it("does not update memory when more than one bullet matches", async () => {
+		const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+		const { service, aiMemoryService, onSaveSettings } = createService(
+			JSON.stringify({
+				add: [],
+				update: [
+					{
+						heading: "Preferences",
+						match: "Likes quiet writing sessions",
+						replacement: "Prefers calm writing sessions.",
+					},
+				],
+				remove: [],
+			}),
+			["## Preferences", "- Likes quiet writing sessions.", "- Likes quiet writing sessions."].join("\n"),
+		);
+
+		await service.updateAfterChatResponse({
+			entry: createEntry(),
+			assistantResponseText: "Of course.",
+		});
+
+		expect(warning).toHaveBeenCalledWith("AI Writing Buddy memory operation skipped", {
+			reason: "ambiguous-match",
+			heading: "Preferences",
+		});
 		expect(aiMemoryService.replaceManagedBlockIfUnchanged).not.toHaveBeenCalled();
 		expect(onSaveSettings).not.toHaveBeenCalled();
 	});
