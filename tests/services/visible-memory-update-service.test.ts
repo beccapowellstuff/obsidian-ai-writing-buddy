@@ -72,6 +72,8 @@ describe("AiVisibleMemoryUpdateService", () => {
 	});
 
 	it("does not write memory when the provider wraps JSON in a code fence", async () => {
+		const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
 		const { service, aiMemoryService, onSaveSettings } = createService(["```json", '{ "add": [], "update": [], "remove": [] }', "```"].join("\n"));
 
 		await service.updateAfterChatResponse({
@@ -79,19 +81,85 @@ describe("AiVisibleMemoryUpdateService", () => {
 			assistantResponseText: "Of course.",
 		});
 
+		expect(warning).toHaveBeenCalledWith("AI Writing Buddy memory update rejected", {
+			reason: "code-fence",
+		});
 		expect(aiMemoryService.replaceManagedBlockIfUnchanged).not.toHaveBeenCalled();
 		expect(onSaveSettings).not.toHaveBeenCalled();
 	});
 
-	it("does not write memory when the provider wraps JSON in a code fence", async () => {
-		// existing test
-	});
-
 	it("does not write memory when the provider returns malformed JSON", async () => {
-		// new test
+		const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+		const { service, aiMemoryService, onSaveSettings } = createService('{ "add": [], "update": [], "remove": [ }');
+
+		await service.updateAfterChatResponse({
+			entry: createEntry(),
+			assistantResponseText: "Of course.",
+		});
+
+		expect(warning).toHaveBeenCalledWith(
+			"AI Writing Buddy memory update rejected",
+			expect.objectContaining({
+				reason: "malformed-json",
+			}),
+		);
+		expect(aiMemoryService.replaceManagedBlockIfUnchanged).not.toHaveBeenCalled();
+		expect(onSaveSettings).not.toHaveBeenCalled();
 	});
 
 	it("does not write memory when required operation arrays are missing", async () => {
-		// new test
+		const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+		const { service, aiMemoryService, onSaveSettings } = createService(
+			JSON.stringify({
+				add: [],
+				update: [],
+			}),
+		);
+
+		await service.updateAfterChatResponse({
+			entry: createEntry(),
+			assistantResponseText: "Of course.",
+		});
+
+		expect(warning).toHaveBeenCalledWith("AI Writing Buddy memory update rejected", {
+			reason: "invalid-schema",
+		});
+		expect(aiMemoryService.replaceManagedBlockIfUnchanged).not.toHaveBeenCalled();
+		expect(onSaveSettings).not.toHaveBeenCalled();
+	});
+	it("does not write memory when the provider exceeds the add-operation limit", async () => {
+		const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+		const { service, aiMemoryService, onSaveSettings } = createService(
+			JSON.stringify({
+				add: Array.from({ length: 6 }, (_, index) => ({
+					heading: "Preferences",
+					text: `New preference ${index + 1}`,
+				})),
+				update: [],
+				remove: [],
+			}),
+		);
+
+		await service.updateAfterChatResponse({
+			entry: createEntry(),
+			assistantResponseText: "Of course.",
+		});
+
+		expect(warning).toHaveBeenCalledWith("AI Writing Buddy memory update rejected", {
+			reason: "too-many-operations",
+		});
+		expect(aiMemoryService.replaceManagedBlockIfUnchanged).not.toHaveBeenCalled();
+		expect(onSaveSettings).not.toHaveBeenCalled();
+	});
+	it("does not write memory when an addition duplicates an existing bullet", async () => {
+		const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+		const { service, aiMemoryService, onSaveSettings } = createService(JSON.stringify({ add: [{ heading: "Preferences", text: "Likes quiet writing sessions" }], update: [], remove: [] }));
+		await service.updateAfterChatResponse({ entry: createEntry(), assistantResponseText: "Of course." });
+		expect(warning).toHaveBeenCalledWith("AI Writing Buddy memory add skipped", { reason: "duplicate" });
+		expect(aiMemoryService.replaceManagedBlockIfUnchanged).not.toHaveBeenCalled();
+		expect(onSaveSettings).not.toHaveBeenCalled();
 	});
 });
