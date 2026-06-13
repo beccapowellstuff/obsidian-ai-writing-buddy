@@ -64,15 +64,17 @@ export class RagService {
 			fileMetadataByPath.set(result.indexedFile.filePath, result.indexedFile);
 		}
 
-		const scopedIndexedFiles = [...fileMetadataByPath.values()];
-		const scopeFilePaths = scopedIndexedFiles.map((file) => file.filePath);
+		const scopedFilePaths = indexingResults.map((result) => result.indexedFile.filePath);
+		const indexedRagFilePaths = indexedFiles.map((file) => file.filePath).filter((filePath) => !scopedFilePaths.includes(filePath));
+		const scopeFilePaths = [...scopedFilePaths, ...indexedRagFilePaths];
 
 		if (scopeFilePaths.length === 0) {
 			return undefined;
 		}
 
 		const retrievalMode = usedKeywordFallback ? "keyword" : "embedding";
-		let searchResults: AiWritingBuddyRagSearchResult[] = [];
+		let scopedSearchResults: AiWritingBuddyRagSearchResult[] = [];
+		let indexedRagSearchResults: AiWritingBuddyRagSearchResult[] = [];
 
 		if (retrievalMode === "embedding") {
 			try {
@@ -93,7 +95,15 @@ export class RagService {
 					usedKeywordFallback = true;
 				}
 
-				searchResults = await this.store.searchEmbeddingChunks(queryEmbedding, dimensionCompatibleFilePaths, {
+				const dimensionCompatibleScopedFilePaths = dimensionCompatibleFilePaths.filter((filePath) => scopedFilePaths.includes(filePath));
+				const dimensionCompatibleIndexedRagFilePaths = dimensionCompatibleFilePaths.filter((filePath) => indexedRagFilePaths.includes(filePath));
+
+				scopedSearchResults = await this.store.searchEmbeddingChunks(queryEmbedding, dimensionCompatibleScopedFilePaths, {
+					maxChunks: MAX_RETRIEVED_CHUNKS,
+					maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
+					similarityThreshold: DEFAULT_SIMILARITY_THRESHOLD,
+				});
+				indexedRagSearchResults = await this.store.searchEmbeddingChunks(queryEmbedding, dimensionCompatibleIndexedRagFilePaths, {
 					maxChunks: MAX_RETRIEVED_CHUNKS,
 					maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
 					similarityThreshold: DEFAULT_SIMILARITY_THRESHOLD,
@@ -105,14 +115,20 @@ export class RagService {
 			}
 		}
 
-		if (usedKeywordFallback || searchResults.length === 0) {
-			searchResults = await this.store.searchKeywordChunks(query, scopeFilePaths, {
+		if (usedKeywordFallback || scopedSearchResults.length + indexedRagSearchResults.length === 0) {
+			scopedSearchResults = await this.store.searchKeywordChunks(query, scopedFilePaths, {
+				maxChunks: MAX_RETRIEVED_CHUNKS,
+				maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
+				similarityThreshold: 0,
+			});
+			indexedRagSearchResults = await this.store.searchKeywordChunks(query, indexedRagFilePaths, {
 				maxChunks: MAX_RETRIEVED_CHUNKS,
 				maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
 				similarityThreshold: 0,
 			});
 		}
 
+		const searchResults = this.prioritizeScopedSearchResults(scopedSearchResults, indexedRagSearchResults);
 		const notes = this.createNoteContexts(searchResults, [...fileMetadataByPath.values()]);
 
 		if (notes.length === 0) {
@@ -358,11 +374,27 @@ export class RagService {
 
 	private getScopeFiles(scope: AiWritingBuddyContextScope): TFile[] {
 		if (scope === "current-note") {
-			const activeFile = this.app.workspace.getActiveFile();
+			const activeFile = this.getCurrentMarkdownFile();
 			return this.isMarkdownFile(activeFile) ? [activeFile] : [];
 		}
 
 		return this.getOpenMarkdownFiles();
+	}
+
+	private getCurrentMarkdownFile(): TFile | null {
+		const activeEditorFile = this.app.workspace.activeEditor?.file;
+
+		if (this.isMarkdownFile(activeEditorFile)) {
+			return activeEditorFile;
+		}
+
+		const activeMarkdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+		if (this.isMarkdownFile(activeMarkdownView?.file)) {
+			return activeMarkdownView.file;
+		}
+
+		return this.app.workspace.getActiveFile();
 	}
 
 	private getOpenMarkdownFiles(): TFile[] {
@@ -384,8 +416,30 @@ export class RagService {
 		return files;
 	}
 
-	private isMarkdownFile(file: TFile | null): file is TFile {
+	private isMarkdownFile(file: TFile | null | undefined): file is TFile {
 		return file instanceof TFile && file.extension.toLowerCase() === "md";
+	}
+
+	private prioritizeScopedSearchResults(scopedSearchResults: AiWritingBuddyRagSearchResult[], indexedRagSearchResults: AiWritingBuddyRagSearchResult[]): AiWritingBuddyRagSearchResult[] {
+		const selectedChunks: AiWritingBuddyRagSearchResult[] = [];
+		const seenChunkIds = new Set<string>();
+		let usedCharacters = 0;
+
+		for (const chunk of [...scopedSearchResults, ...indexedRagSearchResults]) {
+			if (selectedChunks.length >= MAX_RETRIEVED_CHUNKS || seenChunkIds.has(chunk.id)) {
+				continue;
+			}
+
+			if (usedCharacters + chunk.text.length > MAX_RETRIEVED_CONTEXT_CHARACTERS && selectedChunks.length > 0) {
+				continue;
+			}
+
+			selectedChunks.push(chunk);
+			seenChunkIds.add(chunk.id);
+			usedCharacters += chunk.text.length;
+		}
+
+		return selectedChunks;
 	}
 
 	private createEmbeddingService(): EmbeddingService {
