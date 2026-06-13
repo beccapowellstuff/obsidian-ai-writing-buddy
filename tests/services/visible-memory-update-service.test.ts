@@ -189,6 +189,41 @@ describe("AiVisibleMemoryUpdateService", () => {
 		);
 		expect(onSaveSettings).toHaveBeenCalledOnce();
 	});
+	it("skips the update when the managed block changes before writing", async () => {
+		const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+		const { service, aiMemoryService, onSaveSettings } = createService(
+			JSON.stringify({
+				add: [],
+				update: [
+					{
+						heading: "Preferences",
+						match: "Likes quiet writing sessions",
+						replacement: "Prefers calm writing sessions.",
+					},
+				],
+				remove: [],
+			}),
+		);
+
+		aiMemoryService.replaceManagedBlockIfUnchanged.mockResolvedValue("changed");
+
+		await service.updateAfterChatResponse({
+			entry: createEntry(),
+			assistantResponseText: "Of course.",
+		});
+
+		expect(aiMemoryService.replaceManagedBlockIfUnchanged).toHaveBeenCalledWith(
+			expect.any(Object),
+			"## Preferences\n- Likes quiet writing sessions.",
+			"## Preferences\n- Prefers calm writing sessions.",
+		);
+		expect(warning).toHaveBeenCalledWith("AI Writing Buddy memory update skipped", {
+			reason: "changed",
+			filePath: "AI Memory.md",
+		});
+		expect(onSaveSettings).not.toHaveBeenCalled();
+	});
 	it("does not update memory when more than one bullet matches", async () => {
 		const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
