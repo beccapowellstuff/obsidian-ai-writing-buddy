@@ -288,4 +288,29 @@ describe("AiVisibleMemoryUpdateService", () => {
 		expect(aiMemoryService.replaceManagedBlockIfUnchanged).toHaveBeenCalledWith(expect.any(Object), "## Preferences\n- Likes quiet writing sessions.", "## Preferences");
 		expect(onSaveSettings).toHaveBeenCalledOnce();
 	});
+	it("does not write memory when the provider adds commentary around valid JSON", async () => {
+		const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+		const { service, aiMemoryService, onSaveSettings } = createService(
+			[
+				"Here is the requested update:",
+				JSON.stringify({
+					add: [],
+					update: [],
+					remove: [],
+				}),
+			].join("\n"),
+		);
+
+		await service.updateAfterChatResponse({
+			entry: createEntry(),
+			assistantResponseText: "Of course.",
+		});
+
+		expect(warning).toHaveBeenCalledWith("AI Writing Buddy memory update rejected", {
+			reason: "commentary",
+		});
+		expect(aiMemoryService.replaceManagedBlockIfUnchanged).not.toHaveBeenCalled();
+		expect(onSaveSettings).not.toHaveBeenCalled();
+	});
 });
