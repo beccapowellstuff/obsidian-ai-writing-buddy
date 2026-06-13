@@ -8,7 +8,7 @@ AI Writing Buddy can also use local RAG context to answer questions about notes 
 
 ## Current status
 
-AI Writing Buddy is in active development. It supports mock responses for development, OpenAI-compatible chat providers for real AI requests, and local RAG context using a sql.js-backed database.
+AI Writing Buddy is in active development. It supports mock responses for development, OpenAI-compatible chat providers for real AI requests, local RAG context using a sql.js-backed database, and visible AI Memory stored as editable Markdown in the vault.
 
 Current features include:
 
@@ -19,6 +19,8 @@ Current features include:
 * Semantic RAG using an OpenAI-compatible `/embeddings` endpoint.
 * Keyword fallback retrieval when embeddings are not configured or fail.
 * Retrieved-context footers showing scope, fallback mode, files, and chunk counts.
+* Visible, user-editable AI Memory stored in a Markdown note.
+* Optional automatic AI Memory evaluation and guarded bullet-level updates after side-panel chat responses.
 * Selected-text prompts from the editor right-click menu.
 * Reusable prompt templates for selected text.
 * Built-in templates for common writing tasks.
@@ -135,6 +137,103 @@ Each retrieved source includes information such as:
 
 The prompt tells the model to use only the retrieved excerpts as evidence. If the retrieved context is insufficient, the model should say so rather than pretending it read the rest of the note.
 
+## Visible AI Memory
+
+Visible AI Memory is persistent background context stored as a normal, user-editable Markdown note in the vault. It is intended for durable preferences, writing guidance, ongoing project facts, recurring instructions, and things the user wants the assistant to avoid.
+
+Visible memory is separate from both the older session memory summary and RAG note evidence. It can be enabled even when the side-panel **Context** option is off.
+
+### Memory note and managed block
+
+The default memory note location is:
+
+```text
+AI Writing Buddy/Memory/AI Memory.md
+```
+
+The folder and file name can be changed in **Settings → AI Writing Buddy → AI memory**.
+
+AI Writing Buddy recognises one managed block delimited by these exact marker comments:
+
+```markdown
+<!-- AIWB_MEMORY_START -->
+
+Memory headings and bullets go here.
+
+<!-- AIWB_MEMORY_END -->
+```
+
+Only content between the valid start and end markers is active AI Memory. Content outside the markers is preserved when the managed block is updated and is ignored when memory is read for chat or evaluated for automatic updates. This makes the rest of the file available for ordinary manual notes.
+
+The memory note is not created or repaired merely by enabling memory. The settings page provides explicit actions:
+
+* **Create memory note** creates the configured folder and note when they do not already exist, writes the default managed block, and opens the note. It does not overwrite an existing note.
+* **Open memory note** opens the configured note without creating or repairing it.
+* **Add managed memory block** appends the default markers and headings when the note exists but has no valid managed block. Existing note text is preserved. If a valid block is already present, no repair is made.
+
+### Enabling memory and adding it to chat
+
+**Enable AI memory** and **Allow AI to update memory note after chat** are separate settings, and both are off by default.
+
+When AI Memory is enabled, the plugin reads meaningful content from inside the managed block for each new side-panel chat request. Empty headings and blank bullets alone are not treated as memory. The managed content is added to the chat prompt as a separate system message labelled as background preference and project context. It is not presented as evidence from the user’s notes, and the prompt tells the model that the latest user message takes priority.
+
+Visible memory is currently used by side-panel chat, not by selected-text requests. When it is included, the chat entry records the memory note path in its **Used memory** footer and indicates when the content was shortened.
+
+The default memory prompt cap is **8,000 characters**, with a minimum configurable value of **1,000**. When the managed block is longer than the cap, only the first configured number of characters is sent and the prompt is marked as shortened.
+
+### Visible memory, session summary, and RAG
+
+| Context source | Storage and lifetime | Purpose in a chat prompt |
+| --- | --- | --- |
+| **Visible AI Memory** | User-editable Markdown in the vault; persists across sessions | Durable background preferences, project context, and recurring guidance. It is context, not note evidence. |
+| **Older session memory summary** | Generated from older completed entries and saved with the current session | Compact background from earlier in that session after recent entries have been trimmed. It is not the visible memory note. |
+| **RAG note evidence** | Relevant chunks retrieved from the local note index | Evidence-bearing excerpts from notes. The model is told not to claim knowledge beyond the retrieved excerpts. |
+
+Recent chat history, an explicit reply target, and the latest user message remain more specific than either form of memory.
+
+### Automatic post-chat memory evaluation
+
+When both AI Memory and automatic updates are enabled, a successful, non-empty side-panel chat response triggers a separate memory evaluation after the response has been saved and displayed. Selected-text responses, cancelled responses, provider errors, and empty responses do not trigger it.
+
+The evaluation sends the configured provider:
+
+* the current managed memory block
+* the latest user message
+* the latest assistant response
+* a short summary of whether visible memory or RAG/note context was used
+
+The provider must return either exactly `NO_CHANGE`, or one raw JSON object containing `add`, `update`, and `remove` arrays. Each operation targets one Markdown bullet. Ordinary updates are patch-style rather than whole-note rewrites.
+
+Current operation limits are five additions, three updates, three removals, and eight operations in total. Individual operation fields are limited to 1,000 characters and must be single-line text. Responses containing commentary, code fences, marker comments, the full memory note title, malformed JSON, or an invalid schema are rejected.
+
+Before applying operations, the plugin performs further checks:
+
+* Additions are skipped when equivalent bullet text already exists anywhere in the managed block.
+* Updates and removals require one unique matching bullet under the named heading. Matching is exact after normalising case, whitespace, the bullet prefix, and one trailing full stop; fuzzy matches are not used.
+* Removal operations are applied only when the latest user message contains explicit removal intent, such as asking the assistant to forget, remove, delete, clear, or correct an old memory.
+* The note is re-read immediately before writing. If the managed block changed after evaluation began, the update is skipped instead of overwriting the concurrent edit.
+* A missing note or missing marker pair causes the update to be skipped.
+
+A successful automatic write increments the stored memory write count and saves the setting. `NO_CHANGE`, rejected output, no-op operations, missing files, missing markers, and concurrent changes do not increment the count. When **Show notice when memory is updated** is enabled, which is the default, a notice appears only after a successful write.
+
+The cleanup enabled setting and write threshold are currently placeholders. Reaching the threshold only writes a developer-console message; it does not yet clean the note or reset the write count.
+
+### Privacy and provider use
+
+The memory note itself is ordinary Markdown stored locally in the vault. However, when AI Memory is enabled, managed memory content may be sent to the configured provider as part of side-panel chat prompts. When automatic updates are also enabled, the current managed block and latest chat exchange are sent in a separate memory-evaluation request.
+
+With a local provider, that data is sent to the local server. With a hosted provider, it is sent to the external service. The privacy boundary therefore depends on the provider configuration, not merely on the fact that the source note lives in the vault.
+
+### Current limitations and future work
+
+Visible memory currently reads the beginning of the whole managed block up to the configured character cap. It does not yet retrieve only the memories relevant to the current message. Automatic cleanup, weighting, and protected entries are also not implemented.
+
+These are tracked as future work and should not be treated as current behaviour:
+
+* [Issue #126: memory-specific RAG](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues/126)
+* [Issue #127: weighting and protected or precious entries](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues/127)
+* [Issue #128: automatic cleanup and consolidation](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues/128)
+
 ## Templates
 
 Templates are reusable instructions for selected text.
@@ -203,6 +302,8 @@ This does not replace proper version control or backups, but it avoids the most 
 
 RAG context does not modify note files. It reads Markdown note content, creates local index records, retrieves relevant chunks for chat, and leaves the note content itself unchanged.
 
+Visible AI Memory is the exception only when automatic memory updates are explicitly enabled. Those updates are limited to the managed block and use concurrent-edit protection before writing.
+
 ## Prompt behaviour
 
 The plugin has editable prompt settings for:
@@ -211,11 +312,11 @@ The plugin has editable prompt settings for:
 * Selected-text system prompt.
 * Optional personality prompt.
 
-When personality is enabled, the personality prompt is added as style guidance. Templates, selected text, retrieved note context, recent chat history, and user instructions are then combined into the request sent to the configured provider.
+When personality is enabled, the personality prompt is added as style guidance. Templates, selected text, visible memory, retrieved note context, recent chat history, and user instructions are then combined as applicable for the request sent to the configured provider.
 
 A full prompt preview is available from selected-text entries in the side panel, so you can inspect what was sent for that request.
 
-For context-aware chat, the prompt includes retrieved note excerpts only. It also includes rules telling the model not to claim that it has read omitted note sections.
+For context-aware chat, ordinary note context contains retrieved note excerpts rather than full notes. Visible AI Memory, when enabled, is inserted separately as capped background context from its managed Markdown block.
 
 ## Current limitations
 
@@ -226,13 +327,16 @@ Known limitations include:
 * Indexed notes are limited to notes that have already been indexed through RAG use.
 * Very broad questions may still require careful testing because retrieval can miss relevant chunks if the question is vague.
 * Keyword fallback is useful, but it is not the same as semantic embedding search.
+* Visible AI Memory currently sends a capped beginning of the whole managed block rather than retrieving only relevant entries. See [issue #126](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues/126).
+* Memory weighting and protected entries are not implemented. See [issue #127](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues/127).
+* Memory cleanup settings do not yet perform cleanup. See [issue #128](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues/128).
 * Provider error messages need more detail.
 * Command palette and hotkey support are not complete yet.
 * Template editing currently happens directly in the settings page and is due for UX cleanup.
 * Mobile compatibility has not been fully validated.
 * The RAG database is written through sql.js and should be treated as local plugin data, not as a human-edited file.
 
-See [Issues](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues?page=1) for present outstanding work and [project](https://github.com/users/beccapowellstuff/projects/2) for build present build plan.
+See [Issues](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues?page=1) for present outstanding work and the [project](https://github.com/users/beccapowellstuff/projects/2) for the current build plan.
 
 ## Development setup
 
@@ -326,7 +430,9 @@ AI Writing Buddy is being built around a few practical rules:
 
 ## Privacy notes
 
-AI Writing Buddy sends selected text, chat messages, prompt settings, template instructions, and retrieved note excerpts to the configured provider when you make a request.
+AI Writing Buddy sends selected text, chat messages, prompt settings, template instructions, retrieved note excerpts, and enabled visible-memory content to the configured provider when those items are used for a request.
+
+If automatic AI Memory updates are enabled, the current managed memory block and latest completed chat exchange are also sent to the provider for a separate post-chat memory evaluation.
 
 If you use a local provider, that data is sent to your local server. If you configure a hosted provider, that data is sent to that external service.
 
@@ -336,7 +442,7 @@ RAG indexing stores note chunks and embeddings locally in the plugin folder. The
 .obsidian/plugins/<manifest.id>/rag-index/embeddings.db
 ```
 
-The plugin should not send note content unless you explicitly ask it to work with selected text or enable/use chat context. Provider behaviour depends on the service you configure.
+Ordinary note content should not be sent unless you explicitly ask the plugin to work with selected text or enable/use note context. Visible AI Memory is separate: when enabled, content inside its managed block may be sent to side-panel chat even when the **Context** option is off. Provider behaviour and data handling depend on the service you configure.
 
 There is no hidden telemetry in the current project.
 
