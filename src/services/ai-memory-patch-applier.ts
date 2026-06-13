@@ -12,48 +12,44 @@ const MAX_MEMORY_OPERATION_TEXT_CHARACTERS = 1000;
 export class AiMemoryPatchApplier {
 	apply(currentManagedMemory: string, operations: AiMemoryOperationResponse, removalAllowed: boolean): string | null {
 		const lines = currentManagedMemory.replace(/\r\n/g, "\n").split("\n");
-		let appliedOperationCount = 0;
+		let appliedOperationCount = this.applyOperationsWithinLimit(operations.update, 0, (operation) => this.applyUpdateOperation(lines, operation));
 
-		for (const operation of operations.update) {
-			if (appliedOperationCount >= MAX_MEMORY_APPLIED_OPERATIONS) {
-				break;
-			}
-
-			if (this.applyUpdateOperation(lines, operation)) {
-				appliedOperationCount += 1;
-			}
-		}
-
-		if (!removalAllowed && operations.remove.length > 0) {
-			console.warn("AI Writing Buddy memory remove operations skipped", {
-				reason: "removal-without-intent",
-				count: operations.remove.length,
-			});
-		}
+		this.reportSkippedRemoveOperations(operations.remove.length, removalAllowed);
 
 		if (removalAllowed) {
-			for (const operation of operations.remove) {
-				if (appliedOperationCount >= MAX_MEMORY_APPLIED_OPERATIONS) {
-					break;
-				}
-
-				if (this.applyRemoveOperation(lines, operation)) {
-					appliedOperationCount += 1;
-				}
-			}
+			appliedOperationCount = this.applyOperationsWithinLimit(operations.remove, appliedOperationCount, (operation) => this.applyRemoveOperation(lines, operation));
 		}
 
-		for (const operation of operations.add) {
-			if (appliedOperationCount >= MAX_MEMORY_APPLIED_OPERATIONS) {
+		appliedOperationCount = this.applyOperationsWithinLimit(operations.add, appliedOperationCount, (operation) => this.applyAddOperation(lines, operation));
+
+		return appliedOperationCount > 0 ? lines.join("\n") : null;
+	}
+
+	private applyOperationsWithinLimit<T>(operations: readonly T[], appliedOperationCount: number, applyOperation: (operation: T) => boolean): number {
+		let nextAppliedOperationCount = appliedOperationCount;
+
+		for (const operation of operations) {
+			if (nextAppliedOperationCount >= MAX_MEMORY_APPLIED_OPERATIONS) {
 				break;
 			}
 
-			if (this.applyAddOperation(lines, operation)) {
-				appliedOperationCount += 1;
+			if (applyOperation(operation)) {
+				nextAppliedOperationCount += 1;
 			}
 		}
 
-		return appliedOperationCount > 0 ? lines.join("\n") : null;
+		return nextAppliedOperationCount;
+	}
+
+	private reportSkippedRemoveOperations(removeOperationCount: number, removalAllowed: boolean): void {
+		if (removalAllowed || removeOperationCount === 0) {
+			return;
+		}
+
+		console.warn("AI Writing Buddy memory remove operations skipped", {
+			reason: "removal-without-intent",
+			count: removeOperationCount,
+		});
 	}
 
 	private applyAddOperation(lines: string[], operation: AiMemoryAddOperation): boolean {
