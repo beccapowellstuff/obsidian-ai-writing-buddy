@@ -13,11 +13,11 @@ function createSettings(): AiWritingBuddySettings {
 	};
 }
 
-function createEntry() {
+function createEntry(message = "Please remember that I like quiet writing sessions.") {
 	return {
 		id: "entry-1",
 		type: "chat" as const,
-		message: "Please remember that I like quiet writing sessions.",
+		message,
 		response: {
 			text: "Of course.",
 			createdAt: "2026-06-13T20:30:00.000Z",
@@ -218,5 +218,39 @@ describe("AiVisibleMemoryUpdateService", () => {
 		});
 		expect(aiMemoryService.replaceManagedBlockIfUnchanged).not.toHaveBeenCalled();
 		expect(onSaveSettings).not.toHaveBeenCalled();
+	});
+	it("does not remove memory without explicit user intent", async () => {
+		const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+		const { service, aiMemoryService, onSaveSettings } = createService(
+			JSON.stringify({
+				add: [],
+				update: [],
+				remove: [
+					{
+						heading: "Preferences",
+						match: "Likes quiet writing sessions",
+					},
+				],
+			}),
+		);
+
+		await service.updateAfterChatResponse({
+			entry: createEntry("Tell me more about quiet writing sessions."),
+			assistantResponseText: "Of course.",
+		});
+
+		expect(warning).toHaveBeenCalledWith("AI Writing Buddy memory remove operations skipped", {
+			reason: "removal-without-intent",
+			count: 1,
+		});
+		expect(aiMemoryService.replaceManagedBlockIfUnchanged).not.toHaveBeenCalled();
+		expect(onSaveSettings).not.toHaveBeenCalled();
+	});
+	it("removes memory when the user explicitly asks to forget it", async () => {
+		const { service, aiMemoryService, onSaveSettings } = createService(JSON.stringify({ add: [], update: [], remove: [{ heading: "Preferences", match: "Likes quiet writing sessions" }] }));
+		await service.updateAfterChatResponse({ entry: createEntry("Please forget that I like quiet writing sessions."), assistantResponseText: "Of course." });
+		expect(aiMemoryService.replaceManagedBlockIfUnchanged).toHaveBeenCalledWith(expect.any(Object), "## Preferences\n- Likes quiet writing sessions.", "## Preferences");
+		expect(onSaveSettings).toHaveBeenCalledOnce();
 	});
 });
