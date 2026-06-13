@@ -8,7 +8,12 @@ vi.mock("obsidian", () => {
 
 		constructor(path = "") {
 			this.path = path;
-			this.basename = path ? (path.split("/").pop()?.replace(/\.[^.]+$/, "") ?? path) : "";
+			this.basename = path
+				? (path
+						.split("/")
+						.pop()
+						?.replace(/\.[^.]+$/, "") ?? path)
+				: "";
 			this.extension = path ? (path.split(".").pop() ?? "") : "";
 		}
 	}
@@ -83,19 +88,18 @@ function createMarkdownFile(path: string): TFile {
 
 	Object.assign(file, {
 		path,
-		basename: path.split("/").pop()?.replace(/\.[^.]+$/, "") ?? path,
+		basename:
+			path
+				.split("/")
+				.pop()
+				?.replace(/\.[^.]+$/, "") ?? path,
 		extension: path.split(".").pop() ?? "",
 	});
 
 	return file;
 }
 
-function createApp(options: {
-	activeEditorFile?: TFile | null;
-	activeViewFile?: TFile | null;
-	activeFile?: TFile | null;
-	openFiles?: TFile[];
-}): MockApp {
+function createApp(options: { activeEditorFile?: TFile | null; activeViewFile?: TFile | null; activeFile?: TFile | null; openFiles?: TFile[] }): MockApp {
 	return {
 		workspace: {
 			activeEditor: options.activeEditorFile === undefined ? null : { file: options.activeEditorFile },
@@ -199,5 +203,29 @@ describe("RagService", () => {
 		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path, indexedFile.path]);
 		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith("what is the current note?", [currentFile.path], expect.any(Object));
 		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith("what is the current note?", [indexedFile.path], expect.any(Object));
+	});
+	it("reuses an unchanged keyword index without writing it again", async () => {
+		const currentFile = createMarkdownFile("Stories/The Unfinished Oath.md");
+		const app = createApp({
+			activeEditorFile: currentFile,
+		});
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+
+		const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("Current note body"));
+		const fileHash = Array.from(new Uint8Array(hashBuffer))
+			.map((byte) => byte.toString(16).padStart(2, "0"))
+			.join("");
+
+		ragStoreMocks.getIndexedFile.mockResolvedValue({
+			...createIndexedFile(currentFile),
+			fileHash,
+		});
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue([createSearchResult(currentFile, 1)]);
+
+		const context = await service.getContext("current-note", "what is the current note?", false);
+
+		expect(ragStoreMocks.getIndexedFile).toHaveBeenCalledWith(currentFile.path);
+		expect(ragStoreMocks.upsertFileIndex).not.toHaveBeenCalled();
+		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path]);
 	});
 });
