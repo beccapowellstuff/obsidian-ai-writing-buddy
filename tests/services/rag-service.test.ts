@@ -254,4 +254,29 @@ describe("RagService", () => {
 		);
 		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path]);
 	});
+	it("reports keyword fallback when embeddings are not configured", async () => {
+		const currentFile = createMarkdownFile("Stories/The Unfinished Oath.md");
+		const app = createApp({
+			activeEditorFile: currentFile,
+		});
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue([createSearchResult(currentFile, 1)]);
+
+		const context = await service.getContext("current-note", "what is the current note?", false);
+
+		expect(context).toMatchObject({
+			scope: "current-note",
+			retrievalMode: "keyword",
+			usedKeywordFallback: true,
+			includeIndexedRag: false,
+		});
+		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith(
+			"what is the current note?",
+			[currentFile.path],
+			expect.objectContaining({
+				similarityThreshold: 0,
+			}),
+		);
+	});
 });
