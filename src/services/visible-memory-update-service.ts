@@ -5,31 +5,17 @@ import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type { AiResponseService } from "./ai-response-service";
 import { AiMemoryService } from "./ai-memory-service";
 import type { AiWritingBuddyChatEntry } from "../types/ai-writing-buddy-entry";
+import {
+	AiMemoryOperationParser,
+	MEMORY_UPDATE_NO_CHANGE,
+	type AiMemoryAddOperation,
+	type AiMemoryOperationResponse,
+	type AiMemoryRemoveOperation,
+	type AiMemoryUpdateOperation,
+} from "./ai-memory-operation-parser";
 
 type AiResponseServiceProvider = () => AiResponseService;
 type SettingsSaveHandler = () => Promise<void>;
-
-type AiMemoryAddOperation = {
-	heading: string;
-	text: string;
-};
-
-type AiMemoryUpdateOperation = {
-	heading: string;
-	match: string;
-	replacement: string;
-};
-
-type AiMemoryRemoveOperation = {
-	heading: string;
-	match: string;
-};
-
-type AiMemoryOperationResponse = {
-	add: AiMemoryAddOperation[];
-	update: AiMemoryUpdateOperation[];
-	remove: AiMemoryRemoveOperation[];
-};
 
 type BulletMatch = {
 	index: number;
@@ -41,15 +27,12 @@ export type AiVisibleMemoryUpdateRequest = {
 	assistantResponseText: string;
 };
 
-const MEMORY_UPDATE_NO_CHANGE = "NO_CHANGE";
-const MAX_MEMORY_ADD_OPERATIONS = 5;
-const MAX_MEMORY_UPDATE_OPERATIONS = 3;
-const MAX_MEMORY_REMOVE_OPERATIONS = 3;
 const MAX_MEMORY_APPLIED_OPERATIONS = 8;
 const MAX_MEMORY_OPERATION_TEXT_CHARACTERS = 1000;
 
 export class AiVisibleMemoryUpdateService {
 	private readonly activeEntryIds = new Set<string>();
+	private readonly operationParser = new AiMemoryOperationParser();
 
 	constructor(
 		private readonly aiMemoryService: AiMemoryService,
@@ -78,7 +61,7 @@ export class AiVisibleMemoryUpdateService {
 				latestAssistantResponse: request.assistantResponseText,
 				usedContextSummary: this.formatUsedContextSummary(request.entry),
 			});
-			const parsedResponse = this.parseProviderResponse(providerResponse);
+			const parsedResponse = this.operationParser.parse(providerResponse);
 
 			if (parsedResponse === MEMORY_UPDATE_NO_CHANGE || !parsedResponse) {
 				return;
@@ -124,106 +107,6 @@ export class AiVisibleMemoryUpdateService {
 			!this.activeEntryIds.has(request.entry.id) &&
 			Boolean(request.entry.message.trim()) &&
 			Boolean(request.assistantResponseText.trim())
-		);
-	}
-
-	private parseProviderResponse(response: string): AiMemoryOperationResponse | typeof MEMORY_UPDATE_NO_CHANGE | null {
-		const trimmedResponse = response.trim();
-
-		if (trimmedResponse === MEMORY_UPDATE_NO_CHANGE) {
-			return MEMORY_UPDATE_NO_CHANGE;
-		}
-
-		const rejectionReason = this.getResponseRejectionReason(trimmedResponse);
-
-		if (rejectionReason) {
-			console.warn("AI Writing Buddy memory update rejected", {
-				reason: rejectionReason,
-			});
-			return null;
-		}
-
-		try {
-			const parsedResponse: unknown = JSON.parse(trimmedResponse);
-
-			if (!this.isMemoryOperationResponse(parsedResponse)) {
-				console.warn("AI Writing Buddy memory update rejected", {
-					reason: "invalid-schema",
-				});
-				return null;
-			}
-
-			if (this.exceedsOperationLimits(parsedResponse)) {
-				console.warn("AI Writing Buddy memory update rejected", {
-					reason: "too-many-operations",
-				});
-				return null;
-			}
-
-			return parsedResponse;
-		} catch (error) {
-			console.warn("AI Writing Buddy memory update rejected", {
-				reason: "malformed-json",
-				error,
-			});
-			return null;
-		}
-	}
-
-	private getResponseRejectionReason(response: string): string | null {
-		if (!response) {
-			return "empty";
-		}
-
-		if (response.includes("```")) {
-			return "code-fence";
-		}
-
-		if (response.includes(AI_MEMORY_START_MARKER) || response.includes(AI_MEMORY_END_MARKER)) {
-			return "contains-markers";
-		}
-
-		if (/^#\s+AI Writing Buddy Memory\b/m.test(response)) {
-			return "contains-full-note-title";
-		}
-
-		if (!response.startsWith("{") || !response.endsWith("}")) {
-			return "commentary";
-		}
-
-		return null;
-	}
-
-	private isMemoryOperationResponse(value: unknown): value is AiMemoryOperationResponse {
-		if (!value || typeof value !== "object" || Array.isArray(value)) {
-			return false;
-		}
-
-		const candidate = value as Partial<AiMemoryOperationResponse>;
-
-		if (!Array.isArray(candidate.add) || !Array.isArray(candidate.update) || !Array.isArray(candidate.remove)) {
-			return false;
-		}
-
-		return (
-			candidate.add.every((operation) => this.isRecord(operation) && typeof operation.heading === "string" && typeof operation.text === "string") &&
-			candidate.update.every(
-				(operation) => this.isRecord(operation) && typeof operation.heading === "string" && typeof operation.match === "string" && typeof operation.replacement === "string",
-			) &&
-			candidate.remove.every((operation) => this.isRecord(operation) && typeof operation.heading === "string" && typeof operation.match === "string")
-		);
-	}
-
-	private isRecord(value: unknown): value is Record<string, unknown> {
-		return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-	}
-
-	private exceedsOperationLimits(response: AiMemoryOperationResponse): boolean {
-		return (
-			response.add.length > MAX_MEMORY_ADD_OPERATIONS ||
-			response.update.length > MAX_MEMORY_UPDATE_OPERATIONS ||
-			response.remove.length > MAX_MEMORY_REMOVE_OPERATIONS ||
-			response.add.length + response.update.length + response.remove.length > MAX_MEMORY_APPLIED_OPERATIONS
 		);
 	}
 
@@ -302,11 +185,7 @@ export class AiVisibleMemoryUpdateService {
 	}
 
 	private applyUpdateOperation(lines: string[], operation: AiMemoryUpdateOperation): boolean {
-		if (
-			!this.isValidOperationField(operation.heading, "heading") ||
-			!this.isValidOperationField(operation.match, "match") ||
-			!this.isValidOperationField(operation.replacement, "replacement")
-		) {
+		if (!this.isValidOperationField(operation.heading, "heading") || !this.isValidOperationField(operation.match, "match") || !this.isValidOperationField(operation.replacement, "replacement")) {
 			console.warn("AI Writing Buddy memory update skipped", { reason: "invalid-fields" });
 			return false;
 		}
@@ -493,7 +372,11 @@ export class AiVisibleMemoryUpdateService {
 	}
 
 	private normaliseHeadingForDisplay(heading: string): string {
-		return heading.trim().replace(/^#{1,6}\s*/, "").replace(/\s+#+$/, "").trim();
+		return heading
+			.trim()
+			.replace(/^#{1,6}\s*/, "")
+			.replace(/\s+#+$/, "")
+			.trim();
 	}
 
 	private normaliseHeading(heading: string): string {
