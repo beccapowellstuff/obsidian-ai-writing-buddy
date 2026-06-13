@@ -228,4 +228,30 @@ describe("RagService", () => {
 		expect(ragStoreMocks.upsertFileIndex).not.toHaveBeenCalled();
 		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path]);
 	});
+	it("re-indexes a keyword index when the file content hash changes", async () => {
+		const currentFile = createMarkdownFile("Stories/The Unfinished Oath.md");
+		const app = createApp({
+			activeEditorFile: currentFile,
+		});
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+
+		ragStoreMocks.getIndexedFile.mockResolvedValue({
+			...createIndexedFile(currentFile),
+			fileHash: "stale-file-hash",
+		});
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue([createSearchResult(currentFile, 1)]);
+
+		const context = await service.getContext("current-note", "what is the current note?", false);
+
+		expect(ragStoreMocks.getIndexedFile).toHaveBeenCalledWith(currentFile.path);
+		expect(ragStoreMocks.upsertFileIndex).toHaveBeenCalledTimes(1);
+		expect(ragStoreMocks.upsertFileIndex).toHaveBeenCalledWith(
+			expect.objectContaining({
+				filePath: currentFile.path,
+				retrievalMode: "keyword",
+			}),
+			expect.any(Array),
+		);
+		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path]);
+	});
 });
