@@ -40,6 +40,7 @@ vi.mock("obsidian", () => {
 const ragStoreMocks = vi.hoisted(() => ({
 	getIndexedFile: vi.fn(),
 	listIndexedFiles: vi.fn(),
+	searchEmbeddingChunks: vi.fn(),
 	searchKeywordChunks: vi.fn(),
 	upsertFileIndex: vi.fn(),
 }));
@@ -52,6 +53,9 @@ vi.mock("../../src/services/rag-index-store", () => ({
 
 		async listIndexedFiles(): Promise<AiWritingBuddyRagIndexedFile[]> {
 			return ragStoreMocks.listIndexedFiles() as Promise<AiWritingBuddyRagIndexedFile[]>;
+		}
+		async searchEmbeddingChunks(embedding: number[], scopeFilePaths: string[], options: unknown): Promise<AiWritingBuddyRagSearchResult[]> {
+			return ragStoreMocks.searchEmbeddingChunks(embedding, scopeFilePaths, options) as Promise<AiWritingBuddyRagSearchResult[]>;
 		}
 
 		async searchKeywordChunks(query: string, scopeFilePaths: string[], options: unknown): Promise<AiWritingBuddyRagSearchResult[]> {
@@ -145,10 +149,12 @@ describe("RagService", () => {
 	beforeEach(() => {
 		ragStoreMocks.getIndexedFile.mockResolvedValue(null);
 		ragStoreMocks.listIndexedFiles.mockResolvedValue([]);
+		ragStoreMocks.searchEmbeddingChunks.mockResolvedValue([]);
 		ragStoreMocks.searchKeywordChunks.mockResolvedValue([]);
 		ragStoreMocks.upsertFileIndex.mockResolvedValue(undefined);
 
 		vi.stubGlobal("window", {
+			fetch: vi.fn(),
 			setTimeout: (callback: () => void) => {
 				callback();
 				return 0;
@@ -204,6 +210,7 @@ describe("RagService", () => {
 		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith("what is the current note?", [currentFile.path], expect.any(Object));
 		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith("what is the current note?", [indexedFile.path], expect.any(Object));
 	});
+
 	it("reuses an unchanged keyword index without writing it again", async () => {
 		const currentFile = createMarkdownFile("Stories/The Unfinished Oath.md");
 		const app = createApp({
@@ -228,6 +235,7 @@ describe("RagService", () => {
 		expect(ragStoreMocks.upsertFileIndex).not.toHaveBeenCalled();
 		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path]);
 	});
+
 	it("re-indexes a keyword index when the file content hash changes", async () => {
 		const currentFile = createMarkdownFile("Stories/The Unfinished Oath.md");
 		const app = createApp({
@@ -254,6 +262,55 @@ describe("RagService", () => {
 		);
 		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path]);
 	});
+
+	it("uses embedding retrieval when embeddings are configured and available", async () => {
+		const currentFile = createMarkdownFile("Stories/The Unfinished Oath.md");
+		const app = createApp({
+			activeEditorFile: currentFile,
+		});
+		const settings = {
+			...DEFAULT_AI_WRITING_BUDDY_SETTINGS,
+			embeddingBaseUrl: "http://localhost:1234/v1",
+			embeddingModelName: "text-embedding-test",
+		};
+		const service = new RagService(app as unknown as App, settings, ".");
+		const embedding = [0.1, 0.2, 0.3];
+		const embeddingSearchResult = {
+			...createSearchResult(currentFile, 0.9),
+			retrievalMode: "embedding" as const,
+		};
+		const fetchMock = window.fetch as Mock;
+
+		fetchMock.mockResolvedValue({
+			status: 200,
+			json: async () => ({
+				data: [{ index: 0, embedding }],
+			}),
+		});
+
+		ragStoreMocks.searchEmbeddingChunks.mockImplementation(async (_embedding: number[], scopeFilePaths: string[]) => {
+			return scopeFilePaths.includes(currentFile.path) ? [embeddingSearchResult] : [];
+		});
+
+		const context = await service.getContext("current-note", "what is the current note?", false);
+
+		expect(context).toMatchObject({
+			scope: "current-note",
+			retrievalMode: "embedding",
+			usedKeywordFallback: false,
+			includeIndexedRag: false,
+		});
+		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path]);
+		expect(ragStoreMocks.searchEmbeddingChunks).toHaveBeenCalledWith(
+			embedding,
+			[currentFile.path],
+			expect.objectContaining({
+				similarityThreshold: 0.12,
+			}),
+		);
+		expect(ragStoreMocks.searchKeywordChunks).not.toHaveBeenCalled();
+	});
+
 	it("reports keyword fallback when embeddings are not configured", async () => {
 		const currentFile = createMarkdownFile("Stories/The Unfinished Oath.md");
 		const app = createApp({
