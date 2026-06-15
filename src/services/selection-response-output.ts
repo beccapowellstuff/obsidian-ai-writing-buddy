@@ -1,8 +1,9 @@
-export const SELECTION_RESPONSE_OUTPUT_START = "[AI_WRITING_BUDDY_OUTPUT]";
-export const SELECTION_RESPONSE_OUTPUT_END = "[/AI_WRITING_BUDDY_OUTPUT]";
+export const SELECTION_RESPONSE_OUTPUT_START = "[AWB_OUTPUT]";
+export const SELECTION_RESPONSE_OUTPUT_END = "[/AWB_OUTPUT]";
 
-const OUTPUT_START_PATTERN = /\[\s*AI[_\s-]*WRITING[_\s-]*BUDDY[_\s-]*OUTPUT\s*\]/gi;
-const OUTPUT_END_PATTERN = /\[\s*\/\s*AI[_\s-]*WRITING[_\s-]*BUDDY[_\s-]*OUTPUT\s*\]/gi;
+const OUTPUT_MARKER_NAME_PATTERN = String.raw`A[_\s-]*W[_\s-]*B[_\s-]*OUTPUT`;
+const OUTPUT_START_PATTERN = new RegExp(String.raw`\[\s*(?:${OUTPUT_MARKER_NAME_PATTERN})\s*\]`, "gi");
+const OUTPUT_END_PATTERN = new RegExp(String.raw`\[\s*\/\s*(?:${OUTPUT_MARKER_NAME_PATTERN})\s*\]`, "gi");
 
 export type SelectionResponseOutput = {
 	contentText: string;
