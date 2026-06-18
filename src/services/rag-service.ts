@@ -111,7 +111,7 @@ export class RagService {
 		const scopeFilePaths = indexedFiles.map((file) => file.filePath);
 		const fileMetadataByPath = new Map(indexedFiles.map((file) => [file.filePath, file]));
 		const retrievalResults = await this.searchMixedRetrieval(query, fileMetadataByPath, [], scopeFilePaths, [], false);
-		const searchResults = retrievalResults.scopedSearchResults;
+		const searchResults = this.prioritizeScopedSearchResults(retrievalResults.scopedSearchResults, []);
 		const usedKeywordFallback = retrievalResults.usedKeywordFallback;
 
 		const notes = this.createNoteContexts(searchResults, indexedFiles);

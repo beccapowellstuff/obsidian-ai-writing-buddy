@@ -178,6 +178,17 @@ function createEmbeddingSearchResult(file: TFile, score: number): AiWritingBuddy
 	};
 }
 
+function createLargeSearchResult(file: TFile, chunkIndex: number, textLength: number, retrievalMode: "embedding" | "keyword"): AiWritingBuddyRagSearchResult {
+	return {
+		...createSearchResult(file, 10 - chunkIndex),
+		id: `${file.path}::${chunkIndex}`,
+		chunkIndex,
+		text: "x".repeat(textLength),
+		retrievalMode,
+		totalChunkCount: 16,
+	};
+}
+
 function createRagIndexStore(): RagIndexStore {
 	return new RagIndexStore(".");
 }
@@ -606,5 +617,35 @@ describe("RagService", () => {
 		expect(ragStoreMocks.upsertFileIndex).not.toHaveBeenCalled();
 		expect(ragStoreMocks.searchEmbeddingChunks).not.toHaveBeenCalled();
 		expect(ragStoreMocks.searchKeywordChunks).not.toHaveBeenCalled();
+	});
+
+	it("applies global chunk and character limits after combining indexed-note embedding and keyword results", async () => {
+		const embeddingFile = createMarkdownFile("Stories/Semantic.md");
+		const keywordFile = createMarkdownFile("Stories/Keyword.md");
+		const app = createApp({});
+		const service = new RagService(app as unknown as App, createEmbeddingSettings(), createRagIndexStore());
+		const queryEmbedding = [0.1, 0.2, 0.3];
+		const fetchMock = window.fetch as Mock;
+		const embeddingResults = Array.from({ length: 8 }, (_value, index) => createLargeSearchResult(embeddingFile, index, 4000, "embedding"));
+		const keywordResults = Array.from({ length: 8 }, (_value, index) => createLargeSearchResult(keywordFile, index, 4000, "keyword"));
+
+		fetchMock.mockResolvedValue({
+			status: 200,
+			json: async () => ({
+				data: [{ index: 0, embedding: queryEmbedding }],
+			}),
+		});
+		ragStoreMocks.listIndexedFiles.mockResolvedValue([createEmbeddingIndexedFile(embeddingFile), createIndexedFile(keywordFile)]);
+		ragStoreMocks.searchEmbeddingChunks.mockResolvedValue(embeddingResults);
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue(keywordResults);
+
+		const context = await service.getContext("indexed-notes", "limit combined results", false);
+		const retrievedChunks = context?.notes.flatMap((note) => note.chunks ?? []) ?? [];
+		const retrievedCharacters = retrievedChunks.reduce((total, chunk) => total + chunk.text.length, 0);
+
+		expect(retrievedChunks).toHaveLength(7);
+		expect(retrievedChunks.length).toBeLessThanOrEqual(8);
+		expect(retrievedCharacters).toBeLessThanOrEqual(30000);
+		expect(retrievedChunks.map((chunk) => chunk.retrievalMode)).toEqual(Array.from({ length: 7 }, () => "embedding"));
 	});
 });
