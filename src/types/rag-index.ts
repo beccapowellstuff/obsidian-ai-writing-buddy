@@ -29,6 +29,7 @@ export type AiWritingBuddyRagIndexedFile = {
 
 export type AiWritingBuddyRagSearchResult = AiWritingBuddyRagChunk & {
 	score: number;
+	selectedBy: AiWritingBuddyContextRetrievalMode;
 	totalChunkCount: number;
 };
 

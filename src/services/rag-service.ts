@@ -270,7 +270,7 @@ export class RagService {
 			const sortedChunks = chunks.slice().sort((left, right) => left.chunkIndex - right.chunkIndex);
 			const metadata = fileMetadataByPath.get(filePath);
 			const totalChunkCount = metadata?.chunkCount ?? sortedChunks[0]?.totalChunkCount ?? sortedChunks.length;
-			const retrievalMode = sortedChunks.some((chunk) => chunk.retrievalMode === "keyword") ? "keyword" : "embedding";
+			const retrievalMode = sortedChunks.some((chunk) => this.getChunkSelectionMode(chunk) === "keyword") ? "keyword" : "embedding";
 
 			return {
 				path: filePath,
@@ -289,7 +289,9 @@ export class RagService {
 					endLine: chunk.endLine,
 					text: chunk.text,
 					score: chunk.score,
-					retrievalMode: chunk.retrievalMode,
+					retrievalMode: this.getChunkSelectionMode(chunk),
+					selectedBy: this.getChunkSelectionMode(chunk),
+					storedRetrievalMode: chunk.retrievalMode,
 				})),
 			};
 		});
@@ -300,12 +302,16 @@ export class RagService {
 			`[Excerpt chunk ${chunk.chunkIndex + 1} of ${chunk.totalChunkCount}]`,
 			chunk.headingPath && chunk.headingPath.length > 0 ? `Heading: ${chunk.headingPath.join(" > ")}` : "",
 			typeof chunk.startLine === "number" && typeof chunk.endLine === "number" ? `Lines: ${chunk.startLine}-${chunk.endLine}` : "",
-			`Retrieval: ${chunk.retrievalMode}`,
+			`Retrieval: ${this.getChunkSelectionMode(chunk)}`,
 			"Text:",
 			chunk.text,
 		]
 			.filter(Boolean)
 			.join("\n");
+	}
+
+	private getChunkSelectionMode(chunk: AiWritingBuddyRagSearchResult): AiWritingBuddyRagSearchResult["selectedBy"] {
+		return chunk.selectedBy ?? chunk.retrievalMode;
 	}
 
 	private getScopeFiles(scope: AiWritingBuddyContextScope): TFile[] {

@@ -167,6 +167,7 @@ function createSearchResult(file: TFile, score: number): AiWritingBuddyRagSearch
 		retrievalMode: "keyword",
 		updatedAt: 1,
 		score,
+		selectedBy: "keyword",
 		totalChunkCount: 1,
 	};
 }
@@ -175,6 +176,7 @@ function createEmbeddingSearchResult(file: TFile, score: number): AiWritingBuddy
 	return {
 		...createSearchResult(file, score),
 		retrievalMode: "embedding",
+		selectedBy: "embedding",
 	};
 }
 
@@ -185,6 +187,7 @@ function createLargeSearchResult(file: TFile, chunkIndex: number, textLength: nu
 		chunkIndex,
 		text: "x".repeat(textLength),
 		retrievalMode,
+		selectedBy: retrievalMode,
 		totalChunkCount: 16,
 	};
 }
@@ -400,6 +403,7 @@ describe("RagService", () => {
 		const embeddingSearchResult = {
 			...createSearchResult(currentFile, 0.9),
 			retrievalMode: "embedding" as const,
+			selectedBy: "embedding" as const,
 		};
 		const fetchMock = window.fetch as Mock;
 
@@ -421,6 +425,12 @@ describe("RagService", () => {
 			retrievalMode: "embedding",
 			usedKeywordFallback: false,
 			includeIndexedRag: false,
+		});
+		expect(context?.notes[0]?.content).toContain("Retrieval: embedding");
+		expect(context?.notes[0]?.chunks?.[0]).toMatchObject({
+			retrievalMode: "embedding",
+			selectedBy: "embedding",
+			storedRetrievalMode: "embedding",
 		});
 		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path]);
 		expect(ragStoreMocks.searchEmbeddingChunks).toHaveBeenCalledWith(
@@ -503,6 +513,14 @@ describe("RagService", () => {
 			retrievalMode: "keyword",
 			usedKeywordFallback: true,
 		});
+		expect(context?.notes.find((note) => note.path === embeddingFile.path)).toMatchObject({
+			retrievalMode: "embedding",
+		});
+		expect(context?.notes.find((note) => note.path === keywordFile.path)).toMatchObject({
+			retrievalMode: "keyword",
+		});
+		expect(context?.notes.find((note) => note.path === embeddingFile.path)?.content).toContain("Retrieval: embedding");
+		expect(context?.notes.find((note) => note.path === keywordFile.path)?.content).toContain("Retrieval: keyword");
 	});
 
 	it("uses keyword fallback for all non-empty candidates when query embedding generation fails", async () => {
@@ -515,7 +533,14 @@ describe("RagService", () => {
 
 		fetchMock.mockRejectedValue(new Error("Embedding outage"));
 		ragStoreMocks.listIndexedFiles.mockResolvedValue([createEmbeddingIndexedFile(embeddingFile), createIndexedFile(keywordFile), createZeroChunkEmbeddingIndexedFile(emptyFile)]);
-		ragStoreMocks.searchKeywordChunks.mockResolvedValue([createSearchResult(embeddingFile, 3), createSearchResult(keywordFile, 2)]);
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue([
+			{
+				...createSearchResult(embeddingFile, 3),
+				retrievalMode: "embedding",
+				selectedBy: "keyword",
+			},
+			createSearchResult(keywordFile, 2),
+		]);
 
 		const context = await service.getContext("indexed-notes", "outage retrieval", false);
 
@@ -525,6 +550,48 @@ describe("RagService", () => {
 		expect(context).toMatchObject({
 			retrievalMode: "keyword",
 			usedKeywordFallback: true,
+		});
+		expect(context?.notes.find((note) => note.path === embeddingFile.path)).toMatchObject({
+			retrievalMode: "keyword",
+		});
+		expect(context?.notes.find((note) => note.path === embeddingFile.path)?.content).toContain("Retrieval: keyword");
+		expect(context?.notes.find((note) => note.path === embeddingFile.path)?.chunks?.[0]).toMatchObject({
+			retrievalMode: "keyword",
+			selectedBy: "keyword",
+			storedRetrievalMode: "embedding",
+		});
+	});
+
+	it("labels an embedding-stored chunk as keyword-selected when keyword fallback returns it", async () => {
+		const embeddingFile = createMarkdownFile("Stories/Semantic.md");
+		const app = createApp({});
+		const service = new RagService(app as unknown as App, createEmbeddingSettings(), createRagIndexStore());
+		const fetchMock = window.fetch as Mock;
+
+		fetchMock.mockRejectedValue(new Error("Embedding outage"));
+		ragStoreMocks.listIndexedFiles.mockResolvedValue([createEmbeddingIndexedFile(embeddingFile)]);
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue([
+			{
+				...createEmbeddingSearchResult(embeddingFile, 5),
+				selectedBy: "keyword",
+			},
+		]);
+
+		const context = await service.getContext("indexed-notes", "semantic text", false);
+
+		expect(context).toMatchObject({
+			retrievalMode: "keyword",
+			usedKeywordFallback: true,
+		});
+		expect(context?.notes[0]).toMatchObject({
+			path: embeddingFile.path,
+			retrievalMode: "keyword",
+		});
+		expect(context?.notes[0]?.content).toContain("Retrieval: keyword");
+		expect(context?.notes[0]?.chunks?.[0]).toMatchObject({
+			retrievalMode: "keyword",
+			selectedBy: "keyword",
+			storedRetrievalMode: "embedding",
 		});
 	});
 

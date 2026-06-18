@@ -203,6 +203,7 @@ export class RagIndexStore {
 			.map((chunk) => ({
 				...chunk,
 				score: chunk.embedding ? this.cosineSimilarity(queryEmbedding, chunk.embedding) : -1,
+				selectedBy: "embedding" as const,
 			}))
 			.filter((chunk) => chunk.score >= options.similarityThreshold)
 			.sort((left, right) => right.score - left.score);
@@ -217,6 +218,7 @@ export class RagIndexStore {
 			.map((chunk) => ({
 				...chunk,
 				score: scoreKeywordChunk(chunk, keywordQuery),
+				selectedBy: "keyword" as const,
 			}))
 			.sort((left, right) => {
 				if (right.score !== left.score) {
@@ -257,6 +259,7 @@ export class RagIndexStore {
 		return rows.map((row) => ({
 			...this.mapChunk(row),
 			score: 0,
+			selectedBy: retrievalMode ?? "keyword",
 			totalChunkCount: this.asNumber(row.total_chunk_count) ?? 0,
 		}));
 	}

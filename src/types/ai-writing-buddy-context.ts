@@ -17,6 +17,8 @@ export type AiWritingBuddyRetrievedChunk = {
 	text: string;
 	score: number;
 	retrievalMode: AiWritingBuddyContextRetrievalMode;
+	selectedBy: AiWritingBuddyContextRetrievalMode;
+	storedRetrievalMode: AiWritingBuddyContextRetrievalMode;
 };
 
 export type AiWritingBuddyNoteContext = {
