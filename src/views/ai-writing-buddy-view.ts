@@ -34,7 +34,7 @@ type CurrentSessionTitleProvider = () => string | undefined;
 type RenameSavedSessionHandler = (sessionId: string, title: string) => Promise<AiWritingBuddySessionListItem[]>;
 type CurrentSessionProvider = () => AiWritingBuddyCurrentSessionData | null;
 type RenameCurrentSessionHandler = (title: string) => AiWritingBuddyCurrentSessionData;
-type DeleteCurrentSessionHandler = () => AiWritingBuddyCurrentSessionData;
+type DeleteCurrentSessionHandler = () => Promise<AiWritingBuddyCurrentSessionData>;
 type SettingsSaveHandler = () => Promise<void>;
 
 export class AiWritingBuddyView extends ItemView {
@@ -312,12 +312,13 @@ export class AiWritingBuddyView extends ItemView {
 
 				return currentSession;
 			},
-			onDeleteCurrentSession: () => {
-				const newSession = this.onDeleteCurrentSession();
+			onDeleteCurrentSession: async () => {
+				const newSession = await this.onDeleteCurrentSession();
+
 				this.sessionController.replaceCurrentSessionEntries(newSession.entries, newSession.memorySummary);
 				this.render();
 
-				return newSession.entryCount > 0 || newSession.entries.length > 0 ? newSession : null;
+				return newSession;
 			},
 		}).open();
 	}

@@ -103,7 +103,7 @@ export class SessionHistoryStore {
 			const shouldArchiveCurrent = this.hasSessionEntries(sessionToArchive);
 			const savedSessionIds = shouldArchiveCurrent
 				? [sessionToArchive.id, ...index.savedSessionIds.filter((sessionId) => sessionId !== sessionToArchive.id && sessionId !== newSessionSnapshot.id)]
-				: index.savedSessionIds.filter((sessionId) => sessionId !== newSessionSnapshot.id);
+				: index.savedSessionIds.filter((sessionId) => sessionId !== currentSessionSnapshot.id && sessionId !== newSessionSnapshot.id);
 			const sessions = {
 				...index.sessions,
 				[newSessionSnapshot.id]: this.createSessionListItem(newSessionSnapshot),
@@ -112,6 +112,9 @@ export class SessionHistoryStore {
 			if (shouldArchiveCurrent) {
 				sessions[sessionToArchive.id] = this.createSessionListItem(sessionToArchive);
 				await this.saveSession(sessionToArchive);
+			} else {
+				delete sessions[currentSessionSnapshot.id];
+				await this.deleteSessionFile(currentSessionSnapshot.id);
 			}
 
 			this.index = {
@@ -120,6 +123,31 @@ export class SessionHistoryStore {
 				sessions,
 			};
 
+			await this.saveSession(newSessionSnapshot);
+			await this.saveIndex(this.index);
+		});
+	}
+
+	async deleteCurrentSession(currentSession: AiWritingBuddyCurrentSessionData, newSession: AiWritingBuddyCurrentSessionData): Promise<void> {
+		const currentSessionSnapshot: AiWritingBuddyCurrentSessionData = structuredClone(currentSession);
+		const newSessionSnapshot: AiWritingBuddyCurrentSessionData = structuredClone(newSession);
+
+		return this.enqueueMutation(async () => {
+			const index = this.requireIndex();
+			const sessions = {
+				...index.sessions,
+				[newSessionSnapshot.id]: this.createSessionListItem(newSessionSnapshot),
+			};
+
+			delete sessions[currentSessionSnapshot.id];
+
+			this.index = {
+				currentSessionId: newSessionSnapshot.id,
+				savedSessionIds: index.savedSessionIds.filter((sessionId) => sessionId !== currentSessionSnapshot.id && sessionId !== newSessionSnapshot.id),
+				sessions,
+			};
+
+			await this.deleteSessionFile(currentSessionSnapshot.id);
 			await this.saveSession(newSessionSnapshot);
 			await this.saveIndex(this.index);
 		});
@@ -148,6 +176,9 @@ export class SessionHistoryStore {
 				savedSessionIds.unshift(currentSessionSnapshot.id);
 				sessions[currentSessionSnapshot.id] = this.createSessionListItem(currentSessionSnapshot);
 				await this.saveSession(currentSessionSnapshot);
+			} else {
+				delete sessions[currentSessionSnapshot.id];
+				await this.deleteSessionFile(currentSessionSnapshot.id);
 			}
 
 			this.index = {
@@ -377,8 +408,13 @@ export class SessionHistoryStore {
 	}
 
 	private async deleteSessionFile(sessionId: string): Promise<void> {
+		await this.deleteFileIfExists(this.getSessionPath(sessionId));
+		await this.deleteFileIfExists(`${this.getSessionPath(sessionId)}.backup`);
+	}
+
+	private async deleteFileIfExists(filePath: string): Promise<void> {
 		try {
-			await unlink(this.getSessionPath(sessionId));
+			await unlink(filePath);
 		} catch (error) {
 			if (!this.isMissingFileError(error)) {
 				throw error;

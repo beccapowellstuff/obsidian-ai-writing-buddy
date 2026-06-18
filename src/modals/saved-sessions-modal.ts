@@ -13,7 +13,7 @@ type SavedSessionsModalOptions = {
 	onLoadSavedSession: (sessionId: string) => Promise<AiWritingBuddyCurrentSessionData | null>;
 	onRenameSavedSession: (sessionId: string, title: string) => Promise<AiWritingBuddySessionListItem[]>;
 	onRenameCurrentSession: (title: string) => AiWritingBuddyCurrentSessionData;
-	onDeleteCurrentSession: () => AiWritingBuddyCurrentSessionData | null;
+	onDeleteCurrentSession: () => Promise<AiWritingBuddyCurrentSessionData>;
 };
 
 type SessionRowKind = "current" | "saved";
@@ -23,6 +23,7 @@ export class SavedSessionsModal extends Modal {
 	private savedSessions: AiWritingBuddySessionListItem[];
 	private editingSessionId: string | null = null;
 	private deletingSessionId: string | null = null;
+	private isDeletingCurrentSession = false;
 
 	constructor(
 		app: App,
@@ -238,6 +239,7 @@ export class SavedSessionsModal extends Modal {
 		});
 
 		cancelButton.type = "button";
+		cancelButton.disabled = kind === "current" && this.isDeletingCurrentSession;
 		cancelButton.addEventListener("click", () => {
 			this.deletingSessionId = null;
 			this.renderContent();
@@ -249,11 +251,10 @@ export class SavedSessionsModal extends Modal {
 		});
 
 		confirmDeleteButton.type = "button";
+		confirmDeleteButton.disabled = kind === "current" && this.isDeletingCurrentSession;
 		confirmDeleteButton.addEventListener("click", () => {
 			if (kind === "current") {
-				this.currentSession = this.options.onDeleteCurrentSession();
-				this.deletingSessionId = null;
-				this.renderContent();
+				void this.deleteCurrentSessionFromConfirmation();
 			} else {
 				void this.deleteSavedSession(session.id);
 			}
@@ -275,13 +276,13 @@ export class SavedSessionsModal extends Modal {
 			onOpenSession: (sessionId) => {
 				void this.options.onOpenSession(sessionId);
 			},
-			onDeleteSession: (sessionId) => {
+			onDeleteSession: async (sessionId) => {
 				if (kind === "current") {
-					this.currentSession = this.options.onDeleteCurrentSession();
+					await this.deleteCurrentSessionFromPreview();
 					return;
 				}
 
-				void this.deleteSavedSession(sessionId);
+				await this.deleteSavedSession(sessionId);
 			},
 			onClosePreview: () => {
 				new SavedSessionsModal(this.app, {
@@ -303,6 +304,32 @@ export class SavedSessionsModal extends Modal {
 		this.savedSessions = await this.options.onDeleteSavedSession(sessionId);
 		this.deletingSessionId = null;
 		this.renderContent();
+	}
+
+	private async deleteCurrentSessionFromConfirmation(): Promise<void> {
+		if (this.isDeletingCurrentSession) {
+			return;
+		}
+
+		this.isDeletingCurrentSession = true;
+		this.renderContent();
+
+		try {
+			await this.deleteCurrentSessionFromPreview();
+			this.deletingSessionId = null;
+		} catch (error) {
+			console.error(INTERFACE_TEXT.sessionManager.deleteSessionFailedConsole, error);
+			new Notice(INTERFACE_TEXT.sessionManager.deleteSessionFailed);
+		} finally {
+			this.isDeletingCurrentSession = false;
+			this.renderContent();
+		}
+	}
+
+	private async deleteCurrentSessionFromPreview(): Promise<void> {
+		const newSession = await this.options.onDeleteCurrentSession();
+
+		this.currentSession = this.hasSessionEntries(newSession) ? newSession : null;
 	}
 
 	private async saveSessionToNote(sessionListItem: AiWritingBuddyCurrentSessionData | AiWritingBuddySessionListItem, kind: SessionRowKind): Promise<void> {
@@ -336,5 +363,9 @@ export class SavedSessionsModal extends Modal {
 
 	private getSessionLabel(session: AiWritingBuddyCurrentSessionData | AiWritingBuddySessionListItem): string {
 		return formatSessionLabel(session);
+	}
+
+	private hasSessionEntries(session: AiWritingBuddyCurrentSessionData): boolean {
+		return session.entryCount > 0 || session.entries.length > 0;
 	}
 }

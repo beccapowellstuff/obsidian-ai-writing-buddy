@@ -32,6 +32,8 @@ export const INTERFACE_TEXT = {
 		saveToNoteFailed: "Could not save session to note. Check the developer console for details.",
 		saveToNoteFailedConsole: "Failed to save session to note.",
 		sessionLoadFailed: "Could not load that session.",
+		deleteSessionFailed: "Could not delete that session. Check the developer console for details.",
+		deleteSessionFailedConsole: "Failed to delete session.",
 		deleteCurrentQuestion: "Delete current session and start a new one?",
 		saveToNoteSucceeded: (filePath: string): string => `Saved session to ${filePath}`,
 		deleteSavedQuestion: "Delete saved session?",

@@ -1,4 +1,4 @@
-import { App, Modal } from "obsidian";
+import { App, Modal, Notice } from "obsidian";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { AiWritingBuddyCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
 import { ConfirmDeleteSavedSessionModal } from "./confirm-delete-saved-session-modal";
@@ -7,12 +7,13 @@ type SavedSessionPreviewModalOptions = {
 	session: AiWritingBuddyCurrentSessionData;
 	sessionLabel: string;
 	onOpenSession: (sessionId: string) => void;
-	onDeleteSession: (sessionId: string) => void;
+	onDeleteSession: (sessionId: string) => Promise<void>;
 	onClosePreview: () => void;
 };
 
 export class SavedSessionPreviewModal extends Modal {
 	private shouldReturnToSessionManager = true;
+	private isDeletingSession = false;
 
 	constructor(
 		app: App,
@@ -118,8 +119,7 @@ export class SavedSessionPreviewModal extends Modal {
 		deleteButton.type = "button";
 		deleteButton.addEventListener("click", () => {
 			new ConfirmDeleteSavedSessionModal(this.app, this.options.sessionLabel, () => {
-				this.options.onDeleteSession(this.options.session.id);
-				this.close();
+				void this.deleteSession();
 			}).open();
 		});
 	}
@@ -129,6 +129,24 @@ export class SavedSessionPreviewModal extends Modal {
 
 		if (this.shouldReturnToSessionManager) {
 			this.options.onClosePreview();
+		}
+	}
+
+	private async deleteSession(): Promise<void> {
+		if (this.isDeletingSession) {
+			return;
+		}
+
+		this.isDeletingSession = true;
+
+		try {
+			await this.options.onDeleteSession(this.options.session.id);
+			this.close();
+		} catch (error) {
+			console.error(INTERFACE_TEXT.sessionManager.deleteSessionFailedConsole, error);
+			new Notice(INTERFACE_TEXT.sessionManager.deleteSessionFailed);
+		} finally {
+			this.isDeletingSession = false;
 		}
 	}
 }

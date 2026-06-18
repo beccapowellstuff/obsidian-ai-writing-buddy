@@ -98,6 +98,127 @@ describe("SessionHistoryStore", () => {
 		]);
 	});
 
+	it("deletes the replaced current session file, backup, saved id, and metadata", async () => {
+		const store = new SessionHistoryStore(temporaryDirectory, pluginDataService);
+		const snapshot = await store.load();
+		const currentSession = {
+			...snapshot.currentSession,
+			entries: [createChatEntry("entry-1")],
+			entryCount: 1,
+		};
+		const savedSession = createSession("saved-session", [createChatEntry("entry-2")]);
+		const replacementSession = pluginDataService.createEmptyCurrentSession();
+
+		await store.saveCurrentSession(currentSession);
+		await writeSessionFile(temporaryDirectory, savedSession);
+		await writeFile(getSessionBackupPath(temporaryDirectory, currentSession.id), "backup", "utf8");
+		await writeFile(
+			getIndexPath(temporaryDirectory),
+			JSON.stringify({
+				currentSessionId: currentSession.id,
+				savedSessionIds: [currentSession.id, savedSession.id, replacementSession.id],
+				sessions: {
+					[currentSession.id]: createSessionListItem(currentSession),
+					[savedSession.id]: createSessionListItem(savedSession),
+					[replacementSession.id]: createSessionListItem(replacementSession),
+				},
+			}),
+			"utf8",
+		);
+
+		const reloadedStore = new SessionHistoryStore(temporaryDirectory, pluginDataService);
+		await reloadedStore.load();
+		await reloadedStore.deleteCurrentSession(currentSession, replacementSession);
+
+		const index = JSON.parse(await readFile(getIndexPath(temporaryDirectory), "utf8")) as {
+			currentSessionId: string;
+			savedSessionIds: string[];
+			sessions: Record<string, unknown>;
+		};
+
+		expect(index.currentSessionId).toBe(replacementSession.id);
+		expect(index.savedSessionIds).toEqual([savedSession.id]);
+		expect(index.sessions[currentSession.id]).toBeUndefined();
+		expect(index.sessions[replacementSession.id]).toBeTruthy();
+		await expectMissingFile(getSessionPath(temporaryDirectory, currentSession.id));
+		await expectMissingFile(getSessionBackupPath(temporaryDirectory, currentSession.id));
+		expect((await reloadedStore.loadSession(replacementSession.id)).status).toBe("loaded");
+	});
+
+	it("does not resurrect a deleted current session when rebuilding a corrupt index", async () => {
+		const store = new SessionHistoryStore(temporaryDirectory, pluginDataService);
+		const snapshot = await store.load();
+		const currentSession = {
+			...snapshot.currentSession,
+			entries: [createChatEntry("entry-1")],
+			entryCount: 1,
+		};
+		const replacementSession = pluginDataService.createEmptyCurrentSession();
+
+		await store.saveCurrentSession(currentSession);
+		await store.deleteCurrentSession(currentSession, replacementSession);
+		await writeFile(getIndexPath(temporaryDirectory), "{not json", "utf8");
+
+		const reloadedStore = new SessionHistoryStore(temporaryDirectory, pluginDataService);
+		const rebuiltSnapshot = await reloadedStore.load();
+
+		expect(rebuiltSnapshot.savedSessions.map((session) => session.id)).not.toContain(currentSession.id);
+		await expectMissingFile(getSessionPath(temporaryDirectory, currentSession.id));
+		await expectMissingFile(getSessionBackupPath(temporaryDirectory, currentSession.id));
+	});
+
+	it("starts a new session from an empty current session by deleting the old empty file and backup", async () => {
+		const store = new SessionHistoryStore(temporaryDirectory, pluginDataService);
+		const snapshot = await store.load();
+		const nextSession = pluginDataService.createEmptyCurrentSession();
+
+		await writeFile(getSessionBackupPath(temporaryDirectory, snapshot.currentSession.id), "backup", "utf8");
+		await store.startNewSession(snapshot.currentSession, nextSession);
+
+		const index = JSON.parse(await readFile(getIndexPath(temporaryDirectory), "utf8")) as {
+			currentSessionId: string;
+			savedSessionIds: string[];
+			sessions: Record<string, unknown>;
+		};
+
+		expect(index.currentSessionId).toBe(nextSession.id);
+		expect(index.savedSessionIds).not.toContain(snapshot.currentSession.id);
+		expect(index.savedSessionIds).not.toContain(nextSession.id);
+		expect(index.sessions[snapshot.currentSession.id]).toBeUndefined();
+		await expectMissingFile(getSessionPath(temporaryDirectory, snapshot.currentSession.id));
+		await expectMissingFile(getSessionBackupPath(temporaryDirectory, snapshot.currentSession.id));
+		expect((await store.loadSession(nextSession.id)).status).toBe("loaded");
+	});
+
+	it("restores a saved session over an empty current session by deleting the old empty file and backup", async () => {
+		const store = new SessionHistoryStore(temporaryDirectory, pluginDataService);
+		const snapshot = await store.load();
+		const archivedSession = {
+			...snapshot.currentSession,
+			entries: [createChatEntry("entry-1")],
+			entryCount: 1,
+		};
+		const emptyCurrentSession = pluginDataService.createEmptyCurrentSession();
+
+		await store.startNewSession(archivedSession, emptyCurrentSession);
+		await writeFile(getSessionBackupPath(temporaryDirectory, emptyCurrentSession.id), "backup", "utf8");
+
+		const restoredSession = await store.restoreSavedSession(archivedSession.id, emptyCurrentSession);
+
+		const index = JSON.parse(await readFile(getIndexPath(temporaryDirectory), "utf8")) as {
+			currentSessionId: string;
+			savedSessionIds: string[];
+			sessions: Record<string, unknown>;
+		};
+
+		expect(restoredSession?.id).toBe(archivedSession.id);
+		expect(index.currentSessionId).toBe(archivedSession.id);
+		expect(index.savedSessionIds).not.toContain(emptyCurrentSession.id);
+		expect(index.sessions[emptyCurrentSession.id]).toBeUndefined();
+		await expectMissingFile(getSessionPath(temporaryDirectory, emptyCurrentSession.id));
+		await expectMissingFile(getSessionBackupPath(temporaryDirectory, emptyCurrentSession.id));
+	});
+
 	it("loads one saved session without requiring every saved session to be valid", async () => {
 		const validSession = createSession("valid-session", [createChatEntry("entry-1")]);
 		const corruptSessionId = "corrupt-session";
@@ -159,7 +280,7 @@ describe("SessionHistoryStore", () => {
 		]);
 	});
 
-	it("deletes only the selected saved session file and updates the index", async () => {
+	it("deletes only the selected saved session file, backup, and index metadata", async () => {
 		const store = new SessionHistoryStore(temporaryDirectory, pluginDataService);
 		const snapshot = await store.load();
 		const archivedSession = {
@@ -170,13 +291,16 @@ describe("SessionHistoryStore", () => {
 		const nextSession = pluginDataService.createEmptyCurrentSession();
 
 		await store.startNewSession(archivedSession, nextSession);
+		await writeFile(getSessionBackupPath(temporaryDirectory, archivedSession.id), "backup", "utf8");
 		await store.deleteSavedSession(archivedSession.id);
 
-		const index = JSON.parse(await readFile(join(temporaryDirectory, "history", "index.json"), "utf8")) as { savedSessionIds: string[] };
+		const index = JSON.parse(await readFile(getIndexPath(temporaryDirectory), "utf8")) as { savedSessionIds: string[]; sessions: Record<string, unknown> };
 		const deletedSessionResult = await store.loadSession(archivedSession.id);
 
 		expect(index.savedSessionIds).not.toContain(archivedSession.id);
+		expect(index.sessions[archivedSession.id]).toBeUndefined();
 		expect(deletedSessionResult.status).toBe("missing");
+		await expectMissingFile(getSessionBackupPath(temporaryDirectory, archivedSession.id));
 		expect((await store.loadSession(nextSession.id)).status).toBe("loaded");
 	});
 });
@@ -219,5 +343,23 @@ async function writeSessionFile(temporaryDirectory: string, session: AiWritingBu
 	const sessionDirectory = join(temporaryDirectory, "history", "sessions");
 
 	await mkdir(sessionDirectory, { recursive: true });
-	await writeFile(join(sessionDirectory, `${session.id}.json`), JSON.stringify({ session }), "utf8");
+	await writeFile(getSessionPath(temporaryDirectory, session.id), JSON.stringify({ session }), "utf8");
+}
+
+function getIndexPath(temporaryDirectory: string): string {
+	return join(temporaryDirectory, "history", "index.json");
+}
+
+function getSessionPath(temporaryDirectory: string, sessionId: string): string {
+	return join(temporaryDirectory, "history", "sessions", `${sessionId}.json`);
+}
+
+function getSessionBackupPath(temporaryDirectory: string, sessionId: string): string {
+	return `${getSessionPath(temporaryDirectory, sessionId)}.backup`;
+}
+
+async function expectMissingFile(filePath: string): Promise<void> {
+	await expect(readFile(filePath, "utf8")).rejects.toMatchObject({
+		code: "ENOENT",
+	});
 }
