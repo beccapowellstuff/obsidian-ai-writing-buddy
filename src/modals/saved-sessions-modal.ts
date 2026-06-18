@@ -1,16 +1,17 @@
 import { App, Modal, Notice } from "obsidian";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
-import { AiWritingBuddyCurrentSessionData } from "../types/ai-writing-buddy-plugin-data";
+import { AiWritingBuddyCurrentSessionData, AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
 import { SavedSessionPreviewModal } from "./saved-session-preview-modal";
 import { AiWritingBuddySessionExportService } from "../services/session-export-service";
 import { formatSessionLabel } from "../utils/format-session-label";
 
 type SavedSessionsModalOptions = {
 	currentSession: AiWritingBuddyCurrentSessionData | null;
-	savedSessions: AiWritingBuddyCurrentSessionData[];
-	onOpenSession: (sessionId: string) => void;
-	onDeleteSavedSession: (sessionId: string) => AiWritingBuddyCurrentSessionData[];
-	onRenameSavedSession: (sessionId: string, title: string) => AiWritingBuddyCurrentSessionData[];
+	savedSessions: AiWritingBuddySessionListItem[];
+	onOpenSession: (sessionId: string) => Promise<void>;
+	onDeleteSavedSession: (sessionId: string) => Promise<AiWritingBuddySessionListItem[]>;
+	onLoadSavedSession: (sessionId: string) => Promise<AiWritingBuddyCurrentSessionData | null>;
+	onRenameSavedSession: (sessionId: string, title: string) => Promise<AiWritingBuddySessionListItem[]>;
 	onRenameCurrentSession: (title: string) => AiWritingBuddyCurrentSessionData;
 	onDeleteCurrentSession: () => AiWritingBuddyCurrentSessionData | null;
 };
@@ -19,7 +20,7 @@ type SessionRowKind = "current" | "saved";
 
 export class SavedSessionsModal extends Modal {
 	private currentSession: AiWritingBuddyCurrentSessionData | null;
-	private savedSessions: AiWritingBuddyCurrentSessionData[];
+	private savedSessions: AiWritingBuddySessionListItem[];
 	private editingSessionId: string | null = null;
 	private deletingSessionId: string | null = null;
 
@@ -84,7 +85,7 @@ export class SavedSessionsModal extends Modal {
 		}
 	}
 
-	private renderSessionRow(container: HTMLElement, session: AiWritingBuddyCurrentSessionData, kind: SessionRowKind): void {
+	private renderSessionRow(container: HTMLElement, session: AiWritingBuddyCurrentSessionData | AiWritingBuddySessionListItem, kind: SessionRowKind): void {
 		const rowEl = container.createEl("div", {
 			cls: "ai-writing-buddy-saved-session-row",
 		});
@@ -125,30 +126,7 @@ export class SavedSessionsModal extends Modal {
 
 		previewButton.type = "button";
 		previewButton.addEventListener("click", () => {
-			this.close();
-
-			new SavedSessionPreviewModal(this.app, {
-				session,
-				sessionLabel: this.getSessionLabel(session),
-				onOpenSession: (sessionId) => {
-					this.options.onOpenSession(sessionId);
-				},
-				onDeleteSession: (sessionId) => {
-					if (kind === "current") {
-						this.currentSession = this.options.onDeleteCurrentSession();
-						return;
-					}
-
-					this.savedSessions = this.options.onDeleteSavedSession(sessionId);
-				},
-				onClosePreview: () => {
-					new SavedSessionsModal(this.app, {
-						...this.options,
-						currentSession: this.currentSession,
-						savedSessions: this.savedSessions,
-					}).open();
-				},
-			}).open();
+			void this.openPreview(session, kind);
 		});
 
 		const saveToNoteButton = actionsEl.createEl("button", {
@@ -157,7 +135,7 @@ export class SavedSessionsModal extends Modal {
 
 		saveToNoteButton.type = "button";
 		saveToNoteButton.addEventListener("click", () => {
-			void this.saveSessionToNote(session);
+			void this.saveSessionToNote(session, kind);
 		});
 
 		if (kind === "saved") {
@@ -167,7 +145,7 @@ export class SavedSessionsModal extends Modal {
 
 			openButton.type = "button";
 			openButton.addEventListener("click", () => {
-				this.options.onOpenSession(session.id);
+				void this.options.onOpenSession(session.id);
 				this.close();
 			});
 		}
@@ -185,7 +163,7 @@ export class SavedSessionsModal extends Modal {
 		});
 	}
 
-	private renderRenameRow(rowEl: HTMLElement, session: AiWritingBuddyCurrentSessionData, kind: SessionRowKind): void {
+	private renderRenameRow(rowEl: HTMLElement, session: AiWritingBuddyCurrentSessionData | AiWritingBuddySessionListItem, kind: SessionRowKind): void {
 		const inputEl = rowEl.createEl("input", {
 			type: "text",
 			value: session.userTitle ?? "",
@@ -206,12 +184,11 @@ export class SavedSessionsModal extends Modal {
 		const saveRename = (): void => {
 			if (kind === "current") {
 				this.currentSession = this.options.onRenameCurrentSession(inputEl.value);
+				this.editingSessionId = null;
+				this.renderContent();
 			} else {
-				this.savedSessions = this.options.onRenameSavedSession(session.id, inputEl.value);
+				void this.renameSavedSession(session.id, inputEl.value);
 			}
-
-			this.editingSessionId = null;
-			this.renderContent();
 		};
 
 		saveButton.type = "button";
@@ -246,7 +223,7 @@ export class SavedSessionsModal extends Modal {
 		}, 0);
 	}
 
-	private renderDeleteConfirmationRow(rowEl: HTMLElement, session: AiWritingBuddyCurrentSessionData, kind: SessionRowKind): void {
+	private renderDeleteConfirmationRow(rowEl: HTMLElement, session: AiWritingBuddyCurrentSessionData | AiWritingBuddySessionListItem, kind: SessionRowKind): void {
 		rowEl.createEl("div", {
 			cls: "ai-writing-buddy-saved-session-label ai-writing-buddy-session-delete-warning",
 			text: kind === "current" ? INTERFACE_TEXT.sessionManager.deleteCurrentQuestion : INTERFACE_TEXT.sessionManager.deleteSavedQuestion,
@@ -275,17 +252,67 @@ export class SavedSessionsModal extends Modal {
 		confirmDeleteButton.addEventListener("click", () => {
 			if (kind === "current") {
 				this.currentSession = this.options.onDeleteCurrentSession();
+				this.deletingSessionId = null;
+				this.renderContent();
 			} else {
-				this.savedSessions = this.options.onDeleteSavedSession(session.id);
+				void this.deleteSavedSession(session.id);
 			}
-
-			this.deletingSessionId = null;
-			this.renderContent();
 		});
 	}
 
-	private async saveSessionToNote(session: AiWritingBuddyCurrentSessionData): Promise<void> {
+	private async openPreview(sessionListItem: AiWritingBuddyCurrentSessionData | AiWritingBuddySessionListItem, kind: SessionRowKind): Promise<void> {
+		const session = await this.loadSessionForAction(sessionListItem, kind);
+
+		if (!session) {
+			return;
+		}
+
+		this.close();
+
+		new SavedSessionPreviewModal(this.app, {
+			session,
+			sessionLabel: this.getSessionLabel(session),
+			onOpenSession: (sessionId) => {
+				void this.options.onOpenSession(sessionId);
+			},
+			onDeleteSession: (sessionId) => {
+				if (kind === "current") {
+					this.currentSession = this.options.onDeleteCurrentSession();
+					return;
+				}
+
+				void this.deleteSavedSession(sessionId);
+			},
+			onClosePreview: () => {
+				new SavedSessionsModal(this.app, {
+					...this.options,
+					currentSession: this.currentSession,
+					savedSessions: this.savedSessions,
+				}).open();
+			},
+		}).open();
+	}
+
+	private async renameSavedSession(sessionId: string, title: string): Promise<void> {
+		this.savedSessions = await this.options.onRenameSavedSession(sessionId, title);
+		this.editingSessionId = null;
+		this.renderContent();
+	}
+
+	private async deleteSavedSession(sessionId: string): Promise<void> {
+		this.savedSessions = await this.options.onDeleteSavedSession(sessionId);
+		this.deletingSessionId = null;
+		this.renderContent();
+	}
+
+	private async saveSessionToNote(sessionListItem: AiWritingBuddyCurrentSessionData | AiWritingBuddySessionListItem, kind: SessionRowKind): Promise<void> {
 		try {
+			const session = await this.loadSessionForAction(sessionListItem, kind);
+
+			if (!session) {
+				return;
+			}
+
 			await new AiWritingBuddySessionExportService(this.app).saveSessionToNote(session, this.getSessionLabel(session));
 		} catch (error) {
 			console.error(INTERFACE_TEXT.sessionManager.saveToNoteFailedConsole, error);
@@ -293,7 +320,21 @@ export class SavedSessionsModal extends Modal {
 		}
 	}
 
-	private getSessionLabel(session: AiWritingBuddyCurrentSessionData): string {
+	private async loadSessionForAction(session: AiWritingBuddyCurrentSessionData | AiWritingBuddySessionListItem, kind: SessionRowKind): Promise<AiWritingBuddyCurrentSessionData | null> {
+		if (kind === "current") {
+			return session as AiWritingBuddyCurrentSessionData;
+		}
+
+		const loadedSession = await this.options.onLoadSavedSession(session.id);
+
+		if (!loadedSession) {
+			new Notice(INTERFACE_TEXT.sessionManager.sessionLoadFailed);
+		}
+
+		return loadedSession;
+	}
+
+	private getSessionLabel(session: AiWritingBuddyCurrentSessionData | AiWritingBuddySessionListItem): string {
 		return formatSessionLabel(session);
 	}
 }

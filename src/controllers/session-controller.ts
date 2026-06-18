@@ -1,6 +1,7 @@
 import type { AiWritingBuddySettings } from "../config/default-settings";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type { AiResponseService } from "../services/ai-response-service";
+import { AiWritingBuddyPromptBuilder } from "../services/prompt-builder";
 import { AiWritingBuddySessionHistoryTrimmer } from "../services/session-history-trimmer";
 import { AiWritingBuddySessionSummaryService } from "../services/session-summary-service";
 import type { AiWritingBuddyChatNoteContext, AiWritingBuddyUsedContext } from "../types/ai-writing-buddy-context";
@@ -14,7 +15,7 @@ import { formatProviderErrorMessage } from "../utils/format-provider-error-messa
 
 type SessionChangeHandler = (scrollToBottom: boolean) => void;
 type SessionSaveHandler = (entries: AiWritingBuddyEntry[], memorySummary?: AiWritingBuddyMemorySummary) => void;
-type NewSessionHandler = (sessionTitle?: string) => void;
+type NewSessionHandler = (sessionTitle?: string) => Promise<void>;
 type NoteContextProvider = (message: string) => Promise<AiWritingBuddyChatNoteContext | undefined>;
 type VisibleMemoryProvider = () => Promise<AiWritingBuddyVisibleMemoryContext | undefined>;
 type ChatResponseCompletedHandler = (entry: AiWritingBuddyChatEntry, assistantResponseText: string) => void;
@@ -25,6 +26,7 @@ export class AiWritingBuddySessionController {
 	private readonly activeResponseControllers = new Map<string, AbortController>();
 	private replyToEntryId: string | null = null;
 	private memorySummary: AiWritingBuddyMemorySummary | undefined;
+	private readonly promptBuilder: AiWritingBuddyPromptBuilder;
 	private readonly sessionHistoryTrimmer: AiWritingBuddySessionHistoryTrimmer;
 	private readonly sessionSummaryService: AiWritingBuddySessionSummaryService;
 
@@ -42,6 +44,7 @@ export class AiWritingBuddySessionController {
 	) {
 		this.entries = [...initialEntries];
 		this.memorySummary = initialMemorySummary;
+		this.promptBuilder = new AiWritingBuddyPromptBuilder(settings);
 		this.sessionHistoryTrimmer = new AiWritingBuddySessionHistoryTrimmer(settings);
 		this.sessionSummaryService = new AiWritingBuddySessionSummaryService(settings);
 	}
@@ -62,11 +65,11 @@ export class AiWritingBuddySessionController {
 		this.onChange(false);
 	}
 
-	startNewSession(sessionTitle?: string): void {
+	async startNewSession(sessionTitle?: string): Promise<void> {
 		this.entries = [];
 		this.replyToEntryId = null;
 		this.memorySummary = undefined;
-		this.onNewSession(sessionTitle);
+		await this.onNewSession(sessionTitle);
 		this.onChange(false);
 	}
 
@@ -143,6 +146,10 @@ export class AiWritingBuddySessionController {
 		this.onChange(true);
 
 		try {
+			entry.request.promptPreview = this.promptBuilder.formatPromptPreview(this.promptBuilder.buildSelectionPrompt(request));
+			this.saveSession();
+			this.onChange(false);
+
 			const response = await this.getAiResponseService().createSelectionResponse(request, {
 				signal: abortController.signal,
 			});
@@ -178,8 +185,6 @@ export class AiWritingBuddySessionController {
 		const recentEntries = this.sessionHistoryTrimmer.getRecentEntries(this.entries, {
 			excludeEntryId: replyToEntryId ?? undefined,
 		});
-		const noteContext = await this.getNoteContext(trimmedMessage);
-		const visibleMemory = await this.getVisibleMemory();
 
 		const entry: AiWritingBuddyChatEntry = {
 			id: crypto.randomUUID(),
@@ -189,8 +194,6 @@ export class AiWritingBuddySessionController {
 			createdAt: new Date().toISOString(),
 			replyToEntryId: replyToEntryId ?? undefined,
 			replyToSnippet,
-			usedMemory: this.createUsedMemory(visibleMemory),
-			usedContext: this.createUsedContext(noteContext),
 		};
 
 		this.entries.push(entry);
@@ -201,6 +204,17 @@ export class AiWritingBuddySessionController {
 		this.onChange(true);
 
 		try {
+			const [noteContext, visibleMemory] = await Promise.all([this.getNoteContext(trimmedMessage), this.getVisibleMemory()]);
+
+			if (this.wasEntryCancelled(entry.id)) {
+				return;
+			}
+
+			entry.usedMemory = this.createUsedMemory(visibleMemory);
+			entry.usedContext = this.createUsedContext(noteContext);
+			this.saveSession();
+			this.onChange(false);
+
 			const response = await this.getAiResponseService().createChatResponse({
 				message: trimmedMessage,
 				replyToEntry,

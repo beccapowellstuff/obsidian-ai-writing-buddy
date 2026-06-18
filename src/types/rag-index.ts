@@ -37,3 +37,22 @@ export type AiWritingBuddyRagSearchOptions = {
 	maxContextCharacters: number;
 	similarityThreshold: number;
 };
+
+export type AiWritingBuddyRagIndexStatusState = "idle" | "indexing" | "completed" | "failed";
+
+export type AiWritingBuddyRagIndexStatus = {
+	state: AiWritingBuddyRagIndexStatusState;
+	indexedFileCount: number;
+	totalMarkdownFileCount: number;
+	processedFileCount: number;
+	currentFilePath?: string;
+	lastIndexedAt?: number;
+	retrievalMode?: AiWritingBuddyContextRetrievalMode;
+	lastError?: string;
+};
+
+export type AiWritingBuddyRagFileIndexResult = {
+	file: AiWritingBuddyRagIndexedFile;
+	usedKeywordFallback: boolean;
+	errorMessage?: string;
+};

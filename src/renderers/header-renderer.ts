@@ -123,7 +123,7 @@ export class AiWritingBuddyHeaderRenderer {
 			text: INTERFACE_TEXT.header.contextOpenNotes,
 			value: "open-notes",
 		});
-		selectEl.value = options.contextScope === "indexed-notes" ? "open-notes" : options.contextScope;
+		selectEl.value = options.contextScope === "indexed-notes" ? "current-note" : options.contextScope;
 
 		const ragControlEl = actionsEl.createEl("label", {
 			cls: options.contextEnabled ? "ai-writing-buddy-context-control ai-writing-buddy-rag-control" : "ai-writing-buddy-context-control ai-writing-buddy-rag-control is-disabled",

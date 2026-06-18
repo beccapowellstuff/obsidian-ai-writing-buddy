@@ -1,21 +1,9 @@
-import { normalizePath } from "obsidian";
-import {
-	DEFAULT_AI_MEMORY_FILE_NAME,
-	MIN_AI_MEMORY_CLEANUP_WRITE_THRESHOLD,
-	MIN_AI_MEMORY_MAX_PROMPT_CHARACTERS,
-} from "../config/ai-memory";
-import type { AiWritingBuddySettings } from "../config/default-settings";
-import { DEFAULT_AI_WRITING_BUDDY_SETTINGS } from "../config/default-settings";
-import { DEFAULT_PROMPT_TEMPLATES } from "../config/default-prompt-templates";
 import type { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
 import type { AiWritingBuddyCurrentSessionData, AiWritingBuddyMemorySummary, AiWritingBuddyPluginData, AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
-import { normaliseAiMemoryFileName } from "../utils/normalise-ai-memory-file-name";
 
-type LegacyPluginData = Partial<AiWritingBuddySettings>;
-type SavedPluginData = Partial<AiWritingBuddyPluginData> | LegacyPluginData | null;
+type SavedPluginData = Partial<AiWritingBuddyPluginData> | null;
 
 type LoadedPluginData = {
-	settings: AiWritingBuddySettings;
 	currentSession: AiWritingBuddyCurrentSessionData;
 	savedSessions: AiWritingBuddyCurrentSessionData[];
 };
@@ -27,32 +15,25 @@ type SessionSwitchResult = {
 
 type RawMemorySummary = Partial<AiWritingBuddyMemorySummary> | undefined;
 
+const MAX_PERSISTED_SELECTED_TEXT_CHARACTERS = 40000;
+const MAX_PERSISTED_TEMPLATE_PROMPT_CHARACTERS = 20000;
+const MAX_PERSISTED_RESPONSE_TEXT_CHARACTERS = 80000;
+const TRUNCATED_TEXT_SUFFIX = "\n\n[Session text truncated for storage.]";
+
 export class AiWritingBuddyPluginDataService {
 	load(rawData: unknown): LoadedPluginData {
 		const savedData = rawData as SavedPluginData;
-		const savedSettings = this.getSavedSettings(savedData);
-		const mergedSettings = {
-			...DEFAULT_AI_WRITING_BUDDY_SETTINGS,
-			...(savedSettings ?? {}),
-			contextOptions: {
-				...DEFAULT_AI_WRITING_BUDDY_SETTINGS.contextOptions,
-				...(savedSettings?.contextOptions ?? {}),
-			},
-			promptTemplates: this.mergePromptTemplates(savedSettings?.promptTemplates ?? []),
-		};
 
 		return {
-			settings: this.normaliseSettings(mergedSettings),
 			currentSession: this.getSavedCurrentSession(savedData),
 			savedSessions: this.getSavedSessions(savedData),
 		};
 	}
 
-	createSaveData(settings: AiWritingBuddySettings, currentSession: AiWritingBuddyCurrentSessionData, savedSessions: AiWritingBuddyCurrentSessionData[]): AiWritingBuddyPluginData {
+	createSaveData(currentSession: AiWritingBuddyCurrentSessionData, savedSessions: AiWritingBuddyCurrentSessionData[]): AiWritingBuddyPluginData {
 		return {
-			settings,
-			currentSession,
-			savedSessions,
+			currentSession: this.compactSessionForStorage(currentSession),
+			savedSessions: savedSessions.map((session) => this.compactSessionForStorage(session)),
 		};
 	}
 
@@ -160,62 +141,12 @@ export class AiWritingBuddyPluginDataService {
 		return [sessionToArchive, ...savedSessions.filter((session) => session.id !== currentSession.id)];
 	}
 
-	private getSavedSettings(savedData: SavedPluginData): Partial<AiWritingBuddySettings> | null {
-		if (!savedData) {
-			return null;
-		}
-
-		if ("settings" in savedData && savedData.settings) {
-			return savedData.settings;
-		}
-
-		return savedData as LegacyPluginData;
-	}
-
-	private normaliseSettings(settings: AiWritingBuddySettings): AiWritingBuddySettings {
-		return {
-			...settings,
-			aiMemoryFolderPath: this.normaliseFolderPath(settings.aiMemoryFolderPath),
-			aiMemoryFileName: this.normaliseMemoryFileName(settings.aiMemoryFileName),
-			aiMemoryMaxPromptCharacters: this.getMinimumNumber(settings.aiMemoryMaxPromptCharacters, MIN_AI_MEMORY_MAX_PROMPT_CHARACTERS),
-			aiMemoryCleanupWriteThreshold: this.getMinimumNumber(settings.aiMemoryCleanupWriteThreshold, MIN_AI_MEMORY_CLEANUP_WRITE_THRESHOLD),
-		};
-	}
-
-	private normaliseFolderPath(folderPath: unknown): string {
-		if (typeof folderPath !== "string") {
-			return DEFAULT_AI_WRITING_BUDDY_SETTINGS.aiMemoryFolderPath;
-		}
-
-		return normalizePath(folderPath.trim()).replace(/^\/+|\/+$/g, "");
-	}
-
-	private normaliseMemoryFileName(fileName: unknown): string {
-		if (typeof fileName !== "string") {
-			return DEFAULT_AI_MEMORY_FILE_NAME;
-		}
-
-		return normaliseAiMemoryFileName(fileName);
-	}
-
-	private getMinimumNumber(value: unknown, minimum: number): number {
-		if (typeof value !== "number") {
-			return minimum;
-		}
-
-		if (!Number.isFinite(value)) {
-			return minimum;
-		}
-
-		return Math.max(minimum, Math.floor(value));
-	}
-
 	private getSavedCurrentSession(savedData: SavedPluginData): AiWritingBuddyCurrentSessionData {
 		if (!savedData || !("currentSession" in savedData) || !savedData.currentSession) {
 			return this.createEmptyCurrentSession();
 		}
 
-		return this.normaliseSession(savedData.currentSession);
+		return this.normaliseSessionData(savedData.currentSession);
 	}
 
 	private getSavedSessions(savedData: SavedPluginData): AiWritingBuddyCurrentSessionData[] {
@@ -223,10 +154,10 @@ export class AiWritingBuddyPluginDataService {
 			return [];
 		}
 
-		return savedData.savedSessions.map((session) => this.normaliseSession(session)).filter((session) => session.entryCount > 0 || session.entries.length > 0);
+		return savedData.savedSessions.map((session) => this.normaliseSessionData(session)).filter((session) => session.entryCount > 0 || session.entries.length > 0);
 	}
 
-	private normaliseSession(session: Partial<AiWritingBuddyCurrentSessionData>): AiWritingBuddyCurrentSessionData {
+	normaliseSessionData(session: Partial<AiWritingBuddyCurrentSessionData>): AiWritingBuddyCurrentSessionData {
 		const entries = Array.isArray(session.entries) ? session.entries : [];
 		const validEntries = entries.filter((entry): entry is AiWritingBuddyEntry => Boolean(entry && entry.id && entry.type && entry.response));
 		const fallbackSession = this.createEmptyCurrentSession();
@@ -240,6 +171,16 @@ export class AiWritingBuddyPluginDataService {
 			userTitle: typeof session.userTitle === "string" && session.userTitle.trim() ? session.userTitle : undefined,
 			memorySummary,
 			entries: validEntries,
+		};
+	}
+
+	compactSessionForStorage(session: AiWritingBuddyCurrentSessionData): AiWritingBuddyCurrentSessionData {
+		const entries = session.entries.map((entry) => this.compactEntry(entry));
+
+		return {
+			...session,
+			entryCount: entries.length,
+			entries,
 		};
 	}
 
@@ -261,24 +202,37 @@ export class AiWritingBuddyPluginDataService {
 		};
 	}
 
-	private mergePromptTemplates(savedTemplates: AiWritingBuddySettings["promptTemplates"]): AiWritingBuddySettings["promptTemplates"] {
-		const savedUserTemplates = savedTemplates.filter((template) => !template.isBuiltIn);
-		const savedBuiltInTemplates = savedTemplates.filter((template) => template.isBuiltIn);
+	private compactEntry(entry: AiWritingBuddyEntry): AiWritingBuddyEntry {
+		const response = {
+			...entry.response,
+			text: this.truncateText(entry.response.text, MAX_PERSISTED_RESPONSE_TEXT_CHARACTERS),
+			commentText: entry.response.commentText ? this.truncateText(entry.response.commentText, MAX_PERSISTED_RESPONSE_TEXT_CHARACTERS) : undefined,
+		};
 
-		const mergedBuiltInTemplates = DEFAULT_PROMPT_TEMPLATES.map((defaultTemplate) => {
-			const savedTemplate = savedBuiltInTemplates.find((template) => template.id === defaultTemplate.id);
-
+		if (entry.type === "chat") {
 			return {
-				...defaultTemplate,
-				...(savedTemplate ?? {}),
-				highlightChanges: defaultTemplate.highlightChanges,
-				temperature: defaultTemplate.temperature,
-				prompt: defaultTemplate.prompt,
-				returnsReplacementTextOnly: defaultTemplate.returnsReplacementTextOnly,
-				updatedAt: defaultTemplate.updatedAt,
+				...entry,
+				response,
 			};
-		});
+		}
 
-		return [...mergedBuiltInTemplates, ...savedUserTemplates];
+		return {
+			...entry,
+			request: {
+				...entry.request,
+				selectedText: this.truncateText(entry.request.selectedText, MAX_PERSISTED_SELECTED_TEXT_CHARACTERS),
+				templatePrompt: entry.request.templatePrompt ? this.truncateText(entry.request.templatePrompt, MAX_PERSISTED_TEMPLATE_PROMPT_CHARACTERS) : undefined,
+				promptPreview: undefined,
+			},
+			response,
+		};
+	}
+
+	private truncateText(text: string, maxCharacters: number): string {
+		if (text.length <= maxCharacters) {
+			return text;
+		}
+
+		return `${text.slice(0, maxCharacters)}${TRUNCATED_TEXT_SUFFIX}`;
 	}
 }

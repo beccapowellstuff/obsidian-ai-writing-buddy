@@ -52,7 +52,7 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 		this.renderSettingsActions(containerEl);
 
 		new ConnectionSettingsRenderer(this.plugin, this.draftSettings, this.availableModels, () => this.display()).render(containerEl);
-		new RagSettingsRenderer(this.plugin, this.draftSettings, this.availableEmbeddingModels, () => this.display()).render(containerEl);
+		new RagSettingsRenderer(this.plugin, this.draftSettings, this.availableEmbeddingModels, () => this.display(), () => this.saveDraftSettings(false, false)).render(containerEl);
 		new AiMemorySettingsRenderer(this.plugin, this.draftSettings, () => this.display(), () => this.saveDraftSettings(false, false)).render(containerEl);
 		new PromptSettingsRenderer(this.draftSettings, () => this.display()).render(containerEl);
 		this.templateSettingsRenderer.render(containerEl, () => this.display());

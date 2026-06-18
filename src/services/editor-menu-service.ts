@@ -1,5 +1,4 @@
 import { App, Editor, EditorPosition, EventRef, MarkdownView, Menu, MenuItem, Notice, Plugin } from "obsidian";
-import { AiWritingBuddyPromptBuilder } from "./prompt-builder";
 import { AiPromptModal, AiPromptModalSubmitValue } from "../modals/ai-prompt-modal";
 import { AiWritingBuddySettings } from "../config/default-settings";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
@@ -287,12 +286,6 @@ export class EditorMenuService {
 			temperature: template?.temperature,
 		};
 
-		const promptBuilder = new AiWritingBuddyPromptBuilder(this.plugin.settings);
-		const promptPreview = promptBuilder.formatPromptPreview(promptBuilder.buildSelectionPrompt(request));
-
-		aiWritingBuddyView.setRequest({
-			...request,
-			promptPreview,
-		});
+		aiWritingBuddyView.setRequest(request);
 	}
 }

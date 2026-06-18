@@ -1,19 +1,20 @@
 import { App, MarkdownView, Notice, TFile } from "obsidian";
 import { join } from "path";
 import type { AiWritingBuddySettings } from "../config/default-settings";
-import type { AiWritingBuddyChatNoteContext, AiWritingBuddyContextRetrievalMode, AiWritingBuddyContextScope, AiWritingBuddyNoteContext } from "../types/ai-writing-buddy-context";
-import type { AiWritingBuddyRagChunk, AiWritingBuddyRagIndexedFile, AiWritingBuddyRagSearchResult } from "../types/rag-index";
+import type { AiWritingBuddyChatNoteContext, AiWritingBuddyContextScope, AiWritingBuddyNoteContext } from "../types/ai-writing-buddy-context";
+import type { AiWritingBuddyRagIndexedFile, AiWritingBuddyRagSearchResult } from "../types/rag-index";
 import { EmbeddingService } from "./embedding-service";
-import { RagChunker } from "./rag-chunker";
+import { RagFileIndexer } from "./rag-file-indexer";
 import { RagIndexStore } from "./rag-index-store";
 
 const MAX_RETRIEVED_CHUNKS = 8;
+const MAX_SCOPED_CHUNKS_WHEN_INDEXED_RAG_INCLUDED = 4;
 const MAX_RETRIEVED_CONTEXT_CHARACTERS = 30000;
 const DEFAULT_SIMILARITY_THRESHOLD = 0.12;
 
 export class RagService {
-	private readonly chunker = new RagChunker();
 	private readonly store: RagIndexStore;
+	private readonly fileIndexer: RagFileIndexer;
 
 	constructor(
 		private readonly app: App,
@@ -21,6 +22,7 @@ export class RagService {
 		pluginRootPath: string,
 	) {
 		this.store = new RagIndexStore(join(pluginRootPath, "rag-index", "embeddings.db"));
+		this.fileIndexer = new RagFileIndexer(this.app, this.settings, this.store);
 	}
 
 	async getContext(scope: AiWritingBuddyContextScope, query: string, includeIndexedRag: boolean): Promise<AiWritingBuddyChatNoteContext | undefined> {
@@ -38,12 +40,19 @@ export class RagService {
 		let usedKeywordFallback = false;
 
 		for (const file of files) {
-			const result = await this.ensureFileIndexed(file);
+			new Notice(`Indexing ${file.basename} for context...`);
+			console.debug("AI Writing Buddy RAG indexing file", file.path);
 
-			indexingResults.push(result);
+			const result = await this.fileIndexer.ensureFileIndexed(file);
 
-			if (result.indexedFile.retrievalMode === "keyword") {
+			indexingResults.push({ file, indexedFile: result.file });
+
+			if (result.usedKeywordFallback) {
 				usedKeywordFallback = true;
+
+				if (result.errorMessage) {
+					new Notice(`Context is using keyword fallback for ${file.basename}.`);
+				}
 			}
 
 			await this.yieldToUi();
@@ -212,47 +221,6 @@ export class RagService {
 		}
 	}
 
-	private async ensureFileIndexed(file: TFile): Promise<{ file: TFile; indexedFile: AiWritingBuddyRagIndexedFile }> {
-		const content = await this.app.vault.cachedRead(file);
-		const fileHash = await this.hashText(content);
-		const indexedFile = await this.store.getIndexedFile(file.path);
-		const desiredMode: AiWritingBuddyContextRetrievalMode = this.createEmbeddingService().isConfigured() ? "embedding" : "keyword";
-
-		if (this.canReuseIndex(indexedFile, fileHash, desiredMode)) {
-			return { file, indexedFile };
-		}
-
-		new Notice(`Indexing ${file.basename} for context...`);
-		console.debug("AI Writing Buddy RAG indexing file", file.path);
-
-		if (desiredMode === "embedding") {
-			try {
-				const indexed = await this.indexFileWithEmbeddings(file, content, fileHash);
-				return { file, indexedFile: indexed };
-			} catch (error) {
-				console.warn("AI Writing Buddy embedding indexing failed; storing keyword chunks.", error);
-				new Notice(`Context is using keyword fallback for ${file.basename}.`);
-			}
-		}
-
-		const indexed = await this.indexFileWithKeywords(file, content, fileHash);
-		return { file, indexedFile: indexed };
-	}
-
-	private canReuseIndex(indexedFile: AiWritingBuddyRagIndexedFile | null, fileHash: string, desiredMode: AiWritingBuddyContextRetrievalMode): indexedFile is AiWritingBuddyRagIndexedFile {
-		if (!indexedFile || indexedFile.fileHash !== fileHash || indexedFile.retrievalMode !== desiredMode) {
-			return false;
-		}
-
-		if (desiredMode === "keyword") {
-			return true;
-		}
-
-		const embeddingModel = this.createEmbeddingService().getEmbeddingModel();
-
-		return indexedFile.embeddingModel === embeddingModel && typeof indexedFile.embeddingDimension === "number" && indexedFile.embeddingDimension > 0;
-	}
-
 	private async reindexFilesWithMismatchedEmbeddingDimensions(indexingResults: Array<{ file: TFile; indexedFile: AiWritingBuddyRagIndexedFile }>, queryEmbeddingDimension: number): Promise<void> {
 		for (const result of indexingResults) {
 			if (result.indexedFile.retrievalMode !== "embedding" || result.indexedFile.embeddingDimension === queryEmbeddingDimension) {
@@ -262,64 +230,9 @@ export class RagService {
 			new Notice(`Re-indexing ${result.file.basename} for embedding dimensions...`);
 			console.debug("AI Writing Buddy RAG embedding dimension changed; re-indexing file", result.file.path);
 
-			const content = await this.app.vault.cachedRead(result.file);
-			const fileHash = await this.hashText(content);
-
-			result.indexedFile = await this.indexFileWithEmbeddings(result.file, content, fileHash);
+			result.indexedFile = await this.fileIndexer.reindexFileWithEmbeddings(result.file);
 			await this.yieldToUi();
 		}
-	}
-
-	private async indexFileWithEmbeddings(file: TFile, content: string, fileHash: string): Promise<AiWritingBuddyRagIndexedFile> {
-		const chunkerChunks = this.chunker.chunk(file, content);
-		const embeddingService = this.createEmbeddingService();
-		const embeddingResult = await embeddingService.embedTexts(chunkerChunks.map((chunk) => chunk.text));
-		const now = Date.now();
-		const chunks: AiWritingBuddyRagChunk[] = chunkerChunks.map((chunk, index) => ({
-			...chunk,
-			fileHash,
-			embedding: embeddingResult.embeddings[index],
-			embeddingDimension: embeddingResult.dimension,
-			retrievalMode: "embedding",
-			updatedAt: now,
-		}));
-		const indexedFile: AiWritingBuddyRagIndexedFile = {
-			filePath: file.path,
-			fileTitle: file.basename,
-			fileHash,
-			embeddingModel: embeddingResult.model,
-			embeddingDimension: embeddingResult.dimension,
-			retrievalMode: "embedding",
-			chunkCount: chunks.length,
-			indexedAt: now,
-		};
-
-		await this.store.upsertFileIndex(indexedFile, chunks);
-
-		return indexedFile;
-	}
-
-	private async indexFileWithKeywords(file: TFile, content: string, fileHash: string): Promise<AiWritingBuddyRagIndexedFile> {
-		const chunkerChunks = this.chunker.chunk(file, content);
-		const now = Date.now();
-		const chunks: AiWritingBuddyRagChunk[] = chunkerChunks.map((chunk) => ({
-			...chunk,
-			fileHash,
-			retrievalMode: "keyword",
-			updatedAt: now,
-		}));
-		const indexedFile: AiWritingBuddyRagIndexedFile = {
-			filePath: file.path,
-			fileTitle: file.basename,
-			fileHash,
-			retrievalMode: "keyword",
-			chunkCount: chunks.length,
-			indexedAt: now,
-		};
-
-		await this.store.upsertFileIndex(indexedFile, chunks);
-
-		return indexedFile;
 	}
 
 	private createNoteContexts(searchResults: AiWritingBuddyRagSearchResult[], indexedFiles: AiWritingBuddyRagIndexedFile[]): AiWritingBuddyNoteContext[] {
@@ -425,18 +338,48 @@ export class RagService {
 		const seenChunkIds = new Set<string>();
 		let usedCharacters = 0;
 
-		for (const chunk of [...scopedSearchResults, ...indexedRagSearchResults]) {
+		const addChunk = (chunk: AiWritingBuddyRagSearchResult): boolean => {
 			if (selectedChunks.length >= MAX_RETRIEVED_CHUNKS || seenChunkIds.has(chunk.id)) {
-				continue;
+				return false;
 			}
 
 			if (usedCharacters + chunk.text.length > MAX_RETRIEVED_CONTEXT_CHARACTERS && selectedChunks.length > 0) {
-				continue;
+				return false;
 			}
 
 			selectedChunks.push(chunk);
 			seenChunkIds.add(chunk.id);
 			usedCharacters += chunk.text.length;
+
+			return true;
+		};
+
+		if (indexedRagSearchResults.length === 0) {
+			for (const chunk of scopedSearchResults) {
+				addChunk(chunk);
+			}
+
+			return selectedChunks;
+		}
+
+		let scopedChunkCount = 0;
+
+		for (const chunk of scopedSearchResults) {
+			if (scopedChunkCount >= MAX_SCOPED_CHUNKS_WHEN_INDEXED_RAG_INCLUDED) {
+				break;
+			}
+
+			if (addChunk(chunk)) {
+				scopedChunkCount += 1;
+			}
+		}
+
+		for (const chunk of indexedRagSearchResults) {
+			addChunk(chunk);
+		}
+
+		for (const chunk of scopedSearchResults) {
+			addChunk(chunk);
 		}
 
 		return selectedChunks;
@@ -444,14 +387,6 @@ export class RagService {
 
 	private createEmbeddingService(): EmbeddingService {
 		return new EmbeddingService(this.settings);
-	}
-
-	private async hashText(text: string): Promise<string> {
-		const data = new TextEncoder().encode(text);
-		const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-		const hashBytes = Array.from(new Uint8Array(hashBuffer));
-
-		return hashBytes.map((byte) => byte.toString(16).padStart(2, "0")).join("");
 	}
 
 	private async yieldToUi(): Promise<void> {

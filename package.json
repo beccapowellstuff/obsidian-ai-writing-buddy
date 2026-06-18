@@ -5,7 +5,7 @@
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
-		"check:deploy": "npm run lint && npm run build && npm run deploy",
+		"check:deploy": "npm run test && npm run lint && npm run build && npm run deploy",
 		"lint": "eslint .",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/deploy-to-vault.ps1",

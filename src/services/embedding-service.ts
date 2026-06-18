@@ -78,36 +78,52 @@ export class EmbeddingService {
 			headers.Authorization = `Bearer ${apiKey}`;
 		}
 
-		const response = await window.fetch(`${baseUrl}/embeddings`, {
-			method: "POST",
-			headers,
-			body: JSON.stringify({
-				model,
-				input: texts,
-			}),
-		});
+		const abortController = new AbortController();
+		const timeoutId = window.setTimeout(() => {
+			abortController.abort(new Error(`Embedding provider request timed out after ${this.settings.requestTimeoutMs}ms.`));
+		}, Math.max(1, this.settings.requestTimeoutMs));
 
-		if (response.status < 200 || response.status >= 300) {
-			throw new Error(`Embedding request failed with status ${response.status}.`);
+		try {
+			const response = await window.fetch(`${baseUrl}/embeddings`, {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					model,
+					input: texts,
+				}),
+				signal: abortController.signal,
+			});
+
+			if (response.status < 200 || response.status >= 300) {
+				throw new Error(`Embedding request failed with status ${response.status}. Make sure the embedding provider is running and the model is loaded.`);
+			}
+
+			const data = (await response.json()) as EmbeddingResponse;
+			const rows = data.data ?? [];
+			const embeddings = rows
+				.slice()
+				.sort((left, right) => (left.index ?? 0) - (right.index ?? 0))
+				.map((row) => row.embedding)
+				.filter((embedding): embedding is number[] => Array.isArray(embedding));
+
+			if (embeddings.length !== texts.length) {
+				throw new Error("Embedding provider returned an unexpected number of vectors.");
+			}
+
+			return embeddings;
+		} catch (error) {
+			if (abortController.signal.reason instanceof Error) {
+				throw abortController.signal.reason;
+			}
+
+			throw error;
+		} finally {
+			window.clearTimeout(timeoutId);
 		}
-
-		const data = (await response.json()) as EmbeddingResponse;
-		const rows = data.data ?? [];
-		const embeddings = rows
-			.slice()
-			.sort((left, right) => (left.index ?? 0) - (right.index ?? 0))
-			.map((row) => row.embedding)
-			.filter((embedding): embedding is number[] => Array.isArray(embedding));
-
-		if (embeddings.length !== texts.length) {
-			throw new Error("Embedding provider returned an unexpected number of vectors.");
-		}
-
-		return embeddings;
 	}
 
 	private getBaseUrl(): string {
-		return (this.settings.embeddingBaseUrl.trim() || this.settings.baseUrl.trim()).replace(/\/$/, "");
+		return this.settings.embeddingBaseUrl.trim().replace(/\/$/, "");
 	}
 
 	private getApiKey(): string {

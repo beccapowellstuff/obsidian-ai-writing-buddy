@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from "fs/promises";
 import { dirname } from "path";
 import type { AiWritingBuddyContextRetrievalMode } from "../types/ai-writing-buddy-context";
 import type { AiWritingBuddyRagChunk, AiWritingBuddyRagIndexedFile, AiWritingBuddyRagSearchOptions, AiWritingBuddyRagSearchResult } from "../types/rag-index";
+import { createRagKeywordSearchQuery, scoreKeywordChunk } from "./rag-keyword-search";
 
 type IndexedFileRow = {
 	file_path?: unknown;
@@ -33,6 +34,13 @@ type ChunkRow = {
 	total_chunk_count?: unknown;
 };
 
+type MetadataRow = {
+	key?: unknown;
+	value?: unknown;
+};
+
+const VAULT_INDEX_BUILT_AT_KEY = "vault_index_built_at";
+
 export class RagIndexStore {
 	private dbPromise: Promise<SqlJsDatabase> | null = null;
 
@@ -51,6 +59,78 @@ export class RagIndexStore {
 		const rows = this.selectRows<IndexedFileRow>(db, "SELECT * FROM indexed_files ORDER BY file_title ASC, file_path ASC");
 
 		return rows.map((row) => this.mapIndexedFile(row));
+	}
+
+	async listIndexedFilePaths(): Promise<string[]> {
+		const db = await this.getDatabase();
+		const rows = this.selectRows<Pick<IndexedFileRow, "file_path">>(db, "SELECT file_path FROM indexed_files ORDER BY file_path ASC");
+
+		return rows.map((row) => this.asString(row.file_path)).filter((filePath) => filePath.length > 0);
+	}
+
+	async countIndexedFiles(): Promise<number> {
+		const db = await this.getDatabase();
+		const rows = this.selectRows<{ count?: unknown }>(db, "SELECT COUNT(*) AS count FROM indexed_files");
+
+		return this.asNumber(rows[0]?.count) ?? 0;
+	}
+
+	async hasVaultIndexBeenBuilt(): Promise<boolean> {
+		const db = await this.getDatabase();
+		const rows = this.selectRows<MetadataRow>(db, "SELECT value FROM rag_metadata WHERE key = ?", [VAULT_INDEX_BUILT_AT_KEY]);
+		const builtAt = this.asMetadataNumber(rows[0]?.value);
+
+		return typeof builtAt === "number" && builtAt > 0;
+	}
+
+	async markVaultIndexBuilt(indexedAt: number): Promise<void> {
+		const db = await this.getDatabase();
+
+		db.run(
+			[
+				"INSERT INTO rag_metadata (key, value)",
+				"VALUES (?, ?)",
+				"ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+			].join(" "),
+			[VAULT_INDEX_BUILT_AT_KEY, indexedAt],
+		);
+
+		await this.saveDatabase(db);
+	}
+
+	async deleteFileIndex(filePath: string): Promise<void> {
+		const db = await this.getDatabase();
+
+		db.run("BEGIN TRANSACTION");
+
+		try {
+			db.run("DELETE FROM rag_chunks WHERE file_path = ?", [filePath]);
+			db.run("DELETE FROM indexed_files WHERE file_path = ?", [filePath]);
+			db.run("COMMIT");
+		} catch (error) {
+			db.run("ROLLBACK");
+			throw error;
+		}
+
+		await this.saveDatabase(db);
+	}
+
+	async clearIndex(): Promise<void> {
+		const db = await this.getDatabase();
+
+		db.run("BEGIN TRANSACTION");
+
+		try {
+			db.run("DELETE FROM rag_chunks");
+			db.run("DELETE FROM indexed_files");
+			db.run("DELETE FROM rag_metadata WHERE key = ?", [VAULT_INDEX_BUILT_AT_KEY]);
+			db.run("COMMIT");
+		} catch (error) {
+			db.run("ROLLBACK");
+			throw error;
+		}
+
+		await this.saveDatabase(db);
 	}
 
 	async upsertFileIndex(file: AiWritingBuddyRagIndexedFile, chunks: AiWritingBuddyRagChunk[]): Promise<void> {
@@ -123,11 +203,11 @@ export class RagIndexStore {
 
 	async searchKeywordChunks(query: string, scopeFilePaths: string[], options: AiWritingBuddyRagSearchOptions): Promise<AiWritingBuddyRagSearchResult[]> {
 		const candidateChunks = await this.getCandidateChunks(scopeFilePaths);
-		const queryTerms = this.tokenize(query);
+		const keywordQuery = createRagKeywordSearchQuery(query);
 		const scoredChunks = candidateChunks
 			.map((chunk) => ({
 				...chunk,
-				score: this.scoreKeywordChunk(chunk, queryTerms),
+				score: scoreKeywordChunk(chunk, keywordQuery),
 			}))
 			.sort((left, right) => {
 				if (right.score !== left.score) {
@@ -222,6 +302,12 @@ export class RagIndexStore {
 				embedding_dimension INTEGER,
 				retrieval_mode TEXT NOT NULL,
 				updated_at INTEGER NOT NULL
+			);
+		`);
+		db.run(`
+			CREATE TABLE IF NOT EXISTS rag_metadata (
+				key TEXT PRIMARY KEY,
+				value TEXT NOT NULL
 			);
 		`);
 		db.run("CREATE INDEX IF NOT EXISTS idx_rag_chunks_file_path ON rag_chunks(file_path);");
@@ -320,6 +406,20 @@ export class RagIndexStore {
 		return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 	}
 
+	private asMetadataNumber(value: unknown): number | undefined {
+		if (typeof value === "number" && Number.isFinite(value)) {
+			return value;
+		}
+
+		if (typeof value !== "string" || !value.trim()) {
+			return undefined;
+		}
+
+		const parsedValue = Number(value);
+
+		return Number.isFinite(parsedValue) ? parsedValue : undefined;
+	}
+
 	private asRetrievalMode(value: unknown): AiWritingBuddyContextRetrievalMode {
 		return value === "embedding" ? "embedding" : "keyword";
 	}
@@ -364,40 +464,4 @@ export class RagIndexStore {
 		return selectedChunks;
 	}
 
-	private scoreKeywordChunk(chunk: AiWritingBuddyRagChunk, queryTerms: string[]): number {
-		if (queryTerms.length === 0) {
-			return chunk.chunkIndex === 0 ? 1 : 0;
-		}
-
-		const contentTerms = this.tokenize(chunk.text);
-		const titleTerms = this.tokenize(chunk.fileTitle);
-		const pathTerms = this.tokenize(chunk.filePath);
-		const contentTermCounts = new Map<string, number>();
-		let score = 0;
-
-		for (const term of contentTerms) {
-			contentTermCounts.set(term, (contentTermCounts.get(term) ?? 0) + 1);
-		}
-
-		for (const term of queryTerms) {
-			score += Math.min(contentTermCounts.get(term) ?? 0, 6);
-
-			if (titleTerms.includes(term)) {
-				score += 5;
-			}
-
-			if (pathTerms.includes(term)) {
-				score += 2;
-			}
-		}
-
-		return score;
-	}
-
-	private tokenize(text: string): string[] {
-		const matches = text.toLowerCase().match(/[a-z0-9]{3,}/g) ?? [];
-		const stopWords = new Set(["the", "and", "for", "that", "this", "with", "from", "have", "what", "when", "where", "which", "about", "into", "your", "note", "notes"]);
-
-		return matches.filter((term) => !stopWords.has(term));
-	}
 }

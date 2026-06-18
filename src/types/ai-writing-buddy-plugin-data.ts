@@ -27,7 +27,7 @@ export type AiWritingBuddySessionListItem = {
 };
 
 export type AiWritingBuddyPluginData = {
-	settings: AiWritingBuddySettings;
 	currentSession: AiWritingBuddyCurrentSessionData;
 	savedSessions: AiWritingBuddyCurrentSessionData[];
+	settings?: AiWritingBuddySettings;
 };

@@ -73,7 +73,7 @@ Available context modes include:
 
 * **Current note**: indexes and searches the active Markdown note.
 * **Open notes**: indexes and searches open Markdown notes, ignoring non-Markdown tabs and de-duplicating files by path.
-* **Indexed notes**: searches notes that already exist in the local RAG index.
+* **Indexed notes**: searches notes that exist in the local RAG index. Use **Build note index** in **RAG context** settings to index all Markdown notes in the vault.
 
 Depending on the current UI settings, indexed RAG context may also be included alongside the selected note scope.
 
@@ -87,7 +87,7 @@ The runtime database path is:
 .obsidian/plugins/<manifest.id>/rag-index/embeddings.db
 ```
 
-The plugin does not ship with a prebuilt RAG database. The database is created on demand when RAG indexing/search is first used.
+The plugin does not ship with a prebuilt RAG database. The database is created on demand when RAG indexing/search is first used or when **Build note index** is selected in settings.
 
 The generated `rag-index/` folder is ignored by Git and should not be committed.
 
@@ -104,7 +104,7 @@ The database stores indexed file metadata and chunk records, including:
 * embedding model and vector dimension when embeddings are available
 * embedding vectors when semantic RAG is used
 
-If a note changes, the file hash changes, and the plugin replaces only that file’s index records rather than rebuilding everything.
+If a note changes, the file hash changes, and the plugin replaces only that file’s index records rather than rebuilding everything. After a whole-vault index has been built, Markdown note create, modify, delete, and rename events keep the local index fresh while the plugin is loaded.
 
 ### Semantic RAG and keyword fallback
 
@@ -292,6 +292,8 @@ To configure embeddings:
 
 If the embedding model is left blank, context can still use keyword fallback, but semantic retrieval will not be available.
 
+Use **Build note index** in the same settings section to index all Markdown notes in the vault. Use **Rebuild note index** after changing embedding provider/model settings if you want existing chunks recreated with the new embedding configuration. If the embedding provider is unavailable, asleep, or the model is not loaded, indexing falls back to keyword chunks and reports that fallback in the RAG status.
+
 ## Safe note editing
 
 AI Writing Buddy should never silently overwrite note content.
@@ -323,8 +325,7 @@ For context-aware chat, ordinary note context contains retrieved note excerpts r
 Known limitations include:
 
 * The plugin is still experimental and should be treated as a work in progress.
-* RAG currently searches indexed chunks, not a fully automatic always-on vault-wide index.
-* Indexed notes are limited to notes that have already been indexed through RAG use.
+* The whole-vault RAG index must be built explicitly from settings before it can cover all Markdown notes.
 * Very broad questions may still require careful testing because retrieval can miss relevant chunks if the question is vague.
 * Keyword fallback is useful, but it is not the same as semantic embedding search.
 * Visible AI Memory currently sends a capped beginning of the whole managed block rather than retrieving only relevant entries. See [issue #126](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues/126).

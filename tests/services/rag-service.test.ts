@@ -155,6 +155,7 @@ describe("RagService", () => {
 
 		vi.stubGlobal("window", {
 			fetch: vi.fn(),
+			clearTimeout: vi.fn(),
 			setTimeout: (callback: () => void) => {
 				callback();
 				return 0;
@@ -209,6 +210,71 @@ describe("RagService", () => {
 		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path, indexedFile.path]);
 		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith("what is the current note?", [currentFile.path], expect.any(Object));
 		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith("what is the current note?", [indexedFile.path], expect.any(Object));
+	});
+
+	it("keeps room for indexed RAG results when the RAG toggle is enabled", async () => {
+		const currentFile = createMarkdownFile("Stories/The Unfinished Oath.md");
+		const indexedFile = createMarkdownFile("- Story Ideas/- Visual Transformation Methods.md");
+		const app = createApp({
+			activeEditorFile: currentFile,
+		});
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const currentResults = Array.from({ length: 8 }, (_value, index) => ({
+			...createSearchResult(currentFile, 8 - index),
+			id: `${currentFile.path}::${index}`,
+			chunkIndex: index,
+		}));
+		const indexedResult = createSearchResult(indexedFile, 1);
+
+		ragStoreMocks.listIndexedFiles.mockResolvedValue([createIndexedFile(indexedFile)]);
+		ragStoreMocks.searchKeywordChunks.mockImplementation(async (_query: string, scopeFilePaths: string[]) => {
+			if (scopeFilePaths.includes(currentFile.path)) {
+				return currentResults;
+			}
+
+			if (scopeFilePaths.includes(indexedFile.path)) {
+				return [indexedResult];
+			}
+
+			return [];
+		});
+
+		const context = await service.getContext("current-note", "Digital Pixelation", true);
+		const currentNoteChunkCount = context?.notes.find((note) => note.path === currentFile.path)?.retrievedChunkCount ?? 0;
+
+		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path, indexedFile.path]);
+		expect(currentNoteChunkCount).toBeLessThan(8);
+		expect(context?.notes.find((note) => note.path === indexedFile.path)?.retrievedChunkCount).toBe(1);
+		expect(context).toMatchObject({
+			scope: "current-note",
+			includeIndexedRag: true,
+		});
+	});
+
+	it("searches all indexed files when indexed-notes is selected", async () => {
+		const currentFile = createMarkdownFile("Stories/The Unfinished Oath.md");
+		const indexedFile = createMarkdownFile("- Story Ideas/- Visual Transformation Methods.md");
+		const app = createApp({
+			activeEditorFile: currentFile,
+		});
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const indexedMetadata = createIndexedFile(indexedFile);
+		const indexedResult = createSearchResult(indexedFile, 10);
+
+		ragStoreMocks.listIndexedFiles.mockResolvedValue([indexedMetadata]);
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue([indexedResult]);
+
+		const context = await service.getContext("indexed-notes", "Digital Pixelation", false);
+
+		expect(app.vault.cachedRead).not.toHaveBeenCalled();
+		expect(context).toMatchObject({
+			scope: "indexed-notes",
+			retrievalMode: "keyword",
+			usedKeywordFallback: true,
+			includeIndexedRag: true,
+		});
+		expect(context?.notes.map((note) => note.path)).toEqual([indexedFile.path]);
+		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith("Digital Pixelation", [indexedFile.path], expect.any(Object));
 	});
 
 	it("reuses an unchanged keyword index without writing it again", async () => {

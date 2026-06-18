@@ -4,12 +4,16 @@ import type { AiWritingBuddySettings } from "./config/default-settings";
 import { INTERFACE_TEXT } from "./config/language/en-gb";
 import { PLUGIN_DISPLAY } from "./config/plugin-display";
 import { AiWritingBuddySettingTab } from "./settings/ai-writing-buddy-setting-tab";
+import { AiWritingBuddyConfigurationStore } from "./services/ai-writing-buddy-configuration-store";
 import { AiWritingBuddyPluginDataService } from "./services/ai-writing-buddy-plugin-data-service";
 import { createAiResponseService } from "./services/create-ai-response-service";
 import { AiWritingBuddyViewService } from "./services/view-service";
 import { EditorMenuService } from "./services/editor-menu-service";
 import { EmbeddingService } from "./services/embedding-service";
+import { RagIndexManager } from "./services/rag-index-manager";
+import { SessionHistoryStore } from "./services/session-history-store";
 import { AiWritingBuddyCurrentSessionData, AiWritingBuddySessionListItem } from "./types/ai-writing-buddy-plugin-data";
+import type { AiWritingBuddyRagIndexStatus } from "./types/rag-index";
 import { AI_WRITING_BUDDY_VIEW_TYPE, AiWritingBuddyView } from "./views/ai-writing-buddy-view";
 
 type OpenAiModelsResponse = {
@@ -21,14 +25,23 @@ type OpenAiModelsResponse = {
 export default class AiWritingBuddyPlugin extends Plugin {
 	private readonly pluginDataService = new AiWritingBuddyPluginDataService();
 	private aiWritingBuddyViewService!: AiWritingBuddyViewService;
+	private ragIndexManager!: RagIndexManager;
+	private configurationStore!: AiWritingBuddyConfigurationStore;
+	private sessionHistoryStore!: SessionHistoryStore;
 	settings!: AiWritingBuddySettings;
 	currentSession: AiWritingBuddyCurrentSessionData = this.pluginDataService.createEmptyCurrentSession();
-	savedSessions: AiWritingBuddyCurrentSessionData[] = [];
+	savedSessionListItems: AiWritingBuddySessionListItem[] = [];
 
 	async onload(): Promise<void> {
 		console.debug("AI Writing Buddy loaded");
 
+		const pluginRootPath = this.getPluginRootPath();
+
+		this.configurationStore = new AiWritingBuddyConfigurationStore(pluginRootPath);
+		this.sessionHistoryStore = new SessionHistoryStore(pluginRootPath, this.pluginDataService);
 		await this.loadSettings();
+		this.ragIndexManager = new RagIndexManager(this.app, this.settings, pluginRootPath);
+		await this.refreshRagIndexStatus();
 		this.addSettingTab(new AiWritingBuddySettingTab(this.app, this));
 
 		this.aiWritingBuddyViewService = new AiWritingBuddyViewService(this.app);
@@ -44,38 +57,42 @@ export default class AiWritingBuddyPlugin extends Plugin {
 					this.currentSession = this.pluginDataService.withUpdatedCurrentSessionEntries(this.currentSession, entries, memorySummary);
 					void this.savePluginData();
 				},
-				(sessionTitle) => {
-					const result = this.pluginDataService.startNewSession(this.currentSession, this.savedSessions, sessionTitle);
-					this.currentSession = result.currentSession;
-					this.savedSessions = result.savedSessions;
-					void this.savePluginData();
-				},
-				() => this.pluginDataService.getSessionListItems(this.savedSessions),
-				(sessionId) => {
-					const result = this.pluginDataService.restoreSavedSession(sessionId, this.currentSession, this.savedSessions);
+				async (sessionTitle) => {
+					const newSession = this.pluginDataService.createEmptyCurrentSession();
 
-					if (!result) {
+					await this.sessionHistoryStore.startNewSession(this.currentSession, newSession, sessionTitle);
+					this.currentSession = newSession;
+					this.savedSessionListItems = this.sessionHistoryStore.getSavedSessionListItems();
+				},
+				() => this.savedSessionListItems,
+				async (sessionId) => {
+					const restoredSession = await this.sessionHistoryStore.restoreSavedSession(sessionId, this.currentSession);
+
+					if (!restoredSession) {
 						return null;
 					}
 
-					this.currentSession = result.currentSession;
-					this.savedSessions = result.savedSessions;
-					void this.savePluginData();
+					this.currentSession = restoredSession;
+					this.savedSessionListItems = this.sessionHistoryStore.getSavedSessionListItems();
 
 					return this.currentSession;
 				},
-				(sessionId): AiWritingBuddySessionListItem[] => {
-					this.savedSessions = this.pluginDataService.deleteSavedSession(sessionId, this.savedSessions);
-					void this.savePluginData();
+				async (sessionId): Promise<AiWritingBuddySessionListItem[]> => {
+					await this.sessionHistoryStore.deleteSavedSession(sessionId);
+					this.savedSessionListItems = this.sessionHistoryStore.getSavedSessionListItems();
 
-					return this.pluginDataService.getSessionListItems(this.savedSessions);
+					return this.savedSessionListItems;
 				},
-				() => this.savedSessions,
-				(sessionId, title): AiWritingBuddyCurrentSessionData[] => {
-					this.savedSessions = this.pluginDataService.renameSavedSession(sessionId, title, this.savedSessions);
-					void this.savePluginData();
+				async (sessionId) => {
+					const result = await this.sessionHistoryStore.loadSession(sessionId);
 
-					return this.savedSessions;
+					return result.status === "loaded" ? result.session : null;
+				},
+				async (sessionId, title): Promise<AiWritingBuddySessionListItem[]> => {
+					await this.sessionHistoryStore.renameSavedSession(sessionId, title);
+					this.savedSessionListItems = this.sessionHistoryStore.getSavedSessionListItems();
+
+					return this.savedSessionListItems;
 				},
 				() => this.currentSession.userTitle,
 				() => (this.currentSession.entryCount > 0 || this.currentSession.entries.length > 0 ? this.currentSession : null),
@@ -92,7 +109,7 @@ export default class AiWritingBuddyPlugin extends Plugin {
 					return this.currentSession;
 				},
 				() => this.saveSettings(),
-				this.getPluginRootPath(),
+				pluginRootPath,
 			);
 		});
 
@@ -103,26 +120,28 @@ export default class AiWritingBuddyPlugin extends Plugin {
 		const editorMenuService = new EditorMenuService(this, this.aiWritingBuddyViewService);
 
 		editorMenuService.register();
+		this.registerRagIndexEvents();
 	}
 
 	onunload(): void {
+		this.ragIndexManager.dispose();
 		console.debug("AI Writing Buddy unloaded");
 	}
 
 	async loadSettings(): Promise<void> {
-		const loadedData = this.pluginDataService.load(await this.loadData());
+		this.settings = await this.configurationStore.loadSettings();
+		const loadedHistory = await this.sessionHistoryStore.load();
 
-		this.settings = loadedData.settings;
-		this.currentSession = loadedData.currentSession;
-		this.savedSessions = loadedData.savedSessions;
+		this.currentSession = loadedHistory.currentSession;
+		this.savedSessionListItems = loadedHistory.savedSessions;
 	}
 
 	async saveSettings(): Promise<void> {
-		await this.savePluginData();
+		await this.configurationStore.saveSettings(this.settings);
 	}
 
 	private async savePluginData(): Promise<void> {
-		await this.saveData(this.pluginDataService.createSaveData(this.settings, this.currentSession, this.savedSessions));
+		await this.sessionHistoryStore.saveCurrentSession(this.currentSession);
 	}
 
 	async listAvailableModels(settings: AiWritingBuddySettings = this.settings): Promise<string[]> {
@@ -134,7 +153,7 @@ export default class AiWritingBuddyPlugin extends Plugin {
 	}
 
 	async listAvailableEmbeddingModels(settings: AiWritingBuddySettings = this.settings): Promise<string[]> {
-		return this.listModelsFromProvider(settings.embeddingBaseUrl.trim() || settings.baseUrl, settings.embeddingApiKey.trim() || settings.apiKey);
+		return this.listModelsFromProvider(settings.embeddingBaseUrl, settings.embeddingApiKey.trim() || settings.apiKey);
 	}
 
 	private async listModelsFromProvider(baseUrlSetting: string, apiKeySetting: string): Promise<string[]> {
@@ -195,6 +214,23 @@ export default class AiWritingBuddyPlugin extends Plugin {
 		return new EmbeddingService(settings).testConnection();
 	}
 
+	getRagIndexStatusSnapshot(): AiWritingBuddyRagIndexStatus {
+		return this.ragIndexManager.getStatusSnapshot();
+	}
+
+	async buildOrRebuildRagIndex(rebuild: boolean): Promise<void> {
+		if (rebuild) {
+			await this.ragIndexManager.rebuildIndex();
+			return;
+		}
+
+		await this.ragIndexManager.buildIndex();
+	}
+
+	async clearRagIndex(): Promise<void> {
+		await this.ragIndexManager.clearIndex();
+	}
+
 	getPluginRootPath(): string {
 		const adapter = this.app.vault.adapter;
 
@@ -203,5 +239,28 @@ export default class AiWritingBuddyPlugin extends Plugin {
 		}
 
 		return join(adapter.getBasePath(), this.app.vault.configDir, "plugins", this.manifest.id);
+	}
+
+	private registerRagIndexEvents(): void {
+		this.registerEvent(this.app.vault.on("create", (file) => {
+			this.ragIndexManager.handleVaultFileCreatedOrModified(file);
+		}));
+		this.registerEvent(this.app.vault.on("modify", (file) => {
+			this.ragIndexManager.handleVaultFileCreatedOrModified(file);
+		}));
+		this.registerEvent(this.app.vault.on("delete", (file) => {
+			this.ragIndexManager.handleVaultFileDeleted(file);
+		}));
+		this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
+			this.ragIndexManager.handleVaultFileRenamed(file, oldPath);
+		}));
+	}
+
+	private async refreshRagIndexStatus(): Promise<void> {
+		try {
+			await this.ragIndexManager.getStatus();
+		} catch (error) {
+			console.warn("AI Writing Buddy RAG index status refresh failed", error);
+		}
 	}
 }

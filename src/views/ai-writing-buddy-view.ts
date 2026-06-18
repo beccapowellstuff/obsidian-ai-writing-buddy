@@ -24,13 +24,13 @@ import type { AiWritingBuddyVisibleMemoryContext } from "../types/ai-writing-bud
 export const AI_WRITING_BUDDY_VIEW_TYPE = "ai-writing-buddy-view";
 
 type SessionSaveHandler = (entries: AiWritingBuddyEntry[], memorySummary?: AiWritingBuddyMemorySummary) => void;
-type NewSessionHandler = (sessionTitle?: string) => void;
+type NewSessionHandler = (sessionTitle?: string) => Promise<void>;
 type SessionListProvider = () => AiWritingBuddySessionListItem[];
-type RestoreSessionHandler = (sessionId: string) => AiWritingBuddyCurrentSessionData | null;
-type DeleteSavedSessionHandler = (sessionId: string) => AiWritingBuddySessionListItem[];
-type SavedSessionsProvider = () => AiWritingBuddyCurrentSessionData[];
+type RestoreSessionHandler = (sessionId: string) => Promise<AiWritingBuddyCurrentSessionData | null>;
+type DeleteSavedSessionHandler = (sessionId: string) => Promise<AiWritingBuddySessionListItem[]>;
+type SavedSessionProvider = (sessionId: string) => Promise<AiWritingBuddyCurrentSessionData | null>;
 type CurrentSessionTitleProvider = () => string | undefined;
-type RenameSavedSessionHandler = (sessionId: string, title: string) => AiWritingBuddyCurrentSessionData[];
+type RenameSavedSessionHandler = (sessionId: string, title: string) => Promise<AiWritingBuddySessionListItem[]>;
 type CurrentSessionProvider = () => AiWritingBuddyCurrentSessionData | null;
 type RenameCurrentSessionHandler = (title: string) => AiWritingBuddyCurrentSessionData;
 type DeleteCurrentSessionHandler = () => AiWritingBuddyCurrentSessionData;
@@ -59,7 +59,7 @@ export class AiWritingBuddyView extends ItemView {
 		private readonly getSessionListItems: SessionListProvider,
 		private readonly onRestoreSession: RestoreSessionHandler,
 		private readonly onDeleteSavedSession: DeleteSavedSessionHandler,
-		private readonly onGetSavedSessions: SavedSessionsProvider,
+		private readonly onGetSavedSession: SavedSessionProvider,
 		private readonly onRenameSavedSession: RenameSavedSessionHandler,
 		private readonly getCurrentSessionTitle: CurrentSessionTitleProvider,
 		private readonly onGetCurrentSession: CurrentSessionProvider,
@@ -198,7 +198,7 @@ export class AiWritingBuddyView extends ItemView {
 				this.startNewSession();
 			},
 			onRestoreSession: (sessionId) => {
-				this.restoreSession(sessionId);
+				void this.restoreSession(sessionId);
 			},
 			onManageSavedSessions: () => {
 				this.manageSavedSessions();
@@ -255,12 +255,12 @@ export class AiWritingBuddyView extends ItemView {
 
 	private startNewSession(): void {
 		if (!this.sessionController.hasEntries()) {
-			this.sessionController.startNewSession();
+			void this.sessionController.startNewSession();
 			return;
 		}
 
 		new ConfirmNewSessionModal(this.app, this.getDefaultSessionTitle(), (sessionTitle) => {
-			this.sessionController.startNewSession(sessionTitle);
+			void this.sessionController.startNewSession(sessionTitle);
 		}).open();
 	}
 
@@ -274,8 +274,8 @@ export class AiWritingBuddyView extends ItemView {
 		return new Date().toLocaleString();
 	}
 
-	private restoreSession(sessionId: string): void {
-		const restoredSession = this.onRestoreSession(sessionId);
+	private async restoreSession(sessionId: string): Promise<void> {
+		const restoredSession = await this.onRestoreSession(sessionId);
 
 		if (!restoredSession) {
 			return;
@@ -287,19 +287,20 @@ export class AiWritingBuddyView extends ItemView {
 	private manageSavedSessions(): void {
 		new SavedSessionsModal(this.app, {
 			currentSession: this.onGetCurrentSession(),
-			savedSessions: this.onGetSavedSessions(),
-			onOpenSession: (sessionId) => {
-				this.restoreSession(sessionId);
+			savedSessions: this.getSessionListItems(),
+			onOpenSession: async (sessionId) => {
+				await this.restoreSession(sessionId);
 				this.render();
 			},
-			onDeleteSavedSession: (sessionId) => {
-				this.onDeleteSavedSession(sessionId);
+			onDeleteSavedSession: async (sessionId) => {
+				await this.onDeleteSavedSession(sessionId);
 				this.render();
 
-				return this.onGetSavedSessions();
+				return this.getSessionListItems();
 			},
-			onRenameSavedSession: (sessionId, title) => {
-				const savedSessions = this.onRenameSavedSession(sessionId, title);
+			onLoadSavedSession: (sessionId) => this.onGetSavedSession(sessionId),
+			onRenameSavedSession: async (sessionId, title) => {
+				const savedSessions = await this.onRenameSavedSession(sessionId, title);
 				this.render();
 
 				return savedSessions;

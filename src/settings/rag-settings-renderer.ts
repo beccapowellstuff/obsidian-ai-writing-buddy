@@ -2,6 +2,7 @@ import { Notice, Setting } from "obsidian";
 import type { AiWritingBuddySettings } from "../config/default-settings";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type AiWritingBuddyPlugin from "../main";
+import type { AiWritingBuddyRagIndexStatus } from "../types/rag-index";
 import { runSettingsButtonTask } from "./run-settings-button-task";
 
 export class RagSettingsRenderer {
@@ -10,16 +11,18 @@ export class RagSettingsRenderer {
 		private readonly settings: AiWritingBuddySettings,
 		private readonly availableEmbeddingModels: string[],
 		private readonly refresh: () => void,
+		private readonly saveDraftSettings: () => Promise<void>,
 	) {}
 
 	render(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName(INTERFACE_TEXT.settings.rag.heading).setHeading();
+		this.renderNoteIndexSetting(containerEl);
 
 		new Setting(containerEl)
 			.setName(INTERFACE_TEXT.settings.rag.embeddingServerAddress)
 			.setDesc(INTERFACE_TEXT.settings.rag.embeddingServerAddressDescription)
 			.addText((text) => {
-				text.setPlaceholder(this.settings.baseUrl || INTERFACE_TEXT.settings.connection.serverAddress)
+				text.setPlaceholder(INTERFACE_TEXT.settings.connection.serverAddress)
 					.setValue(this.settings.embeddingBaseUrl)
 					.onChange((value) => {
 						this.settings.embeddingBaseUrl = value.trim();
@@ -64,6 +67,77 @@ export class RagSettingsRenderer {
 					}
 				});
 			});
+	}
+
+	private renderNoteIndexSetting(containerEl: HTMLElement): void {
+		const status = this.plugin.getRagIndexStatusSnapshot();
+		const statusEl = containerEl.createEl("p", {
+			cls: "setting-item-description",
+			text: this.formatIndexStatus(status),
+		});
+
+		new Setting(containerEl)
+			.setName(INTERFACE_TEXT.settings.rag.noteIndex)
+			.setDesc(INTERFACE_TEXT.settings.rag.noteIndexDescription)
+			.addButton((button) => {
+				button.setButtonText(status.indexedFileCount > 0 ? INTERFACE_TEXT.settings.rag.rebuildNoteIndex : INTERFACE_TEXT.settings.rag.buildNoteIndex).onClick(async () => {
+					await this.runIndexTask(button, status.indexedFileCount > 0 ? INTERFACE_TEXT.settings.rag.rebuildIndexSucceeded : INTERFACE_TEXT.settings.rag.buildIndexSucceeded, async () => {
+						await this.plugin.buildOrRebuildRagIndex(status.indexedFileCount > 0);
+					});
+				});
+			})
+			.addButton((button) => {
+				button.setButtonText(INTERFACE_TEXT.settings.rag.clearNoteIndex).onClick(async () => {
+					await this.runIndexTask(button, INTERFACE_TEXT.settings.rag.clearIndexSucceeded, async () => {
+						await this.plugin.clearRagIndex();
+					});
+				});
+			});
+
+		if (status.lastError) {
+			statusEl.createEl("br");
+			statusEl.createSpan({
+				text: status.lastError,
+			});
+		}
+	}
+
+	private async runIndexTask(button: { setButtonText(text: string): unknown; setDisabled(disabled: boolean): unknown }, successMessage: string, run: () => Promise<void>): Promise<void> {
+		button.setDisabled(true);
+		button.setButtonText(INTERFACE_TEXT.settings.rag.indexing);
+
+		try {
+			await this.saveDraftSettings();
+			await run();
+			new Notice(successMessage);
+			this.refresh();
+		} catch (error) {
+			console.error("AI Writing Buddy RAG index action failed", error);
+
+			const message = error instanceof Error ? error.message : "Unknown RAG indexing error.";
+			new Notice(INTERFACE_TEXT.settings.rag.indexStatusFailed(message));
+			this.refresh();
+		} finally {
+			button.setDisabled(false);
+		}
+	}
+
+	private formatIndexStatus(status: AiWritingBuddyRagIndexStatus): string {
+		if (status.state === "indexing") {
+			return INTERFACE_TEXT.settings.rag.indexStatusProgress(status.processedFileCount, status.totalMarkdownFileCount, status.currentFilePath ?? "");
+		}
+
+		if (status.state === "failed" && status.lastError) {
+			return INTERFACE_TEXT.settings.rag.indexStatusFailed(status.lastError);
+		}
+
+		if (status.indexedFileCount === 0) {
+			return INTERFACE_TEXT.settings.rag.indexStatusIdle;
+		}
+
+		const lastIndexedAt = status.lastIndexedAt ? new Date(status.lastIndexedAt).toLocaleString() : "Unknown";
+
+		return INTERFACE_TEXT.settings.rag.indexStatusComplete(status.indexedFileCount, status.totalMarkdownFileCount, status.retrievalMode ?? "unknown", lastIndexedAt);
 	}
 
 	private renderEmbeddingModelSetting(containerEl: HTMLElement): void {
