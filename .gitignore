@@ -25,3 +25,6 @@ rag-index/
 
 # Test coverage
 coverage/
+
+# Personal Notes for Development
+.DevNotes/
