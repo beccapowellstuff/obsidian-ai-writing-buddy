@@ -1,5 +1,4 @@
 import { App, MarkdownView, Notice, TFile } from "obsidian";
-import { join } from "path";
 import type { AiWritingBuddySettings } from "../config/default-settings";
 import type { AiWritingBuddyChatNoteContext, AiWritingBuddyContextScope, AiWritingBuddyNoteContext } from "../types/ai-writing-buddy-context";
 import type { AiWritingBuddyRagIndexedFile, AiWritingBuddyRagSearchResult } from "../types/rag-index";
@@ -13,15 +12,13 @@ const MAX_RETRIEVED_CONTEXT_CHARACTERS = 30000;
 const DEFAULT_SIMILARITY_THRESHOLD = 0.12;
 
 export class RagService {
-	private readonly store: RagIndexStore;
 	private readonly fileIndexer: RagFileIndexer;
 
 	constructor(
 		private readonly app: App,
 		private readonly settings: AiWritingBuddySettings,
-		pluginRootPath: string,
+		private readonly store: RagIndexStore,
 	) {
-		this.store = new RagIndexStore(join(pluginRootPath, "rag-index", "embeddings.db"));
 		this.fileIndexer = new RagFileIndexer(this.app, this.settings, this.store);
 	}
 

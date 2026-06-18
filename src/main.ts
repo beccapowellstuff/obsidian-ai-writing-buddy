@@ -11,6 +11,7 @@ import { AiWritingBuddyViewService } from "./services/view-service";
 import { EditorMenuService } from "./services/editor-menu-service";
 import { EmbeddingService } from "./services/embedding-service";
 import { RagIndexManager } from "./services/rag-index-manager";
+import { RagIndexStore } from "./services/rag-index-store";
 import { SessionHistoryStore } from "./services/session-history-store";
 import { AiWritingBuddyCurrentSessionData, AiWritingBuddySessionListItem } from "./types/ai-writing-buddy-plugin-data";
 import type { AiWritingBuddyRagIndexStatus } from "./types/rag-index";
@@ -25,6 +26,7 @@ type OpenAiModelsResponse = {
 export default class AiWritingBuddyPlugin extends Plugin {
 	private readonly pluginDataService = new AiWritingBuddyPluginDataService();
 	private aiWritingBuddyViewService!: AiWritingBuddyViewService;
+	private ragIndexStore!: RagIndexStore;
 	private ragIndexManager!: RagIndexManager;
 	private configurationStore!: AiWritingBuddyConfigurationStore;
 	private sessionHistoryStore!: SessionHistoryStore;
@@ -40,7 +42,8 @@ export default class AiWritingBuddyPlugin extends Plugin {
 		this.configurationStore = new AiWritingBuddyConfigurationStore(pluginRootPath);
 		this.sessionHistoryStore = new SessionHistoryStore(pluginRootPath, this.pluginDataService);
 		await this.loadSettings();
-		this.ragIndexManager = new RagIndexManager(this.app, this.settings, pluginRootPath);
+		this.ragIndexStore = new RagIndexStore(join(pluginRootPath, "rag-index", "embeddings.db"));
+		this.ragIndexManager = new RagIndexManager(this.app, this.settings, this.ragIndexStore);
 		await this.refreshRagIndexStatus();
 		this.addSettingTab(new AiWritingBuddySettingTab(this.app, this));
 
@@ -115,7 +118,7 @@ export default class AiWritingBuddyPlugin extends Plugin {
 					return this.currentSession;
 				},
 				() => this.saveSettings(),
-				pluginRootPath,
+				this.ragIndexStore,
 			);
 		});
 

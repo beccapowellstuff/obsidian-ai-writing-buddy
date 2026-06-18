@@ -1,5 +1,4 @@
 import { Notice, TFile, type App, type TAbstractFile } from "obsidian";
-import { join } from "path";
 import type { AiWritingBuddySettings } from "../config/default-settings";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type { AiWritingBuddyContextRetrievalMode } from "../types/ai-writing-buddy-context";
@@ -10,7 +9,6 @@ import { RagIndexStore } from "./rag-index-store";
 const FILE_UPDATE_DEBOUNCE_MS = 30000;
 
 export class RagIndexManager {
-	private readonly store: RagIndexStore;
 	private readonly pendingUpdateTimers = new Map<string, number>();
 	private readonly pendingIdleCallbacks = new Map<string, number>();
 	private vaultIndexBuiltThisSession = false;
@@ -24,10 +22,8 @@ export class RagIndexManager {
 	constructor(
 		private readonly app: App,
 		private readonly settings: AiWritingBuddySettings,
-		pluginRootPath: string,
-	) {
-		this.store = new RagIndexStore(join(pluginRootPath, "rag-index", "embeddings.db"));
-	}
+		private readonly store: RagIndexStore,
+	) {}
 
 	async getStatus(): Promise<AiWritingBuddyRagIndexStatus> {
 		await this.refreshVaultIndexActivation();

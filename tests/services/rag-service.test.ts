@@ -70,6 +70,7 @@ vi.mock("../../src/services/rag-index-store", () => ({
 
 import { TFile, type App } from "obsidian";
 import { DEFAULT_AI_WRITING_BUDDY_SETTINGS } from "../../src/config/default-settings";
+import { RagIndexStore } from "../../src/services/rag-index-store";
 import { RagService } from "../../src/services/rag-service";
 import type { AiWritingBuddyRagIndexedFile, AiWritingBuddyRagSearchResult } from "../../src/types/rag-index";
 
@@ -145,6 +146,10 @@ function createSearchResult(file: TFile, score: number): AiWritingBuddyRagSearch
 	};
 }
 
+function createRagIndexStore(): RagIndexStore {
+	return new RagIndexStore(".");
+}
+
 describe("RagService", () => {
 	beforeEach(() => {
 		ragStoreMocks.getIndexedFile.mockResolvedValue(null);
@@ -170,7 +175,7 @@ describe("RagService", () => {
 			activeEditorFile: currentFile,
 			activeFile: staleActiveFile,
 		});
-		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 
 		ragStoreMocks.searchKeywordChunks.mockResolvedValue([createSearchResult(currentFile, 1)]);
 
@@ -187,7 +192,7 @@ describe("RagService", () => {
 			activeEditorFile: currentFile,
 			activeFile: indexedFile,
 		});
-		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 		const otherIndexedFile = createIndexedFile(indexedFile);
 		const currentResult = createSearchResult(currentFile, 0);
 		const indexedResult = createSearchResult(indexedFile, 10);
@@ -218,7 +223,7 @@ describe("RagService", () => {
 		const app = createApp({
 			activeEditorFile: currentFile,
 		});
-		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 		const currentResults = Array.from({ length: 8 }, (_value, index) => ({
 			...createSearchResult(currentFile, 8 - index),
 			id: `${currentFile.path}::${index}`,
@@ -257,7 +262,7 @@ describe("RagService", () => {
 		const app = createApp({
 			activeEditorFile: currentFile,
 		});
-		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 		const indexedMetadata = createIndexedFile(indexedFile);
 		const indexedResult = createSearchResult(indexedFile, 10);
 
@@ -282,7 +287,7 @@ describe("RagService", () => {
 		const app = createApp({
 			activeEditorFile: currentFile,
 		});
-		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 
 		const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("Current note body"));
 		const fileHash = Array.from(new Uint8Array(hashBuffer))
@@ -307,7 +312,7 @@ describe("RagService", () => {
 		const app = createApp({
 			activeEditorFile: currentFile,
 		});
-		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 
 		ragStoreMocks.getIndexedFile.mockResolvedValue({
 			...createIndexedFile(currentFile),
@@ -339,7 +344,7 @@ describe("RagService", () => {
 			embeddingBaseUrl: "http://localhost:1234/v1",
 			embeddingModelName: "text-embedding-test",
 		};
-		const service = new RagService(app as unknown as App, settings, ".");
+		const service = new RagService(app as unknown as App, settings, createRagIndexStore());
 		const embedding = [0.1, 0.2, 0.3];
 		const embeddingSearchResult = {
 			...createSearchResult(currentFile, 0.9),
@@ -382,7 +387,7 @@ describe("RagService", () => {
 		const app = createApp({
 			activeEditorFile: currentFile,
 		});
-		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 
 		ragStoreMocks.searchKeywordChunks.mockResolvedValue([createSearchResult(currentFile, 1)]);
 

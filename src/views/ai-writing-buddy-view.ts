@@ -10,6 +10,7 @@ import { AiWritingBuddyHeaderRenderer } from "../renderers/header-renderer";
 import type { AiResponseService } from "../services/ai-response-service";
 import { ClipboardService } from "../services/clipboard-service";
 import { RagService } from "../services/rag-service";
+import type { RagIndexStore } from "../services/rag-index-store";
 import { AiMemoryService } from "../services/ai-memory-service";
 import { SelectionEditService } from "../services/selection-edit-service";
 import { AiVisibleMemoryUpdateService } from "../services/visible-memory-update-service";
@@ -66,13 +67,13 @@ export class AiWritingBuddyView extends ItemView {
 		private readonly onRenameCurrentSession: RenameCurrentSessionHandler,
 		private readonly onDeleteCurrentSession: DeleteCurrentSessionHandler,
 		private readonly onSaveSettings: SettingsSaveHandler,
-		pluginRootPath: string,
+		ragIndexStore: RagIndexStore,
 	) {
 		super(leaf);
 
 		this.clipboardService = new ClipboardService();
 		this.selectionEditService = new SelectionEditService(this.app);
-		this.ragService = new RagService(this.app, this.settings, pluginRootPath);
+		this.ragService = new RagService(this.app, this.settings, ragIndexStore);
 		this.aiMemoryService = new AiMemoryService(this.app);
 		this.visibleMemoryUpdateService = new AiVisibleMemoryUpdateService(
 			this.aiMemoryService,

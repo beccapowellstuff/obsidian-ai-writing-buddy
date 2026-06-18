@@ -77,6 +77,7 @@ vi.mock("../../src/services/rag-index-store", () => ({
 import { TFile, type App } from "obsidian";
 import { DEFAULT_AI_WRITING_BUDDY_SETTINGS } from "../../src/config/default-settings";
 import { RagIndexManager } from "../../src/services/rag-index-manager";
+import { RagIndexStore } from "../../src/services/rag-index-store";
 
 type MockApp = {
 	vault: {
@@ -110,6 +111,10 @@ function createApp(files: TFile[]): MockApp {
 	};
 }
 
+function createRagIndexStore(): RagIndexStore {
+	return new RagIndexStore(".");
+}
+
 describe("RagIndexManager", () => {
 	beforeEach(() => {
 		ragStoreMocks.clearIndex.mockResolvedValue(undefined);
@@ -137,7 +142,7 @@ describe("RagIndexManager", () => {
 	it("builds a vault index from markdown files", async () => {
 		const files = [createFile("Stories/One.md"), createFile("Stories/Two.md")];
 		const app = createApp(files);
-		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 
 		ragStoreMocks.countIndexedFiles.mockResolvedValue(files.length);
 
@@ -158,7 +163,7 @@ describe("RagIndexManager", () => {
 	it("reuses unchanged indexed files without rewriting them", async () => {
 		const file = createFile("Stories/One.md");
 		const app = createApp([file]);
-		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 		const content = "One body";
 		const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content));
 		const fileHash = Array.from(new Uint8Array(hashBuffer))
@@ -183,7 +188,7 @@ describe("RagIndexManager", () => {
 	it("updates modified markdown files only after a vault index has been built", async () => {
 		const file = createFile("Stories/One.md");
 		const app = createApp([file]);
-		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 
 		manager.handleVaultFileCreatedOrModified(file);
 		expect(ragStoreMocks.upsertFileIndex).not.toHaveBeenCalled();
@@ -200,7 +205,7 @@ describe("RagIndexManager", () => {
 	it("updates modified markdown files after restart when a vault index exists", async () => {
 		const file = createFile("Stories/One.md");
 		const app = createApp([file]);
-		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 
 		ragStoreMocks.hasVaultIndexBeenBuilt.mockResolvedValue(true);
 		await manager.getStatus();
@@ -214,7 +219,7 @@ describe("RagIndexManager", () => {
 	it("removes stale records when a markdown file is deleted", async () => {
 		const file = createFile("Stories/One.md");
 		const app = createApp([file]);
-		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, ".");
+		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
 
 		await manager.buildIndex();
 		manager.handleVaultFileDeleted(file);
@@ -229,7 +234,7 @@ describe("RagIndexManager", () => {
 			...DEFAULT_AI_WRITING_BUDDY_SETTINGS,
 			embeddingBaseUrl: "http://localhost:1234/v1",
 			embeddingModelName: "text-embedding-test",
-		}, ".");
+		}, createRagIndexStore());
 		const fetchMock = window.fetch as Mock;
 
 		fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
