@@ -100,13 +100,17 @@ export default class AiWritingBuddyPlugin extends Plugin {
 				() => (this.currentSession.entryCount > 0 || this.currentSession.entries.length > 0 ? this.currentSession : null),
 				(title: string): AiWritingBuddyCurrentSessionData => {
 					this.currentSession = this.pluginDataService.renameCurrentSession(title, this.currentSession);
-					void this.savePluginData();
+					void this.savePluginData().catch((error: unknown) => {
+						console.error("AI Writing Buddy session save failed", error);
+					});
 
 					return this.currentSession;
 				},
 				(): AiWritingBuddyCurrentSessionData => {
 					this.currentSession = this.pluginDataService.createEmptyCurrentSession();
-					void this.savePluginData();
+					void this.savePluginData().catch((error: unknown) => {
+						console.error("AI Writing Buddy session save failed", error);
+					});
 
 					return this.currentSession;
 				},
