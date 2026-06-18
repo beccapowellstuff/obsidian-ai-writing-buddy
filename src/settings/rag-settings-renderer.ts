@@ -5,7 +5,14 @@ import type AiWritingBuddyPlugin from "../main";
 import type { AiWritingBuddyRagIndexStatus } from "../types/rag-index";
 import { runSettingsButtonTask } from "./run-settings-button-task";
 
+type IndexActionButton = {
+	setButtonText(text: string): unknown;
+	setDisabled(disabled: boolean): unknown;
+};
+
 export class RagSettingsRenderer {
+	private isIndexTaskRunning = false;
+
 	constructor(
 		private readonly plugin: AiWritingBuddyPlugin,
 		private readonly settings: AiWritingBuddySettings,
@@ -71,6 +78,8 @@ export class RagSettingsRenderer {
 
 	private renderNoteIndexSetting(containerEl: HTMLElement): void {
 		const status = this.plugin.getRagIndexStatusSnapshot();
+		const indexActionButtons: IndexActionButton[] = [];
+		const isIndexActionDisabled = status.state === "indexing" || this.isIndexTaskRunning;
 		const statusEl = containerEl.createEl("p", {
 			cls: "setting-item-description",
 			text: this.formatIndexStatus(status),
@@ -80,18 +89,26 @@ export class RagSettingsRenderer {
 			.setName(INTERFACE_TEXT.settings.rag.noteIndex)
 			.setDesc(INTERFACE_TEXT.settings.rag.noteIndexDescription)
 			.addButton((button) => {
-				button.setButtonText(status.indexedFileCount > 0 ? INTERFACE_TEXT.settings.rag.rebuildNoteIndex : INTERFACE_TEXT.settings.rag.buildNoteIndex).onClick(async () => {
-					await this.runIndexTask(button, status.indexedFileCount > 0 ? INTERFACE_TEXT.settings.rag.rebuildIndexSucceeded : INTERFACE_TEXT.settings.rag.buildIndexSucceeded, async () => {
-						await this.plugin.buildOrRebuildRagIndex(status.indexedFileCount > 0);
+				indexActionButtons.push(button);
+				button
+					.setButtonText(status.indexedFileCount > 0 ? INTERFACE_TEXT.settings.rag.rebuildNoteIndex : INTERFACE_TEXT.settings.rag.buildNoteIndex)
+					.setDisabled(isIndexActionDisabled)
+					.onClick(async () => {
+						await this.runIndexTask(indexActionButtons, button, status.indexedFileCount > 0 ? INTERFACE_TEXT.settings.rag.rebuildIndexSucceeded : INTERFACE_TEXT.settings.rag.buildIndexSucceeded, async () => {
+							await this.plugin.buildOrRebuildRagIndex(status.indexedFileCount > 0);
+						});
 					});
-				});
 			})
 			.addButton((button) => {
-				button.setButtonText(INTERFACE_TEXT.settings.rag.clearNoteIndex).onClick(async () => {
-					await this.runIndexTask(button, INTERFACE_TEXT.settings.rag.clearIndexSucceeded, async () => {
-						await this.plugin.clearRagIndex();
+				indexActionButtons.push(button);
+				button
+					.setButtonText(INTERFACE_TEXT.settings.rag.clearNoteIndex)
+					.setDisabled(isIndexActionDisabled)
+					.onClick(async () => {
+						await this.runIndexTask(indexActionButtons, button, INTERFACE_TEXT.settings.rag.clearIndexSucceeded, async () => {
+							await this.plugin.clearRagIndex();
+						});
 					});
-				});
 			});
 
 		if (status.lastError) {
@@ -102,9 +119,14 @@ export class RagSettingsRenderer {
 		}
 	}
 
-	private async runIndexTask(button: { setButtonText(text: string): unknown; setDisabled(disabled: boolean): unknown }, successMessage: string, run: () => Promise<void>): Promise<void> {
-		button.setDisabled(true);
-		button.setButtonText(INTERFACE_TEXT.settings.rag.indexing);
+	private async runIndexTask(buttons: IndexActionButton[], activeButton: IndexActionButton, successMessage: string, run: () => Promise<void>): Promise<void> {
+		this.isIndexTaskRunning = true;
+
+		for (const button of buttons) {
+			button.setDisabled(true);
+		}
+
+		activeButton.setButtonText(INTERFACE_TEXT.settings.rag.indexing);
 
 		try {
 			await this.saveDraftSettings();
@@ -118,7 +140,11 @@ export class RagSettingsRenderer {
 			new Notice(INTERFACE_TEXT.settings.rag.indexStatusFailed(message));
 			this.refresh();
 		} finally {
-			button.setDisabled(false);
+			this.isIndexTaskRunning = false;
+
+			for (const button of buttons) {
+				button.setDisabled(false);
+			}
 		}
 	}
 

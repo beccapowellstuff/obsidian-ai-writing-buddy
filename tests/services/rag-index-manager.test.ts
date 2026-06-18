@@ -86,6 +86,27 @@ type MockApp = {
 	};
 };
 
+type Deferred = {
+	promise: Promise<void>;
+	resolve: () => void;
+	reject: (error: unknown) => void;
+};
+
+function createDeferred(): Deferred {
+	let resolve: () => void = () => {};
+	let reject: (error: unknown) => void = () => {};
+	const promise = new Promise<void>((promiseResolve, promiseReject) => {
+		resolve = promiseResolve;
+		reject = promiseReject;
+	});
+
+	return {
+		promise,
+		resolve,
+		reject,
+	};
+}
+
 function createFile(path: string): TFile {
 	const file = new TFile();
 
@@ -252,6 +273,51 @@ describe("RagIndexManager", () => {
 			state: "completed",
 			retrievalMode: "keyword",
 			lastError: "Failed to fetch",
+		});
+	});
+
+	it("rejects overlapping foreground index actions with a clear error", async () => {
+		const file = createFile("Stories/One.md");
+		const app = createApp([file]);
+		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
+		const pendingUpsert = createDeferred();
+
+		ragStoreMocks.upsertFileIndex.mockReturnValueOnce(pendingUpsert.promise);
+		const buildPromise = manager.buildIndex();
+
+		await vi.waitFor(() => {
+			expect(ragStoreMocks.upsertFileIndex).toHaveBeenCalledTimes(1);
+		});
+
+		await expect(manager.clearIndex()).rejects.toThrow("A RAG index action is already running.");
+
+		pendingUpsert.resolve();
+		await expect(buildPromise).resolves.toMatchObject({
+			state: "completed",
+		});
+	});
+
+	it("clears the foreground action guard after success", async () => {
+		const file = createFile("Stories/One.md");
+		const app = createApp([file]);
+		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
+
+		await manager.buildIndex();
+		await expect(manager.clearIndex()).resolves.toMatchObject({
+			state: "idle",
+		});
+	});
+
+	it("clears the foreground action guard after failure", async () => {
+		const file = createFile("Stories/One.md");
+		const app = createApp([file]);
+		const manager = new RagIndexManager(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
+
+		ragStoreMocks.upsertFileIndex.mockRejectedValueOnce(new Error("Write failed"));
+
+		await expect(manager.buildIndex()).rejects.toThrow("Write failed");
+		await expect(manager.clearIndex()).resolves.toMatchObject({
+			state: "idle",
 		});
 	});
 });

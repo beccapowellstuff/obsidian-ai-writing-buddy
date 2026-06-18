@@ -7,10 +7,12 @@ import { RagFileIndexer } from "./rag-file-indexer";
 import { RagIndexStore } from "./rag-index-store";
 
 const FILE_UPDATE_DEBOUNCE_MS = 30000;
+const FOREGROUND_INDEX_ACTION_RUNNING_MESSAGE = "A RAG index action is already running.";
 
 export class RagIndexManager {
 	private readonly pendingUpdateTimers = new Map<string, number>();
 	private readonly pendingIdleCallbacks = new Map<string, number>();
+	private isForegroundIndexActionRunning = false;
 	private vaultIndexBuiltThisSession = false;
 	private status: AiWritingBuddyRagIndexStatus = {
 		state: "idle",
@@ -37,26 +39,30 @@ export class RagIndexManager {
 	}
 
 	async buildIndex(): Promise<AiWritingBuddyRagIndexStatus> {
-		return await this.indexVaultMarkdownFiles(false);
+		return await this.runForegroundIndexAction(async () => this.indexVaultMarkdownFiles(false));
 	}
 
 	async rebuildIndex(): Promise<AiWritingBuddyRagIndexStatus> {
-		await this.store.clearIndex();
+		return await this.runForegroundIndexAction(async () => {
+			await this.store.clearIndex();
 
-		return await this.indexVaultMarkdownFiles(true);
+			return await this.indexVaultMarkdownFiles(true);
+		});
 	}
 
 	async clearIndex(): Promise<AiWritingBuddyRagIndexStatus> {
-		await this.store.clearIndex();
-		this.vaultIndexBuiltThisSession = false;
-		this.status = {
-			state: "idle",
-			indexedFileCount: 0,
-			totalMarkdownFileCount: this.getMarkdownFiles().length,
-			processedFileCount: 0,
-		};
+		return await this.runForegroundIndexAction(async () => {
+			await this.store.clearIndex();
+			this.vaultIndexBuiltThisSession = false;
+			this.status = {
+				state: "idle",
+				indexedFileCount: 0,
+				totalMarkdownFileCount: this.getMarkdownFiles().length,
+				processedFileCount: 0,
+			};
 
-		return { ...this.status };
+			return { ...this.status };
+		});
 	}
 
 	handleVaultFileCreatedOrModified(file: TAbstractFile): void {
@@ -72,12 +78,16 @@ export class RagIndexManager {
 			return;
 		}
 
-		void this.removeFileIndex(file.path);
+		void this.removeFileIndex(file.path).catch((error: unknown) => {
+			this.handleBackgroundFileMutationFailure("AI Writing Buddy RAG file deletion update failed", error);
+		});
 	}
 
 	handleVaultFileRenamed(file: TAbstractFile, oldPath: string): void {
 		if (this.vaultIndexBuiltThisSession && oldPath.toLowerCase().endsWith(".md")) {
-			void this.removeFileIndex(oldPath);
+			void this.removeFileIndex(oldPath).catch((error: unknown) => {
+				this.handleBackgroundFileMutationFailure("AI Writing Buddy RAG file rename removal failed", error);
+			});
 		}
 
 		this.handleVaultFileCreatedOrModified(file);
@@ -182,6 +192,20 @@ export class RagIndexManager {
 		}
 	}
 
+	private async runForegroundIndexAction(run: () => Promise<AiWritingBuddyRagIndexStatus>): Promise<AiWritingBuddyRagIndexStatus> {
+		if (this.isForegroundIndexActionRunning) {
+			throw new Error(FOREGROUND_INDEX_ACTION_RUNNING_MESSAGE);
+		}
+
+		this.isForegroundIndexActionRunning = true;
+
+		try {
+			return await run();
+		} finally {
+			this.isForegroundIndexActionRunning = false;
+		}
+	}
+
 	private scheduleFileUpdate(file: TFile): void {
 		const existingTimerId = this.pendingUpdateTimers.get(file.path);
 
@@ -258,6 +282,19 @@ export class RagIndexManager {
 			state: "completed",
 			currentFilePath: undefined,
 			lastIndexedAt: Date.now(),
+		};
+	}
+
+	private handleBackgroundFileMutationFailure(message: string, error: unknown): void {
+		const errorMessage = this.extractErrorMessage(error);
+
+		console.warn(message, error);
+
+		this.status = {
+			...this.status,
+			state: "failed",
+			currentFilePath: undefined,
+			lastError: errorMessage,
 		};
 	}
 

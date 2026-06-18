@@ -43,6 +43,7 @@ const VAULT_INDEX_BUILT_AT_KEY = "vault_index_built_at";
 
 export class RagIndexStore {
 	private dbPromise: Promise<SqlJsDatabase> | null = null;
+	private mutationQueue: Promise<void> = Promise.resolve();
 
 	constructor(private readonly dbPath: string) {}
 
@@ -84,108 +85,116 @@ export class RagIndexStore {
 	}
 
 	async markVaultIndexBuilt(indexedAt: number): Promise<void> {
-		const db = await this.getDatabase();
+		await this.runMutation(async () => {
+			const db = await this.getDatabase();
 
-		db.run(
-			[
-				"INSERT INTO rag_metadata (key, value)",
-				"VALUES (?, ?)",
-				"ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-			].join(" "),
-			[VAULT_INDEX_BUILT_AT_KEY, indexedAt],
-		);
+			db.run(
+				[
+					"INSERT INTO rag_metadata (key, value)",
+					"VALUES (?, ?)",
+					"ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+				].join(" "),
+				[VAULT_INDEX_BUILT_AT_KEY, indexedAt],
+			);
 
-		await this.saveDatabase(db);
+			await this.saveDatabase(db);
+		});
 	}
 
 	async deleteFileIndex(filePath: string): Promise<void> {
-		const db = await this.getDatabase();
+		await this.runMutation(async () => {
+			const db = await this.getDatabase();
 
-		db.run("BEGIN TRANSACTION");
+			db.run("BEGIN TRANSACTION");
 
-		try {
-			db.run("DELETE FROM rag_chunks WHERE file_path = ?", [filePath]);
-			db.run("DELETE FROM indexed_files WHERE file_path = ?", [filePath]);
-			db.run("COMMIT");
-		} catch (error) {
-			db.run("ROLLBACK");
-			throw error;
-		}
+			try {
+				db.run("DELETE FROM rag_chunks WHERE file_path = ?", [filePath]);
+				db.run("DELETE FROM indexed_files WHERE file_path = ?", [filePath]);
+				db.run("COMMIT");
+			} catch (error) {
+				db.run("ROLLBACK");
+				throw error;
+			}
 
-		await this.saveDatabase(db);
+			await this.saveDatabase(db);
+		});
 	}
 
 	async clearIndex(): Promise<void> {
-		const db = await this.getDatabase();
+		await this.runMutation(async () => {
+			const db = await this.getDatabase();
 
-		db.run("BEGIN TRANSACTION");
+			db.run("BEGIN TRANSACTION");
 
-		try {
-			db.run("DELETE FROM rag_chunks");
-			db.run("DELETE FROM indexed_files");
-			db.run("DELETE FROM rag_metadata WHERE key = ?", [VAULT_INDEX_BUILT_AT_KEY]);
-			db.run("COMMIT");
-		} catch (error) {
-			db.run("ROLLBACK");
-			throw error;
-		}
+			try {
+				db.run("DELETE FROM rag_chunks");
+				db.run("DELETE FROM indexed_files");
+				db.run("DELETE FROM rag_metadata WHERE key = ?", [VAULT_INDEX_BUILT_AT_KEY]);
+				db.run("COMMIT");
+			} catch (error) {
+				db.run("ROLLBACK");
+				throw error;
+			}
 
-		await this.saveDatabase(db);
+			await this.saveDatabase(db);
+		});
 	}
 
 	async upsertFileIndex(file: AiWritingBuddyRagIndexedFile, chunks: AiWritingBuddyRagChunk[]): Promise<void> {
-		const db = await this.getDatabase();
+		await this.runMutation(async () => {
+			const db = await this.getDatabase();
 
-		db.run("BEGIN TRANSACTION");
-
-		try {
-			db.run("DELETE FROM rag_chunks WHERE file_path = ?", [file.filePath]);
-			db.run("DELETE FROM indexed_files WHERE file_path = ?", [file.filePath]);
-			db.run(
-				[
-					"INSERT INTO indexed_files",
-					"(file_path, file_title, file_hash, embedding_model, embedding_dimension, retrieval_mode, chunk_count, indexed_at)",
-					"VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-				].join(" "),
-				[file.filePath, file.fileTitle, file.fileHash, file.embeddingModel ?? null, file.embeddingDimension ?? null, file.retrievalMode, file.chunkCount, file.indexedAt],
-			);
-
-			const statement = db.prepare(
-				[
-					"INSERT INTO rag_chunks",
-					"(id, file_path, chunk_index, heading_path_json, start_line, end_line, text, embedding_json, embedding_dimension, retrieval_mode, updated_at)",
-					"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-				].join(" "),
-			);
+			db.run("BEGIN TRANSACTION");
 
 			try {
-				for (const chunk of chunks) {
-					statement.bind([
-						chunk.id,
-						chunk.filePath,
-						chunk.chunkIndex,
-						chunk.headingPath ? JSON.stringify(chunk.headingPath) : null,
-						chunk.startLine ?? null,
-						chunk.endLine ?? null,
-						chunk.text,
-						chunk.embedding ? JSON.stringify(chunk.embedding) : null,
-						chunk.embeddingDimension ?? null,
-						chunk.retrievalMode,
-						chunk.updatedAt,
-					]);
-					statement.step();
+				db.run("DELETE FROM rag_chunks WHERE file_path = ?", [file.filePath]);
+				db.run("DELETE FROM indexed_files WHERE file_path = ?", [file.filePath]);
+				db.run(
+					[
+						"INSERT INTO indexed_files",
+						"(file_path, file_title, file_hash, embedding_model, embedding_dimension, retrieval_mode, chunk_count, indexed_at)",
+						"VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+					].join(" "),
+					[file.filePath, file.fileTitle, file.fileHash, file.embeddingModel ?? null, file.embeddingDimension ?? null, file.retrievalMode, file.chunkCount, file.indexedAt],
+				);
+
+				const statement = db.prepare(
+					[
+						"INSERT INTO rag_chunks",
+						"(id, file_path, chunk_index, heading_path_json, start_line, end_line, text, embedding_json, embedding_dimension, retrieval_mode, updated_at)",
+						"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+					].join(" "),
+				);
+
+				try {
+					for (const chunk of chunks) {
+						statement.bind([
+							chunk.id,
+							chunk.filePath,
+							chunk.chunkIndex,
+							chunk.headingPath ? JSON.stringify(chunk.headingPath) : null,
+							chunk.startLine ?? null,
+							chunk.endLine ?? null,
+							chunk.text,
+							chunk.embedding ? JSON.stringify(chunk.embedding) : null,
+							chunk.embeddingDimension ?? null,
+							chunk.retrievalMode,
+							chunk.updatedAt,
+						]);
+						statement.step();
+					}
+				} finally {
+					statement.free();
 				}
-			} finally {
-				statement.free();
+
+				db.run("COMMIT");
+			} catch (error) {
+				db.run("ROLLBACK");
+				throw error;
 			}
 
-			db.run("COMMIT");
-		} catch (error) {
-			db.run("ROLLBACK");
-			throw error;
-		}
-
-		await this.saveDatabase(db);
+			await this.saveDatabase(db);
+		});
 	}
 
 	async searchEmbeddingChunks(queryEmbedding: number[], scopeFilePaths: string[], options: AiWritingBuddyRagSearchOptions): Promise<AiWritingBuddyRagSearchResult[]> {
@@ -274,6 +283,16 @@ export class RagIndexStore {
 		this.ensureSchema(db);
 
 		return db;
+	}
+
+	private runMutation<T>(operation: () => Promise<T>): Promise<T> {
+		const result = this.mutationQueue.then(operation, operation);
+		this.mutationQueue = result.then(
+			() => undefined,
+			() => undefined,
+		);
+
+		return result;
 	}
 
 	private ensureSchema(db: SqlJsDatabase): void {
