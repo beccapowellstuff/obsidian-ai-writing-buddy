@@ -55,7 +55,9 @@ export default class AiWritingBuddyPlugin extends Plugin {
 				this.currentSession.memorySummary,
 				(entries, memorySummary) => {
 					this.currentSession = this.pluginDataService.withUpdatedCurrentSessionEntries(this.currentSession, entries, memorySummary);
-					void this.savePluginData();
+					void this.savePluginData().catch((error: unknown) => {
+						console.error("AI Writing Buddy session save failed", error);
+					});
 				},
 				async (sessionTitle) => {
 					const newSession = this.pluginDataService.createEmptyCurrentSession();
@@ -242,18 +244,26 @@ export default class AiWritingBuddyPlugin extends Plugin {
 	}
 
 	private registerRagIndexEvents(): void {
-		this.registerEvent(this.app.vault.on("create", (file) => {
-			this.ragIndexManager.handleVaultFileCreatedOrModified(file);
-		}));
-		this.registerEvent(this.app.vault.on("modify", (file) => {
-			this.ragIndexManager.handleVaultFileCreatedOrModified(file);
-		}));
-		this.registerEvent(this.app.vault.on("delete", (file) => {
-			this.ragIndexManager.handleVaultFileDeleted(file);
-		}));
-		this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
-			this.ragIndexManager.handleVaultFileRenamed(file, oldPath);
-		}));
+		this.registerEvent(
+			this.app.vault.on("create", (file) => {
+				this.ragIndexManager.handleVaultFileCreatedOrModified(file);
+			}),
+		);
+		this.registerEvent(
+			this.app.vault.on("modify", (file) => {
+				this.ragIndexManager.handleVaultFileCreatedOrModified(file);
+			}),
+		);
+		this.registerEvent(
+			this.app.vault.on("delete", (file) => {
+				this.ragIndexManager.handleVaultFileDeleted(file);
+			}),
+		);
+		this.registerEvent(
+			this.app.vault.on("rename", (file, oldPath) => {
+				this.ragIndexManager.handleVaultFileRenamed(file, oldPath);
+			}),
+		);
 	}
 
 	private async refreshRagIndexStatus(): Promise<void> {

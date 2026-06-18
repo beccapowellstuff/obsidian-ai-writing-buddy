@@ -38,6 +38,41 @@ describe("SessionHistoryStore", () => {
 		expect(sessionFile.session.entries).toHaveLength(1);
 	});
 
+	it("serialises rapid current-session saves and persists the newest snapshot", async () => {
+		const store = new SessionHistoryStore(temporaryDirectory, pluginDataService);
+		const snapshot = await store.load();
+
+		const firstSession = {
+			...snapshot.currentSession,
+			updatedAt: "2026-01-01T00:00:01.000Z",
+			entries: [createChatEntry("entry-1")],
+			entryCount: 1,
+		};
+
+		const secondSession = {
+			...snapshot.currentSession,
+			updatedAt: "2026-01-01T00:00:02.000Z",
+			entries: [createChatEntry("entry-1"), createChatEntry("entry-2")],
+			entryCount: 2,
+		};
+
+		const newestSession = {
+			...snapshot.currentSession,
+			updatedAt: "2026-01-01T00:00:03.000Z",
+			entries: [createChatEntry("entry-1"), createChatEntry("entry-2"), createChatEntry("entry-3")],
+			entryCount: 3,
+		};
+
+		await Promise.all([store.saveCurrentSession(firstSession), store.saveCurrentSession(secondSession), store.saveCurrentSession(newestSession)]);
+
+		const reloadedStore = new SessionHistoryStore(temporaryDirectory, pluginDataService);
+		const reloadedSnapshot = await reloadedStore.load();
+
+		expect(reloadedSnapshot.currentSession.updatedAt).toBe(newestSession.updatedAt);
+		expect(reloadedSnapshot.currentSession.entries).toHaveLength(3);
+		expect(reloadedSnapshot.currentSession.entries.at(-1)?.id).toBe("entry-3");
+	});
+
 	it("starts a new session by archiving only the previous current session", async () => {
 		const store = new SessionHistoryStore(temporaryDirectory, pluginDataService);
 		const snapshot = await store.load();

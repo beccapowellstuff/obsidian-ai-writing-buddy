@@ -32,6 +32,7 @@ export class SessionHistoryStore {
 	private readonly sessionsDirectoryPath: string;
 	private readonly indexPath: string;
 	private index: SessionHistoryIndex | null = null;
+	private mutationQueue: Promise<void> = Promise.resolve();
 
 	constructor(
 		pluginRootPath: string,
@@ -73,137 +74,158 @@ export class SessionHistoryStore {
 	}
 
 	async saveCurrentSession(session: AiWritingBuddyCurrentSessionData): Promise<void> {
-		const index = this.requireIndex();
+		const sessionSnapshot: AiWritingBuddyCurrentSessionData = structuredClone(session);
 
-		this.index = {
-			...index,
-			currentSessionId: session.id,
-			sessions: {
-				...index.sessions,
-				[session.id]: this.createSessionListItem(session),
-			},
-		};
+		return this.enqueueMutation(async () => {
+			const index = this.requireIndex();
 
-		await this.saveSession(session);
-		await this.saveIndex(this.index);
+			this.index = {
+				...index,
+				currentSessionId: sessionSnapshot.id,
+				sessions: {
+					...index.sessions,
+					[sessionSnapshot.id]: this.createSessionListItem(sessionSnapshot),
+				},
+			};
+
+			await this.saveSession(sessionSnapshot);
+			await this.saveIndex(this.index);
+		});
 	}
 
 	async startNewSession(currentSession: AiWritingBuddyCurrentSessionData, newSession: AiWritingBuddyCurrentSessionData, sessionTitle?: string): Promise<void> {
-		const index = this.requireIndex();
-		const sessionToArchive = this.withOptionalSessionTitle(currentSession, sessionTitle);
-		const shouldArchiveCurrent = this.hasSessionEntries(sessionToArchive);
-		const savedSessionIds = shouldArchiveCurrent
-			? [sessionToArchive.id, ...index.savedSessionIds.filter((sessionId) => sessionId !== sessionToArchive.id && sessionId !== newSession.id)]
-			: index.savedSessionIds.filter((sessionId) => sessionId !== newSession.id);
-		const sessions = {
-			...index.sessions,
-			[newSession.id]: this.createSessionListItem(newSession),
-		};
+		const currentSessionSnapshot: AiWritingBuddyCurrentSessionData = structuredClone(currentSession);
+		const newSessionSnapshot: AiWritingBuddyCurrentSessionData = structuredClone(newSession);
 
-		if (shouldArchiveCurrent) {
-			sessions[sessionToArchive.id] = this.createSessionListItem(sessionToArchive);
-			await this.saveSession(sessionToArchive);
-		}
+		return this.enqueueMutation(async () => {
+			const index = this.requireIndex();
+			const sessionToArchive = this.withOptionalSessionTitle(currentSessionSnapshot, sessionTitle);
+			const shouldArchiveCurrent = this.hasSessionEntries(sessionToArchive);
+			const savedSessionIds = shouldArchiveCurrent
+				? [sessionToArchive.id, ...index.savedSessionIds.filter((sessionId) => sessionId !== sessionToArchive.id && sessionId !== newSessionSnapshot.id)]
+				: index.savedSessionIds.filter((sessionId) => sessionId !== newSessionSnapshot.id);
+			const sessions = {
+				...index.sessions,
+				[newSessionSnapshot.id]: this.createSessionListItem(newSessionSnapshot),
+			};
 
-		this.index = {
-			currentSessionId: newSession.id,
-			savedSessionIds,
-			sessions,
-		};
+			if (shouldArchiveCurrent) {
+				sessions[sessionToArchive.id] = this.createSessionListItem(sessionToArchive);
+				await this.saveSession(sessionToArchive);
+			}
 
-		await this.saveSession(newSession);
-		await this.saveIndex(this.index);
+			this.index = {
+				currentSessionId: newSessionSnapshot.id,
+				savedSessionIds,
+				sessions,
+			};
+
+			await this.saveSession(newSessionSnapshot);
+			await this.saveIndex(this.index);
+		});
 	}
 
 	async restoreSavedSession(sessionId: string, currentSession: AiWritingBuddyCurrentSessionData): Promise<AiWritingBuddyCurrentSessionData | null> {
-		const targetResult = await this.loadSession(sessionId);
+		const currentSessionSnapshot: AiWritingBuddyCurrentSessionData = structuredClone(currentSession);
 
-		if (targetResult.status !== "loaded") {
-			console.warn("AI Writing Buddy saved session could not be loaded", targetResult);
-			return null;
-		}
+		return this.enqueueMutation(async () => {
+			const targetResult = await this.loadSession(sessionId);
 
-		const index = this.requireIndex();
-		const shouldArchiveCurrent = this.hasSessionEntries(currentSession);
-		const savedSessionIds = index.savedSessionIds.filter((candidateId) => candidateId !== sessionId && candidateId !== currentSession.id);
-		const sessions = {
-			...index.sessions,
-			[targetResult.session.id]: this.createSessionListItem(targetResult.session),
-		};
+			if (targetResult.status !== "loaded") {
+				console.warn("AI Writing Buddy saved session could not be loaded", targetResult);
+				return null;
+			}
 
-		if (shouldArchiveCurrent) {
-			savedSessionIds.unshift(currentSession.id);
-			sessions[currentSession.id] = this.createSessionListItem(currentSession);
-			await this.saveSession(currentSession);
-		}
+			const index = this.requireIndex();
+			const shouldArchiveCurrent = this.hasSessionEntries(currentSessionSnapshot);
+			const savedSessionIds = index.savedSessionIds.filter((candidateId) => candidateId !== sessionId && candidateId !== currentSessionSnapshot.id);
+			const sessions = {
+				...index.sessions,
+				[targetResult.session.id]: this.createSessionListItem(targetResult.session),
+			};
 
-		this.index = {
-			currentSessionId: targetResult.session.id,
-			savedSessionIds,
-			sessions,
-		};
+			if (shouldArchiveCurrent) {
+				savedSessionIds.unshift(currentSessionSnapshot.id);
+				sessions[currentSessionSnapshot.id] = this.createSessionListItem(currentSessionSnapshot);
+				await this.saveSession(currentSessionSnapshot);
+			}
 
-		await this.saveSession(targetResult.session);
-		await this.saveIndex(this.index);
+			this.index = {
+				currentSessionId: targetResult.session.id,
+				savedSessionIds,
+				sessions,
+			};
 
-		return targetResult.session;
+			await this.saveSession(targetResult.session);
+			await this.saveIndex(this.index);
+
+			return targetResult.session;
+		});
 	}
 
 	async deleteSavedSession(sessionId: string): Promise<void> {
-		const index = this.requireIndex();
-		const sessions = { ...index.sessions };
+		return this.enqueueMutation(async () => {
+			const index = this.requireIndex();
+			const sessions = { ...index.sessions };
 
-		delete sessions[sessionId];
+			delete sessions[sessionId];
 
-		this.index = {
-			...index,
-			savedSessionIds: index.savedSessionIds.filter((candidateId) => candidateId !== sessionId),
-			sessions,
-		};
+			this.index = {
+				...index,
+				savedSessionIds: index.savedSessionIds.filter((candidateId) => candidateId !== sessionId),
+				sessions,
+			};
 
-		await this.deleteSessionFile(sessionId);
-		await this.saveIndex(this.index);
+			await this.deleteSessionFile(sessionId);
+			await this.saveIndex(this.index);
+		});
 	}
 
 	async renameSavedSession(sessionId: string, title: string): Promise<AiWritingBuddyCurrentSessionData | null> {
-		const loadResult = await this.loadSession(sessionId);
+		return this.enqueueMutation(async () => {
+			const loadResult = await this.loadSession(sessionId);
 
-		if (loadResult.status !== "loaded") {
-			console.warn("AI Writing Buddy saved session could not be renamed", loadResult);
-			return null;
-		}
+			if (loadResult.status !== "loaded") {
+				console.warn("AI Writing Buddy saved session could not be renamed", loadResult);
+				return null;
+			}
 
-		const renamedSession = this.pluginDataService.renameCurrentSession(title, loadResult.session);
-		const index = this.requireIndex();
+			const renamedSession = this.pluginDataService.renameCurrentSession(title, loadResult.session);
+			const index = this.requireIndex();
 
-		this.index = {
-			...index,
-			sessions: {
-				...index.sessions,
-				[renamedSession.id]: this.createSessionListItem(renamedSession),
-			},
-		};
+			this.index = {
+				...index,
+				sessions: {
+					...index.sessions,
+					[renamedSession.id]: this.createSessionListItem(renamedSession),
+				},
+			};
 
-		await this.saveSession(renamedSession);
-		await this.saveIndex(this.index);
+			await this.saveSession(renamedSession);
+			await this.saveIndex(this.index);
 
-		return renamedSession;
+			return renamedSession;
+		});
 	}
 
 	async replaceCurrentSession(session: AiWritingBuddyCurrentSessionData): Promise<void> {
-		const index = this.requireIndex();
+		const sessionSnapshot: AiWritingBuddyCurrentSessionData = structuredClone(session);
 
-		this.index = {
-			...index,
-			currentSessionId: session.id,
-			sessions: {
-				...index.sessions,
-				[session.id]: this.createSessionListItem(session),
-			},
-		};
+		return this.enqueueMutation(async () => {
+			const index = this.requireIndex();
 
-		await this.saveSession(session);
-		await this.saveIndex(this.index);
+			this.index = {
+				...index,
+				currentSessionId: sessionSnapshot.id,
+				sessions: {
+					...index.sessions,
+					[sessionSnapshot.id]: this.createSessionListItem(sessionSnapshot),
+				},
+			};
+
+			await this.saveSession(sessionSnapshot);
+			await this.saveIndex(this.index);
+		});
 	}
 
 	async loadSession(sessionId: string): Promise<AiWritingBuddySessionLoadResult> {
@@ -392,6 +414,17 @@ export class SessionHistoryStore {
 
 	private hasSessionEntries(session: AiWritingBuddyCurrentSessionData): boolean {
 		return session.entryCount > 0 || session.entries.length > 0;
+	}
+
+	private enqueueMutation<T>(mutation: () => Promise<T>): Promise<T> {
+		const result = this.mutationQueue.then(mutation);
+
+		this.mutationQueue = result.then(
+			() => undefined,
+			() => undefined,
+		);
+
+		return result;
 	}
 
 	private requireIndex(): SessionHistoryIndex {
