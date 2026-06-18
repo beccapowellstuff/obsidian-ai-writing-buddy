@@ -71,14 +71,31 @@ export class RagFileIndexer {
 
 		const embeddingModel = this.createEmbeddingService().getEmbeddingModel();
 
-		return indexedFile.embeddingModel === embeddingModel && typeof indexedFile.embeddingDimension === "number" && indexedFile.embeddingDimension > 0;
+		return indexedFile.embeddingModel === embeddingModel && (indexedFile.chunkCount === 0 || (typeof indexedFile.embeddingDimension === "number" && indexedFile.embeddingDimension > 0));
 	}
 
 	private async indexFileWithEmbeddings(file: TFile, content: string, fileHash: string): Promise<AiWritingBuddyRagIndexedFile> {
 		const chunkerChunks = this.chunker.chunk(file, content);
 		const embeddingService = this.createEmbeddingService();
-		const embeddingResult = await embeddingService.embedTexts(chunkerChunks.map((chunk) => chunk.text));
 		const now = Date.now();
+
+		if (chunkerChunks.length === 0) {
+			const indexedFile: AiWritingBuddyRagIndexedFile = {
+				filePath: file.path,
+				fileTitle: file.basename,
+				fileHash,
+				embeddingModel: embeddingService.getEmbeddingModel(),
+				retrievalMode: "embedding",
+				chunkCount: 0,
+				indexedAt: now,
+			};
+
+			await this.store.upsertFileIndex(indexedFile, []);
+
+			return indexedFile;
+		}
+
+		const embeddingResult = await embeddingService.embedTexts(chunkerChunks.map((chunk) => chunk.text));
 		const chunks: AiWritingBuddyRagChunk[] = chunkerChunks.map((chunk, index) => ({
 			...chunk,
 			fileHash,

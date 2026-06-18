@@ -11,6 +11,12 @@ const MAX_SCOPED_CHUNKS_WHEN_INDEXED_RAG_INCLUDED = 4;
 const MAX_RETRIEVED_CONTEXT_CHARACTERS = 30000;
 const DEFAULT_SIMILARITY_THRESHOLD = 0.12;
 
+type RagRetrievalResults = {
+	scopedSearchResults: AiWritingBuddyRagSearchResult[];
+	indexedRagSearchResults: AiWritingBuddyRagSearchResult[];
+	usedKeywordFallback: boolean;
+};
+
 export class RagService {
 	private readonly fileIndexer: RagFileIndexer;
 
@@ -60,10 +66,6 @@ export class RagService {
 
 		for (const indexedFile of indexedFiles) {
 			fileMetadataByPath.set(indexedFile.filePath, indexedFile);
-
-			if (indexedFile.retrievalMode === "keyword") {
-				usedKeywordFallback = true;
-			}
 		}
 
 		for (const result of indexingResults) {
@@ -78,61 +80,10 @@ export class RagService {
 			return undefined;
 		}
 
-		const retrievalMode = usedKeywordFallback ? "keyword" : "embedding";
-		let scopedSearchResults: AiWritingBuddyRagSearchResult[] = [];
-		let indexedRagSearchResults: AiWritingBuddyRagSearchResult[] = [];
-
-		if (retrievalMode === "embedding") {
-			try {
-				const queryEmbedding = (await this.createEmbeddingService().embedTexts([query])).embeddings[0];
-
-				if (!queryEmbedding) {
-					throw new Error("Embedding provider did not return a query vector.");
-				}
-
-				await this.reindexFilesWithMismatchedEmbeddingDimensions(indexingResults, queryEmbedding.length);
-				this.refreshFileMetadata(fileMetadataByPath, indexingResults);
-
-				const dimensionCompatibleFilePaths = [...fileMetadataByPath.values()]
-					.filter((file) => file.retrievalMode === "embedding" && file.embeddingDimension === queryEmbedding.length)
-					.map((file) => file.filePath);
-
-				if (dimensionCompatibleFilePaths.length < fileMetadataByPath.size) {
-					usedKeywordFallback = true;
-				}
-
-				const dimensionCompatibleScopedFilePaths = dimensionCompatibleFilePaths.filter((filePath) => scopedFilePaths.includes(filePath));
-				const dimensionCompatibleIndexedRagFilePaths = dimensionCompatibleFilePaths.filter((filePath) => indexedRagFilePaths.includes(filePath));
-
-				scopedSearchResults = await this.store.searchEmbeddingChunks(queryEmbedding, dimensionCompatibleScopedFilePaths, {
-					maxChunks: MAX_RETRIEVED_CHUNKS,
-					maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
-					similarityThreshold: DEFAULT_SIMILARITY_THRESHOLD,
-				});
-				indexedRagSearchResults = await this.store.searchEmbeddingChunks(queryEmbedding, dimensionCompatibleIndexedRagFilePaths, {
-					maxChunks: MAX_RETRIEVED_CHUNKS,
-					maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
-					similarityThreshold: DEFAULT_SIMILARITY_THRESHOLD,
-				});
-			} catch (error) {
-				usedKeywordFallback = true;
-				console.warn("AI Writing Buddy RAG query embedding failed; using keyword fallback.", error);
-				new Notice("Context is using keyword fallback.");
-			}
-		}
-
-		if (usedKeywordFallback || scopedSearchResults.length + indexedRagSearchResults.length === 0) {
-			scopedSearchResults = await this.store.searchKeywordChunks(query, scopedFilePaths, {
-				maxChunks: MAX_RETRIEVED_CHUNKS,
-				maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
-				similarityThreshold: 0,
-			});
-			indexedRagSearchResults = await this.store.searchKeywordChunks(query, indexedRagFilePaths, {
-				maxChunks: MAX_RETRIEVED_CHUNKS,
-				maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
-				similarityThreshold: 0,
-			});
-		}
+		const retrievalResults = await this.searchMixedRetrieval(query, fileMetadataByPath, indexingResults, scopedFilePaths, indexedRagFilePaths, true);
+		const scopedSearchResults = retrievalResults.scopedSearchResults;
+		const indexedRagSearchResults = retrievalResults.indexedRagSearchResults;
+		usedKeywordFallback = usedKeywordFallback || retrievalResults.usedKeywordFallback;
 
 		const searchResults = this.prioritizeScopedSearchResults(scopedSearchResults, indexedRagSearchResults);
 		const notes = this.createNoteContexts(searchResults, [...fileMetadataByPath.values()]);
@@ -158,44 +109,10 @@ export class RagService {
 		}
 
 		const scopeFilePaths = indexedFiles.map((file) => file.filePath);
-		let usedKeywordFallback = indexedFiles.some((file) => file.retrievalMode === "keyword");
-		let searchResults: AiWritingBuddyRagSearchResult[] = [];
-
-		if (!usedKeywordFallback && this.createEmbeddingService().isConfigured()) {
-			try {
-				const queryEmbedding = (await this.createEmbeddingService().embedTexts([query])).embeddings[0];
-
-				if (!queryEmbedding) {
-					throw new Error("Embedding provider did not return a query vector.");
-				}
-
-				const dimensionCompatibleFiles = indexedFiles.filter((file) => file.retrievalMode === "embedding" && file.embeddingDimension === queryEmbedding.length);
-
-				searchResults = await this.store.searchEmbeddingChunks(queryEmbedding, dimensionCompatibleFiles.map((file) => file.filePath), {
-					maxChunks: MAX_RETRIEVED_CHUNKS,
-					maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
-					similarityThreshold: DEFAULT_SIMILARITY_THRESHOLD,
-				});
-
-				if (dimensionCompatibleFiles.length < indexedFiles.length) {
-					usedKeywordFallback = true;
-				}
-			} catch (error) {
-				usedKeywordFallback = true;
-				console.warn("AI Writing Buddy indexed-note query embedding failed; using keyword fallback.", error);
-				new Notice("Indexed notes are using keyword fallback.");
-			}
-		} else {
-			usedKeywordFallback = true;
-		}
-
-		if (usedKeywordFallback || searchResults.length === 0) {
-			searchResults = await this.store.searchKeywordChunks(query, scopeFilePaths, {
-				maxChunks: MAX_RETRIEVED_CHUNKS,
-				maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
-				similarityThreshold: 0,
-			});
-		}
+		const fileMetadataByPath = new Map(indexedFiles.map((file) => [file.filePath, file]));
+		const retrievalResults = await this.searchMixedRetrieval(query, fileMetadataByPath, [], scopeFilePaths, [], false);
+		const searchResults = retrievalResults.scopedSearchResults;
+		const usedKeywordFallback = retrievalResults.usedKeywordFallback;
 
 		const notes = this.createNoteContexts(searchResults, indexedFiles);
 
@@ -218,9 +135,118 @@ export class RagService {
 		}
 	}
 
+	private async searchMixedRetrieval(
+		query: string,
+		fileMetadataByPath: Map<string, AiWritingBuddyRagIndexedFile>,
+		indexingResults: Array<{ file: TFile; indexedFile: AiWritingBuddyRagIndexedFile }>,
+		scopedFilePaths: string[],
+		indexedRagFilePaths: string[],
+		allowScopedReindex: boolean,
+	): Promise<RagRetrievalResults> {
+		let queryEmbedding: number[] | undefined;
+		let usedKeywordFallback = false;
+		const nonEmptyFiles = [...fileMetadataByPath.values()].filter((file) => file.chunkCount > 0);
+		const hasEmbeddingCandidates = nonEmptyFiles.some((file) => file.retrievalMode === "embedding");
+
+		if (hasEmbeddingCandidates && this.createEmbeddingService().isConfigured()) {
+			try {
+				queryEmbedding = (await this.createEmbeddingService().embedTexts([query])).embeddings[0];
+
+				if (!queryEmbedding) {
+					throw new Error("Embedding provider did not return a query vector.");
+				}
+
+				if (allowScopedReindex) {
+					await this.reindexFilesWithMismatchedEmbeddingDimensions(indexingResults, queryEmbedding.length);
+					this.refreshFileMetadata(fileMetadataByPath, indexingResults);
+				}
+			} catch (error) {
+				usedKeywordFallback = true;
+				console.warn("AI Writing Buddy RAG query embedding failed; using keyword fallback.", error);
+				new Notice("Context is using keyword fallback.");
+			}
+		}
+
+		const scopedEmbeddingFilePaths = this.getEmbeddingSearchFilePaths(scopedFilePaths, fileMetadataByPath, queryEmbedding);
+		const indexedEmbeddingFilePaths = this.getEmbeddingSearchFilePaths(indexedRagFilePaths, fileMetadataByPath, queryEmbedding);
+		const scopedKeywordFilePaths = this.getKeywordSearchFilePaths(scopedFilePaths, fileMetadataByPath, queryEmbedding);
+		const indexedKeywordFilePaths = this.getKeywordSearchFilePaths(indexedRagFilePaths, fileMetadataByPath, queryEmbedding);
+
+		if (scopedKeywordFilePaths.length + indexedKeywordFilePaths.length > 0) {
+			usedKeywordFallback = true;
+		}
+
+		const scopedEmbeddingResults =
+			queryEmbedding && scopedEmbeddingFilePaths.length > 0
+				? await this.store.searchEmbeddingChunks(queryEmbedding, scopedEmbeddingFilePaths, {
+						maxChunks: MAX_RETRIEVED_CHUNKS,
+						maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
+						similarityThreshold: DEFAULT_SIMILARITY_THRESHOLD,
+					})
+				: [];
+		const indexedEmbeddingResults =
+			queryEmbedding && indexedEmbeddingFilePaths.length > 0
+				? await this.store.searchEmbeddingChunks(queryEmbedding, indexedEmbeddingFilePaths, {
+						maxChunks: MAX_RETRIEVED_CHUNKS,
+						maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
+						similarityThreshold: DEFAULT_SIMILARITY_THRESHOLD,
+					})
+				: [];
+		const scopedKeywordResults =
+			scopedKeywordFilePaths.length > 0
+				? await this.store.searchKeywordChunks(query, scopedKeywordFilePaths, {
+						maxChunks: MAX_RETRIEVED_CHUNKS,
+						maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
+						similarityThreshold: 0,
+					})
+				: [];
+		const indexedKeywordResults =
+			indexedKeywordFilePaths.length > 0
+				? await this.store.searchKeywordChunks(query, indexedKeywordFilePaths, {
+						maxChunks: MAX_RETRIEVED_CHUNKS,
+						maxContextCharacters: MAX_RETRIEVED_CONTEXT_CHARACTERS,
+						similarityThreshold: 0,
+					})
+				: [];
+
+		return {
+			scopedSearchResults: [...scopedEmbeddingResults, ...scopedKeywordResults],
+			indexedRagSearchResults: [...indexedEmbeddingResults, ...indexedKeywordResults],
+			usedKeywordFallback,
+		};
+	}
+
+	private getEmbeddingSearchFilePaths(filePaths: string[], fileMetadataByPath: Map<string, AiWritingBuddyRagIndexedFile>, queryEmbedding: number[] | undefined): string[] {
+		if (!queryEmbedding) {
+			return [];
+		}
+
+		return filePaths.filter((filePath) => {
+			const file = fileMetadataByPath.get(filePath);
+
+			return file?.retrievalMode === "embedding" && file.chunkCount > 0 && file.embeddingDimension === queryEmbedding.length;
+		});
+	}
+
+	private getKeywordSearchFilePaths(filePaths: string[], fileMetadataByPath: Map<string, AiWritingBuddyRagIndexedFile>, queryEmbedding: number[] | undefined): string[] {
+		return filePaths.filter((filePath) => {
+			const file = fileMetadataByPath.get(filePath);
+
+			if (!file || file.chunkCount === 0) {
+				return false;
+			}
+
+			if (!queryEmbedding) {
+				return true;
+			}
+
+			return file.retrievalMode === "keyword" || file.embeddingDimension !== queryEmbedding.length;
+		});
+	}
+
 	private async reindexFilesWithMismatchedEmbeddingDimensions(indexingResults: Array<{ file: TFile; indexedFile: AiWritingBuddyRagIndexedFile }>, queryEmbeddingDimension: number): Promise<void> {
 		for (const result of indexingResults) {
-			if (result.indexedFile.retrievalMode !== "embedding" || result.indexedFile.embeddingDimension === queryEmbeddingDimension) {
+			if (result.indexedFile.retrievalMode !== "embedding" || result.indexedFile.chunkCount === 0 || result.indexedFile.embeddingDimension === queryEmbeddingDimension) {
 				continue;
 			}
 

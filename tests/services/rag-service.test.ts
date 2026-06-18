@@ -129,6 +129,31 @@ function createIndexedFile(file: TFile): AiWritingBuddyRagIndexedFile {
 	};
 }
 
+function createEmbeddingIndexedFile(file: TFile, embeddingDimension = 3): AiWritingBuddyRagIndexedFile {
+	return {
+		filePath: file.path,
+		fileTitle: file.basename,
+		fileHash: `${file.path}-hash`,
+		embeddingModel: "text-embedding-test",
+		embeddingDimension,
+		retrievalMode: "embedding",
+		chunkCount: 1,
+		indexedAt: 1,
+	};
+}
+
+function createZeroChunkEmbeddingIndexedFile(file: TFile): AiWritingBuddyRagIndexedFile {
+	return {
+		filePath: file.path,
+		fileTitle: file.basename,
+		fileHash: `${file.path}-hash`,
+		embeddingModel: "text-embedding-test",
+		retrievalMode: "embedding",
+		chunkCount: 0,
+		indexedAt: 1,
+	};
+}
+
 function createSearchResult(file: TFile, score: number): AiWritingBuddyRagSearchResult {
 	return {
 		id: `${file.path}::0`,
@@ -146,8 +171,23 @@ function createSearchResult(file: TFile, score: number): AiWritingBuddyRagSearch
 	};
 }
 
+function createEmbeddingSearchResult(file: TFile, score: number): AiWritingBuddyRagSearchResult {
+	return {
+		...createSearchResult(file, score),
+		retrievalMode: "embedding",
+	};
+}
+
 function createRagIndexStore(): RagIndexStore {
 	return new RagIndexStore(".");
+}
+
+function createEmbeddingSettings() {
+	return {
+		...DEFAULT_AI_WRITING_BUDDY_SETTINGS,
+		embeddingBaseUrl: "http://localhost:1234/v1",
+		embeddingModelName: "text-embedding-test",
+	};
 }
 
 describe("RagService", () => {
@@ -406,5 +446,165 @@ describe("RagService", () => {
 				similarityThreshold: 0,
 			}),
 		);
+	});
+
+	it("does not generate a query embedding when only zero-chunk embedding records are candidates", async () => {
+		const emptyFile = createMarkdownFile("Templates/Blank.md");
+		const app = createApp({});
+		const service = new RagService(app as unknown as App, createEmbeddingSettings(), createRagIndexStore());
+
+		ragStoreMocks.listIndexedFiles.mockResolvedValue([createZeroChunkEmbeddingIndexedFile(emptyFile)]);
+
+		const context = await service.getContext("indexed-notes", "blank template", false);
+
+		expect(context).toBeUndefined();
+		expect(window.fetch).not.toHaveBeenCalled();
+		expect(ragStoreMocks.searchEmbeddingChunks).not.toHaveBeenCalled();
+		expect(ragStoreMocks.searchKeywordChunks).not.toHaveBeenCalled();
+	});
+
+	it("searches embedding and keyword candidate groups without downgrading semantic files globally", async () => {
+		const embeddingFile = createMarkdownFile("Stories/Semantic.md");
+		const keywordFile = createMarkdownFile("Stories/Keyword.md");
+		const app = createApp({});
+		const service = new RagService(app as unknown as App, createEmbeddingSettings(), createRagIndexStore());
+		const queryEmbedding = [0.1, 0.2, 0.3];
+		const embeddingResult = createEmbeddingSearchResult(embeddingFile, 0.9);
+		const keywordResult = createSearchResult(keywordFile, 10);
+		const fetchMock = window.fetch as Mock;
+
+		fetchMock.mockResolvedValue({
+			status: 200,
+			json: async () => ({
+				data: [{ index: 0, embedding: queryEmbedding }],
+			}),
+		});
+		ragStoreMocks.listIndexedFiles.mockResolvedValue([createEmbeddingIndexedFile(embeddingFile), createIndexedFile(keywordFile)]);
+		ragStoreMocks.searchEmbeddingChunks.mockResolvedValue([embeddingResult]);
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue([keywordResult]);
+
+		const context = await service.getContext("indexed-notes", "mixed retrieval", false);
+
+		expect(ragStoreMocks.searchEmbeddingChunks).toHaveBeenCalledWith(queryEmbedding, [embeddingFile.path], expect.any(Object));
+		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith("mixed retrieval", [keywordFile.path], expect.any(Object));
+		expect(context?.notes.map((note) => note.path)).toEqual([embeddingFile.path, keywordFile.path]);
+		expect(context).toMatchObject({
+			retrievalMode: "keyword",
+			usedKeywordFallback: true,
+		});
+	});
+
+	it("uses keyword fallback for all non-empty candidates when query embedding generation fails", async () => {
+		const embeddingFile = createMarkdownFile("Stories/Semantic.md");
+		const keywordFile = createMarkdownFile("Stories/Keyword.md");
+		const emptyFile = createMarkdownFile("Templates/Blank.md");
+		const app = createApp({});
+		const service = new RagService(app as unknown as App, createEmbeddingSettings(), createRagIndexStore());
+		const fetchMock = window.fetch as Mock;
+
+		fetchMock.mockRejectedValue(new Error("Embedding outage"));
+		ragStoreMocks.listIndexedFiles.mockResolvedValue([createEmbeddingIndexedFile(embeddingFile), createIndexedFile(keywordFile), createZeroChunkEmbeddingIndexedFile(emptyFile)]);
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue([createSearchResult(embeddingFile, 3), createSearchResult(keywordFile, 2)]);
+
+		const context = await service.getContext("indexed-notes", "outage retrieval", false);
+
+		expect(ragStoreMocks.searchEmbeddingChunks).not.toHaveBeenCalled();
+		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith("outage retrieval", [embeddingFile.path, keywordFile.path], expect.any(Object));
+		expect(context?.notes.map((note) => note.path)).toEqual([embeddingFile.path, keywordFile.path]);
+		expect(context).toMatchObject({
+			retrievalMode: "keyword",
+			usedKeywordFallback: true,
+		});
+	});
+
+	it("keeps indexed-only dimension mismatches available through keyword search", async () => {
+		const mismatchedFile = createMarkdownFile("Stories/Old Vectors.md");
+		const app = createApp({});
+		const service = new RagService(app as unknown as App, createEmbeddingSettings(), createRagIndexStore());
+		const queryEmbedding = [0.1, 0.2, 0.3];
+		const fetchMock = window.fetch as Mock;
+
+		fetchMock.mockResolvedValue({
+			status: 200,
+			json: async () => ({
+				data: [{ index: 0, embedding: queryEmbedding }],
+			}),
+		});
+		ragStoreMocks.listIndexedFiles.mockResolvedValue([createEmbeddingIndexedFile(mismatchedFile, 2)]);
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue([createSearchResult(mismatchedFile, 1)]);
+
+		const context = await service.getContext("indexed-notes", "old vectors", false);
+
+		expect(ragStoreMocks.searchEmbeddingChunks).not.toHaveBeenCalled();
+		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith("old vectors", [mismatchedFile.path], expect.any(Object));
+		expect(context?.notes.map((note) => note.path)).toEqual([mismatchedFile.path]);
+	});
+
+	it("reindexes scoped dimension mismatches before semantic search", async () => {
+		const currentFile = createMarkdownFile("Stories/Current.md");
+		const app = createApp({
+			activeEditorFile: currentFile,
+		});
+		const service = new RagService(app as unknown as App, createEmbeddingSettings(), createRagIndexStore());
+		const content = "Current note body";
+		const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content));
+		const fileHash = Array.from(new Uint8Array(hashBuffer))
+			.map((byte) => byte.toString(16).padStart(2, "0"))
+			.join("");
+		const fetchMock = window.fetch as Mock;
+
+		ragStoreMocks.getIndexedFile.mockResolvedValue({
+			...createEmbeddingIndexedFile(currentFile, 2),
+			fileHash,
+		});
+		fetchMock
+			.mockResolvedValueOnce({
+				status: 200,
+				json: async () => ({
+					data: [{ index: 0, embedding: [0.1, 0.2, 0.3] }],
+				}),
+			})
+			.mockResolvedValueOnce({
+				status: 200,
+				json: async () => ({
+					data: [{ index: 0, embedding: [0.4, 0.5, 0.6] }],
+				}),
+			});
+		ragStoreMocks.searchEmbeddingChunks.mockResolvedValue([createEmbeddingSearchResult(currentFile, 0.8)]);
+
+		const context = await service.getContext("current-note", "current note", false);
+
+		expect(ragStoreMocks.upsertFileIndex).toHaveBeenCalledWith(
+			expect.objectContaining({
+				filePath: currentFile.path,
+				embeddingDimension: 3,
+				retrievalMode: "embedding",
+			}),
+			expect.any(Array),
+		);
+		expect(ragStoreMocks.searchEmbeddingChunks).toHaveBeenCalledWith([0.1, 0.2, 0.3], [currentFile.path], expect.any(Object));
+		expect(context?.notes.map((note) => note.path)).toEqual([currentFile.path]);
+	});
+
+	it("does not reindex or retrieve zero-chunk scoped embedding records", async () => {
+		const currentFile = createMarkdownFile("Templates/Blank.md");
+		const app = createApp({
+			activeEditorFile: currentFile,
+		});
+		app.vault.cachedRead.mockResolvedValue("");
+		const service = new RagService(app as unknown as App, createEmbeddingSettings(), createRagIndexStore());
+
+		ragStoreMocks.getIndexedFile.mockResolvedValue({
+			...createZeroChunkEmbeddingIndexedFile(currentFile),
+			fileHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		});
+
+		const context = await service.getContext("current-note", "blank", false);
+
+		expect(context).toBeUndefined();
+		expect(window.fetch).not.toHaveBeenCalled();
+		expect(ragStoreMocks.upsertFileIndex).not.toHaveBeenCalled();
+		expect(ragStoreMocks.searchEmbeddingChunks).not.toHaveBeenCalled();
+		expect(ragStoreMocks.searchKeywordChunks).not.toHaveBeenCalled();
 	});
 });
