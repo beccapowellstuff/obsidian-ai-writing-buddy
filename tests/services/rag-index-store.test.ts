@@ -6,6 +6,7 @@ import type { AiWritingBuddyRagChunk } from "../../src/types/rag-index";
 const sqlMocks = vi.hoisted(() => ({
 	runLog: [] as string[],
 	activeTransaction: false,
+	queryRows: [] as Array<Record<string, unknown>>,
 }));
 
 const fsMocks = vi.hoisted(() => ({
@@ -26,12 +27,17 @@ vi.mock("fs/promises", () => ({
 
 vi.mock("@webreflection/sql.js", () => {
 	class FakeStatement {
+		private rowIndex = -1;
+
+		constructor(private readonly rows: Array<Record<string, unknown>> = []) {}
+
 		bind(): void {}
 		step(): boolean {
-			return false;
+			this.rowIndex += 1;
+			return this.rowIndex < this.rows.length;
 		}
 		getAsObject(): Record<string, unknown> {
-			return {};
+			return this.rows[this.rowIndex] ?? {};
 		}
 		free(): void {}
 	}
@@ -58,7 +64,11 @@ vi.mock("@webreflection/sql.js", () => {
 			}
 		}
 
-		prepare(): FakeStatement {
+		prepare(sql: string): FakeStatement {
+			if (sql.includes("SELECT rag_chunks.*")) {
+				return new FakeStatement(sqlMocks.queryRows);
+			}
+
 			return new FakeStatement();
 		}
 
@@ -112,6 +122,24 @@ function createChunk(path: string, text: string): AiWritingBuddyRagChunk {
 	};
 }
 
+function createChunkRow(path: string, chunkIndex: number, text: string): Record<string, unknown> {
+	return {
+		id: `${path}::${chunkIndex}`,
+		file_path: path,
+		chunk_index: chunkIndex,
+		text,
+		retrieval_mode: "keyword",
+		updated_at: 1,
+		file_title:
+			path
+				.split("/")
+				.pop()
+				?.replace(/\.[^.]+$/, "") ?? path,
+		file_hash: "hash",
+		total_chunk_count: 1,
+	};
+}
+
 function createIndexedFile(path: string) {
 	return {
 		filePath: path,
@@ -137,6 +165,7 @@ describe("RagIndexStore mutation queue", () => {
 	beforeEach(() => {
 		sqlMocks.runLog.length = 0;
 		sqlMocks.activeTransaction = false;
+		sqlMocks.queryRows = [];
 		fsMocks.mkdir.mockResolvedValue(undefined);
 		fsMocks.readFile.mockRejectedValue(new Error("No database"));
 		fsMocks.writeFile.mockResolvedValue(undefined);
@@ -214,5 +243,61 @@ describe("RagIndexStore keyword scoring", () => {
 		expect(query.terms).toEqual(["digital", "pixelation"]);
 		expect(query.phrases).toContain("digital pixelation");
 		expect(scoreKeywordChunk(matchingChunk, query)).toBeGreaterThan(scoreKeywordChunk(genericChunk, query));
+	});
+
+	it("returns only positive-score keyword chunks", async () => {
+		const store = new RagIndexStore("rag-index/embeddings.db");
+		const matchingPath = "- Story Ideas/- Visual Transformation Methods.md";
+		const unrelatedPath = "Stories/Rain Window.md";
+
+		sqlMocks.queryRows = [
+			createChunkRow(matchingPath, 0, "Digital Pixelation makes the character dissolve into blocks of light."),
+			createChunkRow(unrelatedPath, 0, "Rain taps against the kitchen window."),
+		];
+
+		const results = await store.searchKeywordChunks("Digital Pixelation", [matchingPath, unrelatedPath], {
+			maxChunks: 8,
+			maxContextCharacters: 30000,
+			similarityThreshold: 0,
+		});
+
+		expect(results).toHaveLength(1);
+		expect(results[0]).toMatchObject({
+			id: `${matchingPath}::0`,
+			selectedBy: "keyword",
+		});
+		expect(results[0]?.score).toBeGreaterThan(0);
+	});
+
+	it("returns no keyword chunks when every candidate scores zero", async () => {
+		const store = new RagIndexStore("rag-index/embeddings.db");
+		const firstPath = "Stories/Rain Window.md";
+		const secondPath = "Archive/Quiet Kitchen.md";
+
+		sqlMocks.queryRows = [createChunkRow(firstPath, 0, "Rain taps against the kitchen window."), createChunkRow(secondPath, 0, "A kettle hums on the counter.")];
+
+		const results = await store.searchKeywordChunks("zqxwv impossible term", [firstPath, secondPath], {
+			maxChunks: 8,
+			maxContextCharacters: 30000,
+			similarityThreshold: 0,
+		});
+
+		expect(results).toEqual([]);
+	});
+
+	it("applies the result limiter after filtering zero-score keyword chunks", async () => {
+		const store = new RagIndexStore("rag-index/embeddings.db");
+		const paths = ["Ideas/One.md", "Ideas/Two.md", "Ideas/Three.md"];
+
+		sqlMocks.queryRows = paths.map((path, index) => createChunkRow(path, 0, `Digital Pixelation option ${index + 1}.`));
+
+		const results = await store.searchKeywordChunks("Digital Pixelation", paths, {
+			maxChunks: 2,
+			maxContextCharacters: 30000,
+			similarityThreshold: 0,
+		});
+
+		expect(results).toHaveLength(2);
+		expect(results.every((result) => result.score > 0)).toBe(true);
 	});
 });

@@ -220,6 +220,7 @@ export class RagIndexStore {
 				score: scoreKeywordChunk(chunk, keywordQuery),
 				selectedBy: "keyword" as const,
 			}))
+			.filter((chunk) => chunk.score > 0)
 			.sort((left, right) => {
 				if (right.score !== left.score) {
 					return right.score - left.score;

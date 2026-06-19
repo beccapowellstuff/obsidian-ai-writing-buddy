@@ -562,6 +562,24 @@ describe("RagService", () => {
 		});
 	});
 
+	it("returns no note context when keyword fallback finds no positive matches", async () => {
+		const embeddingFile = createMarkdownFile("Stories/Semantic.md");
+		const keywordFile = createMarkdownFile("Stories/Keyword.md");
+		const app = createApp({});
+		const service = new RagService(app as unknown as App, createEmbeddingSettings(), createRagIndexStore());
+		const fetchMock = window.fetch as Mock;
+
+		fetchMock.mockRejectedValue(new Error("Embedding outage"));
+		ragStoreMocks.listIndexedFiles.mockResolvedValue([createEmbeddingIndexedFile(embeddingFile), createIndexedFile(keywordFile)]);
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue([]);
+
+		const context = await service.getContext("indexed-notes", "unmatched query", false);
+
+		expect(context).toBeUndefined();
+		expect(ragStoreMocks.searchEmbeddingChunks).not.toHaveBeenCalled();
+		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith("unmatched query", [embeddingFile.path, keywordFile.path], expect.any(Object));
+	});
+
 	it("labels an embedding-stored chunk as keyword-selected when keyword fallback returns it", async () => {
 		const embeddingFile = createMarkdownFile("Stories/Semantic.md");
 		const app = createApp({});
