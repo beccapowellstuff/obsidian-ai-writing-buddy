@@ -14,7 +14,7 @@ Current features include:
 
 * A side panel for reviewing AI responses before using them.
 * General chat from the side panel.
-* Context-aware chat for the current note, open notes, and indexed notes.
+* Context-aware chat for the current note and open notes, with optional indexed RAG context from the local note index.
 * Persistent local RAG indexing using a sql.js SQLite database stored inside the plugin folder.
 * Semantic RAG using an OpenAI-compatible `/embeddings` endpoint.
 * Keyword fallback retrieval when embeddings are not configured or fail.
@@ -67,15 +67,14 @@ This is different from simply pasting a whole note into the prompt. The plugin i
 
 ### Context scopes
 
-The side panel includes a **Context** checkbox and a context scope selector.
+The side panel includes a **Context** checkbox, a context scope selector, and a separate indexed RAG checkbox.
 
-Available context modes include:
+The context scope selector includes:
 
 * **Current note**: indexes and searches the active Markdown note.
 * **Open notes**: indexes and searches open Markdown notes, ignoring non-Markdown tabs and de-duplicating files by path.
-* **Indexed notes**: searches notes that exist in the local RAG index. Use **Build note index** in **RAG context** settings to index all Markdown notes in the vault.
 
-Depending on the current UI settings, indexed RAG context may also be included alongside the selected note scope.
+When the separate indexed RAG checkbox is enabled, the plugin also searches notes that already exist in the local RAG index and includes those results alongside the selected note scope. Use **Build note index** in **RAG context** settings to index all Markdown notes in the vault.
 
 ### How RAG storage works
 
@@ -117,7 +116,7 @@ Embedding settings include:
 * optional embedding secret key
 * embedding connection test
 
-The embedding server address and key can fall back to the main chat provider settings when left blank.
+The embedding server address must be configured explicitly for the embedding provider. It does not fall back to the main chat provider server address. The embedding secret key can fall back to the main chat provider secret key when left blank.
 
 If embeddings are not configured or an embedding request fails, the plugin stores and searches chunks using keyword fallback instead. Keyword fallback is deliberately labelled as keyword fallback in the used-context footer so it is not confused with semantic retrieval.
 
@@ -285,12 +284,12 @@ To configure embeddings:
 
 1. Open **Settings → AI Writing Buddy**.
 2. Find the **RAG context** settings.
-3. Set **Embedding server address**, or leave it blank to use the main chat server address.
+3. Set **Embedding server address** to your embedding provider base URL.
 4. Set **Embedding model**.
 5. Set **Embedding secret key** if needed, or leave it blank to use the main chat secret key.
 6. Press **Test embedding connection**.
 
-If the embedding model is left blank, context can still use keyword fallback, but semantic retrieval will not be available.
+If the embedding model or embedding server address is left blank, context can still use keyword fallback, but semantic retrieval will not be available. The embedding server address is separate from the main chat server address.
 
 Use **Build note index** in the same settings section to index all Markdown notes in the vault. Use **Rebuild note index** after changing embedding provider/model settings if you want existing chunks recreated with the new embedding configuration. If the embedding provider is unavailable, asleep, or the model is not loaded, indexing falls back to keyword chunks and reports that fallback in the RAG status.
 
