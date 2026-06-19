@@ -82,7 +82,7 @@ export function scoreKeywordChunk(chunk: AiWritingBuddyRagChunk, query: RagKeywo
 	return score;
 }
 
-export function tokenizeRagSearchText(text: string): string[] {
+function tokenizeRagSearchText(text: string): string[] {
 	const matches = text.toLowerCase().match(/[a-z0-9]+/g) ?? [];
 	const stopWords = new Set([
 		"the",

@@ -3,19 +3,6 @@ import { AiWritingBuddyPluginDataService } from "../../src/services/ai-writing-b
 import type { AiWritingBuddyCurrentSessionData } from "../../src/types/ai-writing-buddy-plugin-data";
 
 describe("AiWritingBuddyPluginDataService", () => {
-	it("saves session data without settings", () => {
-		const service = new AiWritingBuddyPluginDataService();
-		const session = createSession([]);
-
-		const savedData = service.createSaveData(session, []);
-
-		expect(savedData).toEqual({
-			currentSession: session,
-			savedSessions: [],
-		});
-		expect(savedData).not.toHaveProperty("settings");
-	});
-
 	it("omits generated prompt previews and caps large selected text", () => {
 		const service = new AiWritingBuddyPluginDataService();
 		const selectedText = "a".repeat(45000);
@@ -41,8 +28,8 @@ describe("AiWritingBuddyPluginDataService", () => {
 			},
 		]);
 
-		const savedData = service.createSaveData(session, []);
-		const savedEntry = savedData.currentSession.entries[0];
+		const compactSession = service.compactSessionForStorage(session);
+		const savedEntry = compactSession.entries[0];
 
 		if (!savedEntry || savedEntry.type !== "selection") {
 			throw new Error("Expected selection entry");
@@ -54,9 +41,8 @@ describe("AiWritingBuddyPluginDataService", () => {
 		expect(savedEntry.request.selectedText).toContain("[Session text truncated for storage.]");
 	});
 
-	it("still loads current and saved sessions from data.json", () => {
+	it("normalises valid saved session data", () => {
 		const service = new AiWritingBuddyPluginDataService();
-		const currentSession = createSession([]);
 		const savedSession = createSession([
 			{
 				id: "chat-entry",
@@ -71,14 +57,11 @@ describe("AiWritingBuddyPluginDataService", () => {
 			},
 		], "saved-session");
 
-		const loadedData = service.load({
-			currentSession,
-			savedSessions: [savedSession],
-		});
+		const normalisedSession = service.normaliseSessionData(savedSession);
 
-		expect(loadedData.currentSession.id).toBe("current-session");
-		expect(loadedData.savedSessions).toHaveLength(1);
-		expect(loadedData.savedSessions[0]?.id).toBe("saved-session");
+		expect(normalisedSession.id).toBe("saved-session");
+		expect(normalisedSession.entries).toHaveLength(1);
+		expect(normalisedSession.entryCount).toBe(1);
 	});
 });
 

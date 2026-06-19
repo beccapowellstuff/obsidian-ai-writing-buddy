@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createRagKeywordSearchQuery, scoreKeywordChunk, tokenizeRagSearchText } from "../../src/services/rag-keyword-search";
+import { createRagKeywordSearchQuery, scoreKeywordChunk } from "../../src/services/rag-keyword-search";
 import { RagIndexStore } from "../../src/services/rag-index-store";
 import type { AiWritingBuddyRagChunk } from "../../src/types/rag-index";
 
@@ -213,7 +213,7 @@ describe("RagIndexStore mutation queue", () => {
 
 describe("RagIndexStore keyword scoring", () => {
 	it("prefers content matches over generic story path matches", () => {
-		const queryTerms = tokenizeRagSearchText("what story does Scott take a shower");
+		const queryTerms = createRagKeywordSearchQuery("what story does Scott take a shower").terms;
 		const matchingChunk = createChunk("Stories/Quiet Morning.md", "Scott takes a shower before returning to the kitchen.");
 		const genericStoryChunk = createChunk("Stories/Archive/Blue House.md", "A scene about rain on the windows.");
 

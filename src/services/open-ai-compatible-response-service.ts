@@ -1,4 +1,6 @@
 import { AiWritingBuddySettings } from "../config/default-settings";
+import { createJsonRequestHeaders } from "../utils/create-json-request-headers";
+import { createRequestTimeout } from "../utils/create-request-timeout";
 import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 import { AiWritingBuddyResponse } from "../types/ai-writing-buddy-response";
 import { ConversationMemoryStrategy } from "../types/conversation-memory-strategy";
@@ -70,18 +72,12 @@ export class OpenAiCompatibleResponseService implements AiResponseService {
 			throw new Error("Model name is required.");
 		}
 
-		const headers: Record<string, string> = {
-			"Content-Type": "application/json",
-		};
+		const headers = createJsonRequestHeaders(this.settings.apiKey);
 
-		if (this.settings.apiKey.trim()) {
-			headers.Authorization = `Bearer ${this.settings.apiKey.trim()}`;
-		}
-
-		const abortController = new AbortController();
-		const timeoutId = window.setTimeout(() => {
-			abortController.abort(new Error(`AI provider request timed out after ${this.settings.requestTimeoutMs}ms.`));
-		}, Math.max(1, this.settings.requestTimeoutMs));
+		const { abortController, timeoutId } = createRequestTimeout(
+			this.settings.requestTimeoutMs,
+			`AI provider request timed out after ${this.settings.requestTimeoutMs}ms.`,
+		);
 
 		const abortFromExternalSignal = (): void => {
 			abortController.abort(new DOMException("The request was cancelled.", "AbortError"));

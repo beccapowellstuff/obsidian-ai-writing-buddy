@@ -239,26 +239,6 @@ export class SessionHistoryStore {
 		});
 	}
 
-	async replaceCurrentSession(session: AiWritingBuddyCurrentSessionData): Promise<void> {
-		const sessionSnapshot: AiWritingBuddyCurrentSessionData = structuredClone(session);
-
-		return this.enqueueMutation(async () => {
-			const index = this.requireIndex();
-
-			this.index = {
-				...index,
-				currentSessionId: sessionSnapshot.id,
-				sessions: {
-					...index.sessions,
-					[sessionSnapshot.id]: this.createSessionListItem(sessionSnapshot),
-				},
-			};
-
-			await this.saveSession(sessionSnapshot);
-			await this.saveIndex(this.index);
-		});
-	}
-
 	async loadSession(sessionId: string): Promise<AiWritingBuddySessionLoadResult> {
 		try {
 			const rawData = await readFile(this.getSessionPath(sessionId), "utf8");

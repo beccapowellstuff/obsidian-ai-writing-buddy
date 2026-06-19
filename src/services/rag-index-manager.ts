@@ -3,6 +3,7 @@ import type { AiWritingBuddySettings } from "../config/default-settings";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type { AiWritingBuddyContextRetrievalMode } from "../types/ai-writing-buddy-context";
 import type { AiWritingBuddyRagIndexStatus } from "../types/rag-index";
+import { extractErrorMessage } from "../utils/extract-error-message";
 import { RagFileIndexer } from "./rag-file-indexer";
 import { RagIndexStore } from "./rag-index-store";
 
@@ -177,7 +178,7 @@ export class RagIndexManager {
 
 			return { ...this.status };
 		} catch (error) {
-			const errorMessage = this.extractErrorMessage(error);
+			const errorMessage = extractErrorMessage(error, "RAG indexing failed.");
 
 			console.error("AI Writing Buddy RAG vault indexing failed", error);
 
@@ -261,7 +262,7 @@ export class RagIndexManager {
 				lastError,
 			};
 		} catch (error) {
-			const errorMessage = this.extractErrorMessage(error);
+			const errorMessage = extractErrorMessage(error, "RAG indexing failed.");
 
 			console.warn("AI Writing Buddy RAG file update failed", error);
 
@@ -286,7 +287,7 @@ export class RagIndexManager {
 	}
 
 	private handleBackgroundFileMutationFailure(message: string, error: unknown): void {
-		const errorMessage = this.extractErrorMessage(error);
+		const errorMessage = extractErrorMessage(error, "RAG indexing failed.");
 
 		console.warn(message, error);
 
@@ -331,18 +332,6 @@ export class RagIndexManager {
 
 	private isMarkdownFile(file: TAbstractFile | null | undefined): file is TFile {
 		return file instanceof TFile && file.extension.toLowerCase() === "md";
-	}
-
-	private extractErrorMessage(error: unknown): string {
-		if (error instanceof Error && error.message.trim()) {
-			return error.message.trim();
-		}
-
-		if (typeof error === "string" && error.trim()) {
-			return error.trim();
-		}
-
-		return "RAG indexing failed.";
 	}
 
 	private async yieldToUi(): Promise<void> {

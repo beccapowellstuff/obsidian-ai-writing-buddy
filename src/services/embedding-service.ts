@@ -1,4 +1,6 @@
 import type { AiWritingBuddySettings } from "../config/default-settings";
+import { createJsonRequestHeaders } from "../utils/create-json-request-headers";
+import { createRequestTimeout } from "../utils/create-request-timeout";
 
 type EmbeddingResponse = {
 	data?: Array<{
@@ -69,19 +71,12 @@ export class EmbeddingService {
 			throw new Error("Embedding server address is required.");
 		}
 
-		const headers: Record<string, string> = {
-			"Content-Type": "application/json",
-		};
-		const apiKey = this.getApiKey();
+		const headers = createJsonRequestHeaders(this.getApiKey());
 
-		if (apiKey) {
-			headers.Authorization = `Bearer ${apiKey}`;
-		}
-
-		const abortController = new AbortController();
-		const timeoutId = window.setTimeout(() => {
-			abortController.abort(new Error(`Embedding provider request timed out after ${this.settings.requestTimeoutMs}ms.`));
-		}, Math.max(1, this.settings.requestTimeoutMs));
+		const { abortController, timeoutId } = createRequestTimeout(
+			this.settings.requestTimeoutMs,
+			`Embedding provider request timed out after ${this.settings.requestTimeoutMs}ms.`,
+		);
 
 		try {
 			const response = await window.fetch(`${baseUrl}/embeddings`, {

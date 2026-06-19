@@ -1,13 +1,16 @@
 {
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
   "ignorePatterns": [
-    "src/styles/**"
+    "src/styles/**",
+    "tests/**"  
   ],
   "ignoreDependencies": [
     "tslib"
   ],
   "usedClassMembers": [
     "isConfigured",
+    "normaliseSessionData",
+    "compactSessionForStorage",
     {
       "implements": "AiResponseService",
       "members": [
@@ -25,12 +28,14 @@
   ],
   "health": {
     "ignore": [
-      "npm/fallow/scripts/**"
+      "npm/fallow/scripts/**",
+      "tests/**"
     ]
   },
   "duplicates": {
     "ignore": [
-      "npm/fallow/scripts/**"
+      "npm/fallow/scripts/**",
+      "tests/**"
     ]
   }
 }

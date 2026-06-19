@@ -1,4 +1,3 @@
-import { AiWritingBuddySettings } from "../config/default-settings";
 import { AiWritingBuddyEntry } from "./ai-writing-buddy-entry";
 
 export type AiWritingBuddyMemorySummary = {
@@ -24,10 +23,4 @@ export type AiWritingBuddySessionListItem = {
 	updatedAt: string;
 	entryCount: number;
 	userTitle?: string;
-};
-
-export type AiWritingBuddyPluginData = {
-	currentSession: AiWritingBuddyCurrentSessionData;
-	savedSessions: AiWritingBuddyCurrentSessionData[];
-	settings?: AiWritingBuddySettings;
 };

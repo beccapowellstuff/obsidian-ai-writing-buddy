@@ -2,6 +2,7 @@ import type { App, TFile } from "obsidian";
 import type { AiWritingBuddySettings } from "../config/default-settings";
 import type { AiWritingBuddyContextRetrievalMode } from "../types/ai-writing-buddy-context";
 import type { AiWritingBuddyRagChunk, AiWritingBuddyRagFileIndexResult, AiWritingBuddyRagIndexedFile } from "../types/rag-index";
+import { extractErrorMessage } from "../utils/extract-error-message";
 import { EmbeddingService } from "./embedding-service";
 import { RagChunker } from "./rag-chunker";
 import type { RagIndexStore } from "./rag-index-store";
@@ -35,7 +36,7 @@ export class RagFileIndexer {
 					usedKeywordFallback: false,
 				};
 			} catch (error) {
-				const errorMessage = this.extractErrorMessage(error);
+				const errorMessage = extractErrorMessage(error, "Embedding provider unavailable.");
 
 				console.warn("AI Writing Buddy embedding indexing failed; storing keyword chunks.", error);
 
@@ -155,15 +156,4 @@ export class RagFileIndexer {
 		return hashBytes.map((byte) => byte.toString(16).padStart(2, "0")).join("");
 	}
 
-	private extractErrorMessage(error: unknown): string {
-		if (error instanceof Error && error.message.trim()) {
-			return error.message.trim();
-		}
-
-		if (typeof error === "string" && error.trim()) {
-			return error.trim();
-		}
-
-		return "Embedding provider unavailable.";
-	}
 }

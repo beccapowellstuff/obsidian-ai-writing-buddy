@@ -1,17 +1,5 @@
 import type { AiWritingBuddyEntry } from "../types/ai-writing-buddy-entry";
-import type { AiWritingBuddyCurrentSessionData, AiWritingBuddyMemorySummary, AiWritingBuddyPluginData, AiWritingBuddySessionListItem } from "../types/ai-writing-buddy-plugin-data";
-
-type SavedPluginData = Partial<AiWritingBuddyPluginData> | null;
-
-type LoadedPluginData = {
-	currentSession: AiWritingBuddyCurrentSessionData;
-	savedSessions: AiWritingBuddyCurrentSessionData[];
-};
-
-type SessionSwitchResult = {
-	currentSession: AiWritingBuddyCurrentSessionData;
-	savedSessions: AiWritingBuddyCurrentSessionData[];
-};
+import type { AiWritingBuddyCurrentSessionData, AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 
 type RawMemorySummary = Partial<AiWritingBuddyMemorySummary> | undefined;
 
@@ -21,22 +9,6 @@ const MAX_PERSISTED_RESPONSE_TEXT_CHARACTERS = 80000;
 const TRUNCATED_TEXT_SUFFIX = "\n\n[Session text truncated for storage.]";
 
 export class AiWritingBuddyPluginDataService {
-	load(rawData: unknown): LoadedPluginData {
-		const savedData = rawData as SavedPluginData;
-
-		return {
-			currentSession: this.getSavedCurrentSession(savedData),
-			savedSessions: this.getSavedSessions(savedData),
-		};
-	}
-
-	createSaveData(currentSession: AiWritingBuddyCurrentSessionData, savedSessions: AiWritingBuddyCurrentSessionData[]): AiWritingBuddyPluginData {
-		return {
-			currentSession: this.compactSessionForStorage(currentSession),
-			savedSessions: savedSessions.map((session) => this.compactSessionForStorage(session)),
-		};
-	}
-
 	createEmptyCurrentSession(): AiWritingBuddyCurrentSessionData {
 		const now = new Date().toISOString();
 
@@ -64,58 +36,6 @@ export class AiWritingBuddyPluginDataService {
 		};
 	}
 
-	getSessionListItems(savedSessions: AiWritingBuddyCurrentSessionData[]): AiWritingBuddySessionListItem[] {
-		return savedSessions.map((session) => ({
-			id: session.id,
-			createdAt: session.createdAt,
-			updatedAt: session.updatedAt,
-			entryCount: session.entryCount,
-			userTitle: session.userTitle,
-		}));
-	}
-
-	startNewSession(currentSession: AiWritingBuddyCurrentSessionData, savedSessions: AiWritingBuddyCurrentSessionData[], sessionTitle?: string): SessionSwitchResult {
-		return {
-			currentSession: this.createEmptyCurrentSession(),
-			savedSessions: this.archiveSession(currentSession, savedSessions, sessionTitle),
-		};
-	}
-
-	restoreSavedSession(sessionId: string, currentSession: AiWritingBuddyCurrentSessionData, savedSessions: AiWritingBuddyCurrentSessionData[]): SessionSwitchResult | null {
-		const selectedSession = savedSessions.find((session) => session.id === sessionId);
-
-		if (!selectedSession) {
-			return null;
-		}
-
-		const remainingSavedSessions = savedSessions.filter((session) => session.id !== sessionId);
-
-		return {
-			currentSession: selectedSession,
-			savedSessions: this.archiveSession(currentSession, remainingSavedSessions),
-		};
-	}
-
-	deleteSavedSession(sessionId: string, savedSessions: AiWritingBuddyCurrentSessionData[]): AiWritingBuddyCurrentSessionData[] {
-		return savedSessions.filter((session) => session.id !== sessionId);
-	}
-
-	renameSavedSession(sessionId: string, title: string, savedSessions: AiWritingBuddyCurrentSessionData[]): AiWritingBuddyCurrentSessionData[] {
-		const trimmedTitle = title.trim().slice(0, 25);
-
-		return savedSessions.map((session) => {
-			if (session.id !== sessionId) {
-				return session;
-			}
-
-			return {
-				...session,
-				updatedAt: new Date().toISOString(),
-				userTitle: trimmedTitle || undefined,
-			};
-		});
-	}
-
 	renameCurrentSession(title: string, currentSession: AiWritingBuddyCurrentSessionData): AiWritingBuddyCurrentSessionData {
 		const trimmedTitle = title.trim().slice(0, 25);
 
@@ -124,37 +44,6 @@ export class AiWritingBuddyPluginDataService {
 			updatedAt: new Date().toISOString(),
 			userTitle: trimmedTitle || undefined,
 		};
-	}
-
-	private archiveSession(currentSession: AiWritingBuddyCurrentSessionData, savedSessions: AiWritingBuddyCurrentSessionData[], sessionTitle?: string): AiWritingBuddyCurrentSessionData[] {
-		if (currentSession.entryCount === 0 && currentSession.entries.length === 0) {
-			return savedSessions;
-		}
-
-		const trimmedTitle = sessionTitle?.trim().slice(0, 25);
-		const sessionToArchive: AiWritingBuddyCurrentSessionData = {
-			...currentSession,
-			updatedAt: new Date().toISOString(),
-			userTitle: trimmedTitle || currentSession.userTitle,
-		};
-
-		return [sessionToArchive, ...savedSessions.filter((session) => session.id !== currentSession.id)];
-	}
-
-	private getSavedCurrentSession(savedData: SavedPluginData): AiWritingBuddyCurrentSessionData {
-		if (!savedData || !("currentSession" in savedData) || !savedData.currentSession) {
-			return this.createEmptyCurrentSession();
-		}
-
-		return this.normaliseSessionData(savedData.currentSession);
-	}
-
-	private getSavedSessions(savedData: SavedPluginData): AiWritingBuddyCurrentSessionData[] {
-		if (!savedData || !("savedSessions" in savedData) || !Array.isArray(savedData.savedSessions)) {
-			return [];
-		}
-
-		return savedData.savedSessions.map((session) => this.normaliseSessionData(session)).filter((session) => session.entryCount > 0 || session.entries.length > 0);
 	}
 
 	normaliseSessionData(session: Partial<AiWritingBuddyCurrentSessionData>): AiWritingBuddyCurrentSessionData {
