@@ -68,7 +68,7 @@ vi.mock("../../src/services/rag-index-store", () => ({
 	},
 }));
 
-import { TFile, type App } from "obsidian";
+import { MarkdownView, TFile, type App } from "obsidian";
 import { DEFAULT_AI_WRITING_BUDDY_SETTINGS } from "../../src/config/default-settings";
 import { RagIndexStore } from "../../src/services/rag-index-store";
 import { RagService } from "../../src/services/rag-service";
@@ -78,7 +78,7 @@ type MockWorkspace = {
 	activeEditor: { file: TFile | null } | null;
 	getActiveViewOfType: Mock<() => { file: TFile | null } | null>;
 	getActiveFile: Mock<() => TFile | null>;
-	getLeavesOfType: Mock<() => Array<{ view: { file: TFile } }>>;
+	getLeavesOfType: Mock<() => Array<{ view: MarkdownView }>>;
 };
 
 type MockApp = {
@@ -104,13 +104,19 @@ function createMarkdownFile(path: string): TFile {
 	return file;
 }
 
+function createMarkdownView(file: TFile): MarkdownView {
+	return Object.assign(Object.create(MarkdownView.prototype) as MarkdownView, {
+		file,
+	});
+}
+
 function createApp(options: { activeEditorFile?: TFile | null; activeViewFile?: TFile | null; activeFile?: TFile | null; openFiles?: TFile[] }): MockApp {
 	return {
 		workspace: {
 			activeEditor: options.activeEditorFile === undefined ? null : { file: options.activeEditorFile },
 			getActiveViewOfType: vi.fn(() => (options.activeViewFile === undefined ? null : { file: options.activeViewFile })),
 			getActiveFile: vi.fn(() => options.activeFile ?? null),
-			getLeavesOfType: vi.fn(() => (options.openFiles ?? []).map((file) => ({ view: { file } }))),
+			getLeavesOfType: vi.fn(() => (options.openFiles ?? []).map((file) => ({ view: createMarkdownView(file) }))),
 		},
 		vault: {
 			cachedRead: vi.fn(async () => "Current note body"),
@@ -220,6 +226,39 @@ describe("RagService", () => {
 				return 0;
 			},
 		});
+	});
+
+	it("searches unique open markdown leaves when open-notes scope is selected", async () => {
+		const firstOpenFile = createMarkdownFile("Stories/The Unfinished Oath.md");
+		const secondOpenFile = createMarkdownFile("Comics/To be Young.md");
+		const nonMarkdownFile = createMarkdownFile("Images/Cover.png");
+		const app = createApp({
+			openFiles: [firstOpenFile, firstOpenFile, nonMarkdownFile, secondOpenFile],
+		});
+		const service = new RagService(app as unknown as App, DEFAULT_AI_WRITING_BUDDY_SETTINGS, createRagIndexStore());
+
+		ragStoreMocks.searchKeywordChunks.mockResolvedValue([createSearchResult(firstOpenFile, 10), createSearchResult(secondOpenFile, 9)]);
+
+		const context = await service.getContext("open-notes", "shared scene detail", false);
+
+		expect(app.workspace.getLeavesOfType).toHaveBeenCalledWith("markdown");
+		expect(app.vault.cachedRead).toHaveBeenCalledTimes(2);
+		expect(app.vault.cachedRead).toHaveBeenCalledWith(firstOpenFile);
+		expect(app.vault.cachedRead).toHaveBeenCalledWith(secondOpenFile);
+		expect(ragStoreMocks.searchKeywordChunks).toHaveBeenCalledWith(
+			"shared scene detail",
+			[firstOpenFile.path, secondOpenFile.path],
+			expect.objectContaining({
+				similarityThreshold: 0,
+			}),
+		);
+		expect(context).toMatchObject({
+			scope: "open-notes",
+			retrievalMode: "keyword",
+			usedKeywordFallback: true,
+			includeIndexedRag: false,
+		});
+		expect(context?.notes.map((note) => note.path)).toEqual([firstOpenFile.path, secondOpenFile.path]);
 	});
 
 	it("uses the active markdown editor file for current-note context before the broader active file fallback", async () => {
