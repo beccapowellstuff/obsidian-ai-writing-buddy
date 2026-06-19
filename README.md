@@ -230,7 +230,7 @@ Visible memory currently reads the beginning of the whole managed block up to th
 These are tracked as future work and should not be treated as current behaviour:
 
 * [Issue #126: memory-specific RAG](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues/126)
-* [Issue #127: weighting and protected or precious entries](https://github.com/beccapowellstuff/issues/127)
+* [Issue #127: weighting and protected or precious entries](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues/127)
 * [Issue #128: automatic cleanup and consolidation](https://github.com/beccapowellstuff/obsidian-ai-writing-buddy/issues/128)
 
 ## Templates
