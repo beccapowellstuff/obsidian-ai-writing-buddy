@@ -19,6 +19,7 @@ type NewSessionHandler = (sessionTitle?: string) => Promise<void>;
 type NoteContextProvider = (message: string) => Promise<AiWritingBuddyChatNoteContext | undefined>;
 type VisibleMemoryProvider = () => Promise<AiWritingBuddyVisibleMemoryContext | undefined>;
 type ChatResponseCompletedHandler = (entry: AiWritingBuddyChatEntry, assistantResponseText: string) => void;
+type ProviderErrorLogHandler = (error: unknown, operation: string) => void;
 
 export class AiWritingBuddySessionController {
 	private entries: AiWritingBuddyEntry[];
@@ -41,6 +42,7 @@ export class AiWritingBuddySessionController {
 		settings: AiWritingBuddySettings,
 		initialEntries: AiWritingBuddyEntry[] = [],
 		initialMemorySummary?: AiWritingBuddyMemorySummary,
+		private readonly onProviderError?: ProviderErrorLogHandler,
 	) {
 		this.entries = [...initialEntries];
 		this.memorySummary = initialMemorySummary;
@@ -280,6 +282,7 @@ export class AiWritingBuddySessionController {
 		}
 
 		console.error(logMessage, error);
+		this.onProviderError?.(error, logMessage);
 		entry.response = createPlaceholderResponse([INTERFACE_TEXT.responses.providerErrorHeading, "", formatProviderErrorMessage(error)].join("\n"));
 
 		return true;

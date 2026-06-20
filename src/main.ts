@@ -10,11 +10,14 @@ import { createAiResponseService } from "./services/create-ai-response-service";
 import { AiWritingBuddyViewService } from "./services/view-service";
 import { EditorMenuService } from "./services/editor-menu-service";
 import { EmbeddingService } from "./services/embedding-service";
+import { ErrorDebugLogService } from "./services/error-debug-log-service";
 import { RagIndexManager } from "./services/rag-index-manager";
 import { RagIndexStore } from "./services/rag-index-store";
 import { SessionHistoryStore } from "./services/session-history-store";
 import { AiWritingBuddyCurrentSessionData, AiWritingBuddySessionListItem } from "./types/ai-writing-buddy-plugin-data";
+import type { ErrorDebugLogInput } from "./types/error-debug-log";
 import type { AiWritingBuddyRagIndexStatus } from "./types/rag-index";
+import { getProviderErrorDetails } from "./utils/format-provider-error-message";
 import { AI_WRITING_BUDDY_VIEW_TYPE, AiWritingBuddyView } from "./views/ai-writing-buddy-view";
 
 type OpenAiModelsResponse = {
@@ -30,6 +33,7 @@ export default class AiWritingBuddyPlugin extends Plugin {
 	private ragIndexManager!: RagIndexManager;
 	private configurationStore!: AiWritingBuddyConfigurationStore;
 	private sessionHistoryStore!: SessionHistoryStore;
+	errorDebugLogService!: ErrorDebugLogService;
 	settings!: AiWritingBuddySettings;
 	currentSession: AiWritingBuddyCurrentSessionData = this.pluginDataService.createEmptyCurrentSession();
 	savedSessionListItems: AiWritingBuddySessionListItem[] = [];
@@ -41,6 +45,7 @@ export default class AiWritingBuddyPlugin extends Plugin {
 
 		this.configurationStore = new AiWritingBuddyConfigurationStore(pluginRootPath);
 		this.sessionHistoryStore = new SessionHistoryStore(pluginRootPath, this.pluginDataService);
+		this.errorDebugLogService = new ErrorDebugLogService(pluginRootPath);
 		await this.loadSettings();
 		this.ragIndexStore = new RagIndexStore(join(pluginRootPath, "rag-index", "embeddings.db"));
 		this.ragIndexManager = new RagIndexManager(this.app, this.settings, this.ragIndexStore);
@@ -60,6 +65,7 @@ export default class AiWritingBuddyPlugin extends Plugin {
 					this.currentSession = this.pluginDataService.withUpdatedCurrentSessionEntries(this.currentSession, entries, memorySummary);
 					void this.savePluginData().catch((error: unknown) => {
 						console.error("AI Writing Buddy session save failed", error);
+						this.logPluginError(error, "session-save");
 					});
 				},
 				async (sessionTitle) => {
@@ -105,6 +111,7 @@ export default class AiWritingBuddyPlugin extends Plugin {
 					this.currentSession = this.pluginDataService.renameCurrentSession(title, this.currentSession);
 					void this.savePluginData().catch((error: unknown) => {
 						console.error("AI Writing Buddy session save failed", error);
+						this.logPluginError(error, "session-save");
 					});
 
 					return this.currentSession;
@@ -119,6 +126,9 @@ export default class AiWritingBuddyPlugin extends Plugin {
 				},
 				() => this.saveSettings(),
 				this.ragIndexStore,
+				(error, operation) => {
+					this.logProviderError(error, operation);
+				},
 			);
 		});
 
@@ -147,6 +157,38 @@ export default class AiWritingBuddyPlugin extends Plugin {
 
 	async saveSettings(): Promise<void> {
 		await this.configurationStore.saveSettings(this.settings);
+	}
+
+	logProviderError(error: unknown, operation: string): void {
+		const details = getProviderErrorDetails(error);
+
+		this.appendErrorDebugLogEntry({
+			source: "provider",
+			providerType: this.settings.provider,
+			category: details.kind,
+			httpStatus: details.httpStatus,
+			code: details.code,
+			message: details.kind === "unknown" ? undefined : details.technicalMessage,
+			operation,
+		});
+	}
+
+	logPluginError(error: unknown, operation: string): void {
+		this.appendErrorDebugLogEntry({
+			source: "plugin",
+			code: error instanceof Error ? error.name : undefined,
+			message: error instanceof Error ? error.message : undefined,
+			operation,
+		});
+	}
+
+	private appendErrorDebugLogEntry(entry: ErrorDebugLogInput): void {
+		void this.errorDebugLogService.appendEntry(this.settings.errorDebugLoggingEnabled, {
+			...entry,
+			pluginVersion: this.manifest.version,
+		}).catch((error: unknown) => {
+			console.warn("AI Writing Buddy error debug log write failed", error);
+		});
 	}
 
 	private async savePluginData(): Promise<void> {
@@ -270,6 +312,7 @@ export default class AiWritingBuddyPlugin extends Plugin {
 			await this.ragIndexManager.getStatus();
 		} catch (error) {
 			console.warn("AI Writing Buddy RAG index status refresh failed", error);
+			this.logPluginError(error, "rag-index-status-refresh");
 		}
 	}
 }

@@ -44,6 +44,26 @@ describe("AiWritingBuddySessionController", () => {
 		consoleErrorSpy.mockRestore();
 	});
 
+	it("logs provider errors without changing the existing panel error response", async () => {
+		const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+		const providerError = new Error("AI provider request failed with status 503.");
+		const createChatResponse = vi.fn<AiResponseService["createChatResponse"]>().mockRejectedValue(providerError);
+		const onProviderError = vi.fn();
+		const harness = createControllerHarness({
+			createChatResponse,
+			onProviderError,
+		});
+
+		await harness.controller.addChatEntry("Hello");
+
+		const entry = harness.controller.getEntries()[0];
+		expect(entry?.response.text).toContain(INTERFACE_TEXT.responses.providerErrorHeading);
+		expect(entry?.response.text).toContain("Technical detail: AI provider request failed with status 503.");
+		expect(onProviderError).toHaveBeenCalledWith(providerError, "AI Writing Buddy chat response failed");
+
+		consoleErrorSpy.mockRestore();
+	});
+
 	it("does not notify chat completion when a pending chat response is cancelled", async () => {
 		const response = createCompletedResponse("Draft response.");
 		const responsePromise = createControlledPromise<AiWritingBuddyResponse>();
@@ -73,6 +93,7 @@ describe("AiWritingBuddySessionController", () => {
 function createControllerHarness(options: {
 	createChatResponse: CreateChatResponseMock;
 	nextEntryId?: `${string}-${string}-${string}-${string}-${string}`;
+	onProviderError?: (error: unknown, operation: string) => void;
 }) {
 	const nextEntryId = options.nextEntryId ?? "00000000-0000-4000-8000-000000000001";
 
@@ -100,6 +121,9 @@ function createControllerHarness(options: {
 		getVisibleMemory,
 		onChatResponseCompleted,
 		DEFAULT_AI_WRITING_BUDDY_SETTINGS,
+		[],
+		undefined,
+		options.onProviderError,
 	);
 
 	return {

@@ -103,6 +103,7 @@ export class ConnectionSettingsRenderer {
 						new Notice(message);
 					} catch (error) {
 						console.error("AI Writing Buddy connection test failed", error);
+						this.plugin.logProviderError(error, "connection-test");
 
 						const message = error instanceof Error ? error.message : INTERFACE_TEXT.errors.connectionTestFailed;
 						new Notice(INTERFACE_TEXT.errors.connectionTestFailure(message));
@@ -163,6 +164,9 @@ export class ConnectionSettingsRenderer {
 						logMessage: "AI Writing Buddy model loading failed",
 						fallbackErrorMessage: INTERFACE_TEXT.errors.modelLoadingFailed,
 						formatFailureNotice: INTERFACE_TEXT.errors.modelLoadingFailure,
+						onError: (error) => {
+							this.plugin.logProviderError(error, "model-list");
+						},
 						run: async () => {
 							this.availableModels.length = 0;
 							this.availableModels.push(...(await this.plugin.listAvailableModels(this.settings)));

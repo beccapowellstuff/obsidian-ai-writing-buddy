@@ -65,6 +65,7 @@ export class RagSettingsRenderer {
 						new Notice(message);
 					} catch (error) {
 						console.error("AI Writing Buddy embedding connection test failed", error);
+						this.plugin.logProviderError(error, "embedding-connection-test");
 
 						const message = error instanceof Error ? error.message : INTERFACE_TEXT.errors.embeddingConnectionTestFailed;
 						new Notice(INTERFACE_TEXT.errors.embeddingConnectionTestFailure(message));
@@ -137,6 +138,7 @@ export class RagSettingsRenderer {
 			console.error("AI Writing Buddy RAG index action failed", error);
 
 			const message = error instanceof Error ? error.message : "Unknown RAG indexing error.";
+			this.plugin.logPluginError(error, "rag-index-action");
 			new Notice(INTERFACE_TEXT.settings.rag.indexStatusFailed(message));
 			this.refresh();
 		} finally {
@@ -215,6 +217,9 @@ export class RagSettingsRenderer {
 						logMessage: "AI Writing Buddy embedding model loading failed",
 						fallbackErrorMessage: INTERFACE_TEXT.errors.modelLoadingFailed,
 						formatFailureNotice: INTERFACE_TEXT.errors.modelLoadingFailure,
+						onError: (error) => {
+							this.plugin.logProviderError(error, "embedding-model-list");
+						},
 						run: async () => {
 							this.availableEmbeddingModels.length = 0;
 							this.availableEmbeddingModels.push(...(await this.plugin.listAvailableEmbeddingModels(this.settings)));

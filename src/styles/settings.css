@@ -138,6 +138,10 @@
 	max-width: 96vw;
 }
 
+.ai-writing-buddy-error-debug-log-textarea {
+	width: 100%;
+}
+
 .ai-writing-buddy-user-templates-modal-content {
 	overflow-x: hidden;
 }

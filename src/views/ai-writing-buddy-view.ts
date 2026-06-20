@@ -36,6 +36,7 @@ type CurrentSessionProvider = () => AiWritingBuddyCurrentSessionData | null;
 type RenameCurrentSessionHandler = (title: string) => AiWritingBuddyCurrentSessionData;
 type DeleteCurrentSessionHandler = () => Promise<AiWritingBuddyCurrentSessionData>;
 type SettingsSaveHandler = () => Promise<void>;
+type ProviderErrorLogHandler = (error: unknown, operation: string) => void;
 
 export class AiWritingBuddyView extends ItemView {
 	private readonly sessionController: AiWritingBuddySessionController;
@@ -68,6 +69,7 @@ export class AiWritingBuddyView extends ItemView {
 		private readonly onDeleteCurrentSession: DeleteCurrentSessionHandler,
 		private readonly onSaveSettings: SettingsSaveHandler,
 		ragIndexStore: RagIndexStore,
+		private readonly onProviderError?: ProviderErrorLogHandler,
 	) {
 		super(leaf);
 
@@ -108,6 +110,7 @@ export class AiWritingBuddyView extends ItemView {
 			this.settings,
 			initialEntries,
 			initialMemorySummary,
+			this.onProviderError,
 		);
 
 		this.entryRenderer = new AiWritingBuddyEntryRenderer(
