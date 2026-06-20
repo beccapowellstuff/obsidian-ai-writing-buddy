@@ -1,6 +1,13 @@
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 
-type ProviderErrorKind = "no-model-selected" | "provider-memory-unavailable" | "empty-response" | "rejected-request" | "timeout" | "connection" | "unknown";
+export type ProviderErrorKind = "no-model-selected" | "provider-memory-unavailable" | "empty-response" | "rejected-request" | "timeout" | "connection" | "unknown";
+
+export type ProviderErrorDetails = {
+	kind: ProviderErrorKind;
+	technicalMessage: string;
+	httpStatus?: number;
+	code?: string;
+};
 
 type ProviderErrorRule = {
 	kind: Exclude<ProviderErrorKind, "unknown">;
@@ -35,10 +42,20 @@ const PROVIDER_ERROR_RULES: readonly ProviderErrorRule[] = [
 ];
 
 export function formatProviderErrorMessage(error: unknown): string {
-	const technicalMessage = extractErrorMessage(error);
-	const errorKind = classifyProviderError(technicalMessage);
+	const { kind, technicalMessage } = getProviderErrorDetails(error);
 
-	return formatKnownProviderError(errorKind, technicalMessage);
+	return formatKnownProviderError(kind, technicalMessage);
+}
+
+export function getProviderErrorDetails(error: unknown): ProviderErrorDetails {
+	const technicalMessage = extractErrorMessage(error);
+
+	return {
+		kind: classifyProviderError(technicalMessage),
+		technicalMessage,
+		httpStatus: extractHttpStatus(technicalMessage),
+		code: extractSafeErrorCode(error),
+	};
 }
 
 function classifyProviderError(technicalMessage: string): ProviderErrorKind {
@@ -92,4 +109,19 @@ function extractErrorMessage(error: unknown): string {
 	}
 
 	return "Unknown provider error.";
+}
+
+function extractHttpStatus(message: string): number | undefined {
+	const match = message.match(/\bstatus\s+(\d{3})\b/i);
+	const status = match?.[1] ? Number.parseInt(match[1], 10) : undefined;
+
+	return status && status >= 100 && status <= 599 ? status : undefined;
+}
+
+function extractSafeErrorCode(error: unknown): string | undefined {
+	if (!(error instanceof Error) || !error.name || error.name === "Error") {
+		return undefined;
+	}
+
+	return /^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(error.name) ? error.name : undefined;
 }
