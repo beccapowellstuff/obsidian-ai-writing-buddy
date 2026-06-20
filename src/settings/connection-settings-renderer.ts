@@ -3,6 +3,7 @@ import type { AiWritingBuddySettings } from "../config/default-settings";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type AiWritingBuddyPlugin from "../main";
 import { runSettingsButtonTask } from "./run-settings-button-task";
+import { getProviderPreset, PROVIDER_PRESETS } from "../config/provider-presets";
 
 export class ConnectionSettingsRenderer {
 	constructor(
@@ -16,17 +17,34 @@ export class ConnectionSettingsRenderer {
 		new Setting(containerEl).setName(INTERFACE_TEXT.settings.connection.heading).setHeading();
 
 		new Setting(containerEl)
-			.setName(INTERFACE_TEXT.settings.connection.provider)
-			.setDesc(INTERFACE_TEXT.settings.connection.providerDescription)
+			.setName(INTERFACE_TEXT.settings.connection.providerPreset)
+			.setDesc(INTERFACE_TEXT.settings.connection.providerPresetDescription)
 			.addDropdown((dropdown) => {
-				dropdown
-					.addOption("mock", INTERFACE_TEXT.settings.connection.mockProvider)
-					.addOption("openai-compatible", INTERFACE_TEXT.settings.connection.compatibleProvider)
-					.setValue(this.settings.provider)
-					.onChange((value) => {
-						this.settings.provider = value === "openai-compatible" ? "openai-compatible" : "mock";
-					});
+				for (const preset of PROVIDER_PRESETS) {
+					dropdown.addOption(preset.id, preset.label);
+				}
+
+				dropdown.setValue(this.settings.providerPresetId).onChange((value) => {
+					const preset = getProviderPreset(value);
+
+					this.settings.providerPresetId = preset.id;
+					this.settings.provider = preset.protocol;
+
+					if (preset.defaultBaseUrl) {
+						this.settings.baseUrl = preset.defaultBaseUrl;
+					}
+
+					if (!this.settings.embeddingBaseUrl && preset.defaultEmbeddingBaseUrl) {
+						this.settings.embeddingBaseUrl = preset.defaultEmbeddingBaseUrl;
+					}
+
+					this.refresh();
+				});
 			});
+
+		const selectedPreset = getProviderPreset(this.settings.providerPresetId);
+
+		new Setting(containerEl).setName(INTERFACE_TEXT.settings.connection.providerGuidance).setDesc(selectedPreset.description);
 
 		new Setting(containerEl)
 			.setName(INTERFACE_TEXT.settings.connection.serverAddress)

@@ -1,7 +1,7 @@
 import { AiResponseService, AiChatRequest, AiMemoryUpdateRequest, AiResponseRequestOptions } from "./ai-response-service";
 import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 import { AiWritingBuddyResponse } from "../types/ai-writing-buddy-response";
-import { extractSelectionResponseOutput, SELECTION_RESPONSE_OUTPUT_END, SELECTION_RESPONSE_OUTPUT_START } from "./selection-response-output";
+import { parseSelectionResponseOutput, SELECTION_RESPONSE_OUTPUT_END, SELECTION_RESPONSE_OUTPUT_START } from "./selection-response-output";
 
 const MOCK_RESPONSE_DELAY_MS = 1200;
 
@@ -10,7 +10,7 @@ export class MockAiResponseService implements AiResponseService {
 		await this.waitForMockDelay(options?.signal);
 
 		return {
-			text: extractSelectionResponseOutput(`${SELECTION_RESPONSE_OUTPUT_START}\nFake AI response for: ${request.instruction}\n${SELECTION_RESPONSE_OUTPUT_END}`),
+			text: parseSelectionResponseOutput(`${SELECTION_RESPONSE_OUTPUT_START}\nFake AI response for: ${request.instruction}\n${SELECTION_RESPONSE_OUTPUT_END}`).contentText,
 			createdAt: new Date().toISOString(),
 			isPlaceholder: false,
 		};

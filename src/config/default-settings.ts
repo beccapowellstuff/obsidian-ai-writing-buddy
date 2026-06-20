@@ -1,16 +1,13 @@
 import { PromptTemplate } from "../types/prompt-template";
 import type { AiWritingBuddyContextOptions } from "../types/ai-writing-buddy-context";
-import {
-	DEFAULT_AI_MEMORY_CLEANUP_WRITE_THRESHOLD,
-	DEFAULT_AI_MEMORY_FILE_NAME,
-	DEFAULT_AI_MEMORY_FOLDER_PATH,
-	DEFAULT_AI_MEMORY_MAX_PROMPT_CHARACTERS,
-} from "./ai-memory";
+import { DEFAULT_AI_MEMORY_CLEANUP_WRITE_THRESHOLD, DEFAULT_AI_MEMORY_FILE_NAME, DEFAULT_AI_MEMORY_FOLDER_PATH, DEFAULT_AI_MEMORY_MAX_PROMPT_CHARACTERS } from "./ai-memory";
 import { DEFAULT_PROMPT_TEMPLATES } from "./default-prompt-templates";
-export type AiWritingBuddyProvider = "mock" | "openai-compatible";
+import { DEFAULT_PROVIDER_PRESET_ID, type ProviderPresetId, type ProviderProtocol } from "./provider-presets";
 
+export type AiWritingBuddyProvider = ProviderProtocol;
 export type AiWritingBuddySettings = {
 	provider: AiWritingBuddyProvider;
+	providerPresetId: ProviderPresetId;
 	baseUrl: string;
 	modelName: string;
 	apiKey: string;
@@ -70,7 +67,8 @@ const DEFAULT_CONTEXT_OPTIONS: AiWritingBuddyContextOptions = {
 };
 
 export const DEFAULT_AI_WRITING_BUDDY_SETTINGS: AiWritingBuddySettings = {
-	provider: "mock",
+	provider: "openai-compatible",
+	providerPresetId: DEFAULT_PROVIDER_PRESET_ID,
 	baseUrl: "http://localhost:1234/v1",
 	modelName: "",
 	apiKey: "",

@@ -11,10 +11,6 @@ export type SelectionResponseOutput = {
 	hasMarkedContent: boolean;
 };
 
-export function extractSelectionResponseOutput(responseText: string): string {
-	return parseSelectionResponseOutput(responseText).contentText;
-}
-
 export function parseSelectionResponseOutput(responseText: string): SelectionResponseOutput {
 	const sections: string[] = [];
 	const commentSections: string[] = [];

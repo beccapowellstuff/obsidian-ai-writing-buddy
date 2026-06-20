@@ -154,10 +154,6 @@ export default class AiWritingBuddyPlugin extends Plugin {
 	}
 
 	async listAvailableModels(settings: AiWritingBuddySettings = this.settings): Promise<string[]> {
-		if (settings.provider === "mock") {
-			return ["mock-model"];
-		}
-
 		return this.listModelsFromProvider(settings.baseUrl, settings.apiKey);
 	}
 
@@ -210,10 +206,6 @@ export default class AiWritingBuddyPlugin extends Plugin {
 
 		if (!responseText) {
 			throw new Error("The provider returned an empty response.");
-		}
-
-		if (settings.provider === "mock") {
-			return INTERFACE_TEXT.errors.mockProviderTestSucceeded;
 		}
 
 		return INTERFACE_TEXT.errors.connectionTestSucceeded;
