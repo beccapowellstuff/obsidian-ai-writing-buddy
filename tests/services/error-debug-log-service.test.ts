@@ -4,6 +4,7 @@ import { join } from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_AI_WRITING_BUDDY_SETTINGS } from "../../src/config/default-settings";
 import { ErrorDebugLogService } from "../../src/services/error-debug-log-service";
+import { ERROR_DEBUG_LOG_OPERATIONS } from "../../src/types/error-debug-log";
 
 describe("ErrorDebugLogService", () => {
 	let temporaryDirectory: string;
@@ -45,7 +46,7 @@ describe("ErrorDebugLogService", () => {
 			code: "ProviderError",
 			message: "AI provider request failed with status 503.",
 			pluginVersion: "1.0.0",
-			operation: "chat-response",
+			operation: ERROR_DEBUG_LOG_OPERATIONS.chatResponse,
 		});
 
 		expect(await service.readEntries()).toEqual([
@@ -58,7 +59,7 @@ describe("ErrorDebugLogService", () => {
 				code: "ProviderError",
 				message: "AI provider request failed with status 503.",
 				pluginVersion: "1.0.0",
-				operation: "chat-response",
+				operation: ERROR_DEBUG_LOG_OPERATIONS.chatResponse,
 			},
 		]);
 	});
@@ -68,17 +69,54 @@ describe("ErrorDebugLogService", () => {
 			source: "plugin",
 			code: "Error",
 			message: "Session history store has not been loaded.",
-			operation: "session-save",
+			operation: ERROR_DEBUG_LOG_OPERATIONS.sessionSave,
 		});
 
 		expect(await service.readEntries()).toEqual([
 			expect.objectContaining({
 				source: "plugin",
 				code: "Error",
-				message: "Session history store has not been loaded.",
-				operation: "session-save",
+				message: "Plugin error.",
+				operation: ERROR_DEBUG_LOG_OPERATIONS.sessionSave,
 			}),
 		]);
+	});
+
+	it("does not persist private plugin error messages", async () => {
+		await service.appendEntry(true, {
+			source: "plugin",
+			code: "Error",
+			message: [
+				"Failed to write AI Writing Buddy/Memory/Secret Folder/Private Note",
+				"Prompt: Rewrite this private scene",
+				"Selected text: Private selected passage",
+				"Folder name: Secret Folder",
+				"Note name: Private Note",
+			].join(" "),
+			operation: ERROR_DEBUG_LOG_OPERATIONS.sessionSave,
+		});
+
+		const serialisedLog = await service.serialiseEntries();
+
+		expect(serialisedLog).toContain("Plugin error.");
+		expect(serialisedLog).not.toContain("AI Writing Buddy/Memory");
+		expect(serialisedLog).not.toContain("Secret Folder");
+		expect(serialisedLog).not.toContain("Private Note");
+		expect(serialisedLog).not.toContain("Rewrite this private scene");
+		expect(serialisedLog).not.toContain("Private selected passage");
+	});
+
+	it("drops operation labels that are not fixed internal constants", async () => {
+		await service.appendEntry(true, {
+			source: "plugin",
+			code: "Error",
+			message: "Safe-looking message should still be generic.",
+			operation: "Secret Folder/Private Note",
+		} as never);
+
+		const entries = await service.readEntries();
+
+		expect(entries[0]?.operation).toBeUndefined();
 	});
 
 	it("keeps only approved safe fields even if private fields are passed accidentally", async () => {
@@ -122,7 +160,7 @@ describe("ErrorDebugLogService", () => {
 				"C:\\Vault\\Story Ideas\\Private Note.md",
 				"request body: { private: true }",
 			].join(" "),
-			operation: "C:\\Vault\\Story Ideas\\Private Note.md",
+			operation: "C:\\Vault\\Story Ideas\\Private Note.md" as never,
 		});
 
 		const serialisedLog = await service.serialiseEntries();
@@ -163,31 +201,32 @@ describe("ErrorDebugLogService", () => {
 		expect(serialisedLog).not.toContain("private-key");
 		expect(serialisedLog).not.toContain("secret");
 
-		await service.exportEntries();
+		const exportPath = await service.exportEntries();
 		const exportedLog = await readFile(join(temporaryDirectory, "error-debug-log-export.txt"), "utf8");
 
+		expect(exportPath).toBe(join(temporaryDirectory, "error-debug-log-export.txt"));
 		expect(exportedLog).toBe(serialisedLog);
 	});
 
 	it("caps the number of stored entries", async () => {
 		for (let index = 0; index < 205; index += 1) {
 			await service.appendEntry(true, {
-				source: "plugin",
-				message: `Safe plugin error ${index}`,
+				source: "provider",
+				message: `Safe provider error ${index}`,
 			});
 		}
 
 		const entries = await service.readEntries();
 
 		expect(entries).toHaveLength(200);
-		expect(entries[0]?.message).toBe("Safe plugin error 5");
+		expect(entries[0]?.message).toBe("Safe provider error 5");
 	});
 });
 
 describe("ErrorDebugLogService.createEntry", () => {
 	it("caps long messages", () => {
 		const entry = new ErrorDebugLogService("debug-log-test").createEntry({
-			source: "plugin",
+			source: "provider",
 			message: "a".repeat(300),
 		});
 

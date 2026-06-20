@@ -315,7 +315,7 @@ export const INTERFACE_TEXT = {
 			close: "Close",
 			empty: "No error debug entries yet.",
 			copied: "Debug log copied.",
-			exported: "Debug log exported.",
+			exported: (filePath: string): string => `Debug log exported to ${filePath}`,
 			cleared: "Debug log cleared.",
 		},
 	},

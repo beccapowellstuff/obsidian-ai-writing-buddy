@@ -1,6 +1,6 @@
 import { mkdir, readFile, rename, writeFile } from "fs/promises";
 import { dirname, join } from "path";
-import type { ErrorDebugLogEntry, ErrorDebugLogInput } from "../types/error-debug-log";
+import { ERROR_DEBUG_LOG_OPERATIONS, type ErrorDebugLogEntry, type ErrorDebugLogInput, type ErrorDebugLogOperation } from "../types/error-debug-log";
 
 type SavedDebugLog = {
 	entries?: unknown;
@@ -53,9 +53,11 @@ export class ErrorDebugLogService {
 		await this.writeEntries([]);
 	}
 
-	async exportEntries(): Promise<void> {
+	async exportEntries(): Promise<string> {
 		await mkdir(dirname(this.exportPath), { recursive: true });
 		await writeFile(this.exportPath, await this.serialiseEntries(), "utf8");
+
+		return this.exportPath;
 	}
 
 	async serialiseEntries(): Promise<string> {
@@ -69,7 +71,7 @@ export class ErrorDebugLogService {
 		const entry: ErrorDebugLogEntry = {
 			timestamp: new Date().toISOString(),
 			source,
-			message: sanitiseTechnicalMessage(input.message, source),
+			message: source === "plugin" ? GENERIC_PLUGIN_ERROR_MESSAGE : sanitiseProviderTechnicalMessage(input.message),
 		};
 
 		this.addSafeStringField(entry, "providerType", input.providerType);
@@ -77,7 +79,7 @@ export class ErrorDebugLogService {
 		this.addSafeHttpStatus(entry, input.httpStatus);
 		this.addSafeStringField(entry, "code", input.code);
 		this.addSafeStringField(entry, "pluginVersion", input.pluginVersion);
-		this.addSafeStringField(entry, "operation", input.operation);
+		this.addSafeOperation(entry, input.operation);
 
 		return entry;
 	}
@@ -108,7 +110,7 @@ export class ErrorDebugLogService {
 		return typeof timestamp === "string" && timestamp.trim() ? timestamp : new Date().toISOString();
 	}
 
-	private addSafeStringField(entry: ErrorDebugLogEntry, key: keyof Pick<ErrorDebugLogEntry, "providerType" | "category" | "code" | "pluginVersion" | "operation">, value: unknown): void {
+	private addSafeStringField(entry: ErrorDebugLogEntry, key: keyof Pick<ErrorDebugLogEntry, "providerType" | "category" | "code" | "pluginVersion">, value: unknown): void {
 		if (typeof value !== "string") {
 			return;
 		}
@@ -117,6 +119,12 @@ export class ErrorDebugLogService {
 
 		if (sanitisedValue) {
 			entry[key] = sanitisedValue;
+		}
+	}
+
+	private addSafeOperation(entry: ErrorDebugLogEntry, value: unknown): void {
+		if (isErrorDebugLogOperation(value)) {
+			entry.operation = value;
 		}
 	}
 
@@ -129,12 +137,11 @@ export class ErrorDebugLogService {
 	}
 }
 
-function sanitiseTechnicalMessage(message: unknown, source: ErrorDebugLogEntry["source"] = "plugin"): string {
-	const fallbackMessage = source === "provider" ? GENERIC_PROVIDER_ERROR_MESSAGE : GENERIC_PLUGIN_ERROR_MESSAGE;
+function sanitiseProviderTechnicalMessage(message: unknown): string {
 	const trimmedMessage = toTrimmedString(message);
 	const sanitisedMessage = trimmedMessage ? sanitiseNonEmptyTechnicalMessage(trimmedMessage) : "";
 
-	return sanitisedMessage || fallbackMessage;
+	return sanitisedMessage || GENERIC_PROVIDER_ERROR_MESSAGE;
 }
 
 function sanitiseNonEmptyTechnicalMessage(message: string): string {
@@ -192,6 +199,10 @@ function asDebugLogEntryObject(entry: unknown): (Partial<ErrorDebugLogEntry> & P
 
 function isErrorDebugLogSource(source: unknown): source is ErrorDebugLogEntry["source"] {
 	return source === "provider" || source === "plugin";
+}
+
+function isErrorDebugLogOperation(operation: unknown): operation is ErrorDebugLogOperation {
+	return typeof operation === "string" && (Object.values(ERROR_DEBUG_LOG_OPERATIONS) as string[]).includes(operation);
 }
 
 function capMessage(message: string, maxLength = MAX_MESSAGE_LENGTH): string {

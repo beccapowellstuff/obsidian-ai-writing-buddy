@@ -21,6 +21,7 @@ import { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 import { AiWritingBuddySessionController } from "../controllers/session-controller";
 import { SavedSessionsModal } from "../modals/saved-sessions-modal";
 import type { AiWritingBuddyVisibleMemoryContext } from "../types/ai-writing-buddy-visible-memory";
+import type { ErrorDebugLogOperation } from "../types/error-debug-log";
 
 export const AI_WRITING_BUDDY_VIEW_TYPE = "ai-writing-buddy-view";
 
@@ -36,7 +37,7 @@ type CurrentSessionProvider = () => AiWritingBuddyCurrentSessionData | null;
 type RenameCurrentSessionHandler = (title: string) => AiWritingBuddyCurrentSessionData;
 type DeleteCurrentSessionHandler = () => Promise<AiWritingBuddyCurrentSessionData>;
 type SettingsSaveHandler = () => Promise<void>;
-type ProviderErrorLogHandler = (error: unknown, operation: string) => void;
+type ProviderErrorLogHandler = (error: unknown, operation: ErrorDebugLogOperation) => void;
 
 export class AiWritingBuddyView extends ItemView {
 	private readonly sessionController: AiWritingBuddySessionController;

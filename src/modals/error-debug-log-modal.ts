@@ -39,8 +39,8 @@ export class ErrorDebugLogModal extends Modal {
 			})
 			.addButton((button) => {
 				button.setButtonText(INTERFACE_TEXT.settings.errorDebugLog.export).onClick(async () => {
-					await this.debugLogService.exportEntries();
-					new Notice(INTERFACE_TEXT.settings.errorDebugLog.exported);
+					const exportPath = await this.debugLogService.exportEntries();
+					new Notice(INTERFACE_TEXT.settings.errorDebugLog.exported(exportPath));
 				});
 			})
 			.addButton((button) => {

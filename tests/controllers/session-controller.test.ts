@@ -4,6 +4,7 @@ import { INTERFACE_TEXT } from "../../src/config/language/en-gb";
 import { AiWritingBuddySessionController } from "../../src/controllers/session-controller";
 import type { AiResponseService } from "../../src/services/ai-response-service";
 import type { AiWritingBuddyResponse } from "../../src/types/ai-writing-buddy-response";
+import { ERROR_DEBUG_LOG_OPERATIONS, type ErrorDebugLogOperation } from "../../src/types/error-debug-log";
 
 type CreateChatResponseMock = ReturnType<typeof vi.fn<AiResponseService["createChatResponse"]>>;
 
@@ -59,7 +60,7 @@ describe("AiWritingBuddySessionController", () => {
 		const entry = harness.controller.getEntries()[0];
 		expect(entry?.response.text).toContain(INTERFACE_TEXT.responses.providerErrorHeading);
 		expect(entry?.response.text).toContain("Technical detail: AI provider request failed with status 503.");
-		expect(onProviderError).toHaveBeenCalledWith(providerError, "AI Writing Buddy chat response failed");
+		expect(onProviderError).toHaveBeenCalledWith(providerError, ERROR_DEBUG_LOG_OPERATIONS.chatResponse);
 
 		consoleErrorSpy.mockRestore();
 	});
@@ -93,7 +94,7 @@ describe("AiWritingBuddySessionController", () => {
 function createControllerHarness(options: {
 	createChatResponse: CreateChatResponseMock;
 	nextEntryId?: `${string}-${string}-${string}-${string}-${string}`;
-	onProviderError?: (error: unknown, operation: string) => void;
+	onProviderError?: (error: unknown, operation: ErrorDebugLogOperation) => void;
 }) {
 	const nextEntryId = options.nextEntryId ?? "00000000-0000-4000-8000-000000000001";
 

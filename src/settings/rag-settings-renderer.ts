@@ -4,6 +4,7 @@ import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type AiWritingBuddyPlugin from "../main";
 import type { AiWritingBuddyRagIndexStatus } from "../types/rag-index";
 import { runSettingsButtonTask } from "./run-settings-button-task";
+import { ERROR_DEBUG_LOG_OPERATIONS } from "../types/error-debug-log";
 
 type IndexActionButton = {
 	setButtonText(text: string): unknown;
@@ -65,7 +66,7 @@ export class RagSettingsRenderer {
 						new Notice(message);
 					} catch (error) {
 						console.error("AI Writing Buddy embedding connection test failed", error);
-						this.plugin.logProviderError(error, "embedding-connection-test");
+						this.plugin.logProviderError(error, ERROR_DEBUG_LOG_OPERATIONS.embeddingConnectionTest);
 
 						const message = error instanceof Error ? error.message : INTERFACE_TEXT.errors.embeddingConnectionTestFailed;
 						new Notice(INTERFACE_TEXT.errors.embeddingConnectionTestFailure(message));
@@ -138,7 +139,7 @@ export class RagSettingsRenderer {
 			console.error("AI Writing Buddy RAG index action failed", error);
 
 			const message = error instanceof Error ? error.message : "Unknown RAG indexing error.";
-			this.plugin.logPluginError(error, "rag-index-action");
+			this.plugin.logPluginError(error, ERROR_DEBUG_LOG_OPERATIONS.ragIndexAction);
 			new Notice(INTERFACE_TEXT.settings.rag.indexStatusFailed(message));
 			this.refresh();
 		} finally {
@@ -218,7 +219,7 @@ export class RagSettingsRenderer {
 						fallbackErrorMessage: INTERFACE_TEXT.errors.modelLoadingFailed,
 						formatFailureNotice: INTERFACE_TEXT.errors.modelLoadingFailure,
 						onError: (error) => {
-							this.plugin.logProviderError(error, "embedding-model-list");
+							this.plugin.logProviderError(error, ERROR_DEBUG_LOG_OPERATIONS.embeddingModelList);
 						},
 						run: async () => {
 							this.availableEmbeddingModels.length = 0;
