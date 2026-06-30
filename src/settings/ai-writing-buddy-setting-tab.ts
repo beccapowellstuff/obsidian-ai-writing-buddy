@@ -9,6 +9,7 @@ import { RagSettingsRenderer } from "./rag-settings-renderer";
 import { AiMemorySettingsRenderer } from "./ai-memory-settings-renderer";
 import type { AiWritingBuddySettings } from "../config/default-settings";
 import { UnsavedChangesModal } from "../modals/unsaved-changes-modal";
+import { ErrorDebugLogSettingsRenderer } from "./error-debug-log-settings-renderer";
 
 export class AiWritingBuddySettingTab extends PluginSettingTab {
 	private availableModels: string[] = [];
@@ -54,6 +55,7 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 		new ConnectionSettingsRenderer(this.plugin, this.draftSettings, this.availableModels, () => this.display()).render(containerEl);
 		new RagSettingsRenderer(this.plugin, this.draftSettings, this.availableEmbeddingModels, () => this.display(), () => this.saveDraftSettings(false, false)).render(containerEl);
 		new AiMemorySettingsRenderer(this.plugin, this.draftSettings, () => this.display(), () => this.saveDraftSettings(false, false)).render(containerEl);
+		new ErrorDebugLogSettingsRenderer(this.plugin, this.draftSettings).render(containerEl);
 		new PromptSettingsRenderer(this.draftSettings, () => this.display()).render(containerEl);
 		this.templateSettingsRenderer.render(containerEl, () => this.display());
 	}
@@ -213,6 +215,7 @@ export class AiWritingBuddySettingTab extends PluginSettingTab {
 			aiMemoryWriteCount: settings.aiMemoryWriteCount,
 			aiMemoryCleanupEnabled: settings.aiMemoryCleanupEnabled,
 			aiMemoryCleanupWriteThreshold: settings.aiMemoryCleanupWriteThreshold,
+			errorDebugLoggingEnabled: settings.errorDebugLoggingEnabled,
 			openChatSystemPrompt: settings.openChatSystemPrompt,
 			selectionSystemPrompt: settings.selectionSystemPrompt,
 			personalityEnabled: settings.personalityEnabled,

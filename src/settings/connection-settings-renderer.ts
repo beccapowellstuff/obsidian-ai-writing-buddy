@@ -4,6 +4,7 @@ import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type AiWritingBuddyPlugin from "../main";
 import { runSettingsButtonTask } from "./run-settings-button-task";
 import { getProviderPreset, PROVIDER_PRESETS } from "../config/provider-presets";
+import { ERROR_DEBUG_LOG_OPERATIONS } from "../types/error-debug-log";
 
 export class ConnectionSettingsRenderer {
 	constructor(
@@ -103,6 +104,7 @@ export class ConnectionSettingsRenderer {
 						new Notice(message);
 					} catch (error) {
 						console.error("AI Writing Buddy connection test failed", error);
+						this.plugin.logProviderError(error, ERROR_DEBUG_LOG_OPERATIONS.connectionTest);
 
 						const message = error instanceof Error ? error.message : INTERFACE_TEXT.errors.connectionTestFailed;
 						new Notice(INTERFACE_TEXT.errors.connectionTestFailure(message));
@@ -163,6 +165,9 @@ export class ConnectionSettingsRenderer {
 						logMessage: "AI Writing Buddy model loading failed",
 						fallbackErrorMessage: INTERFACE_TEXT.errors.modelLoadingFailed,
 						formatFailureNotice: INTERFACE_TEXT.errors.modelLoadingFailure,
+						onError: (error) => {
+							this.plugin.logProviderError(error, ERROR_DEBUG_LOG_OPERATIONS.modelList);
+						},
 						run: async () => {
 							this.availableModels.length = 0;
 							this.availableModels.push(...(await this.plugin.listAvailableModels(this.settings)));

@@ -9,6 +9,7 @@ import type { AiWritingBuddyChatEntry, AiWritingBuddyEntry } from "../types/ai-w
 import type { AiWritingBuddyMemorySummary } from "../types/ai-writing-buddy-plugin-data";
 import type { AiWritingBuddyRequest } from "../types/ai-writing-buddy-request";
 import type { AiWritingBuddyUsedMemory, AiWritingBuddyVisibleMemoryContext } from "../types/ai-writing-buddy-visible-memory";
+import { ERROR_DEBUG_LOG_OPERATIONS, type ErrorDebugLogOperation } from "../types/error-debug-log";
 import type { ResponseDiffChangeRejection } from "../types/response-diff-change";
 import { createPlaceholderResponse } from "../utils/create-placeholder-response";
 import { formatProviderErrorMessage } from "../utils/format-provider-error-message";
@@ -19,6 +20,7 @@ type NewSessionHandler = (sessionTitle?: string) => Promise<void>;
 type NoteContextProvider = (message: string) => Promise<AiWritingBuddyChatNoteContext | undefined>;
 type VisibleMemoryProvider = () => Promise<AiWritingBuddyVisibleMemoryContext | undefined>;
 type ChatResponseCompletedHandler = (entry: AiWritingBuddyChatEntry, assistantResponseText: string) => void;
+type ProviderErrorLogHandler = (error: unknown, operation: ErrorDebugLogOperation) => void;
 
 export class AiWritingBuddySessionController {
 	private entries: AiWritingBuddyEntry[];
@@ -41,6 +43,7 @@ export class AiWritingBuddySessionController {
 		settings: AiWritingBuddySettings,
 		initialEntries: AiWritingBuddyEntry[] = [],
 		initialMemorySummary?: AiWritingBuddyMemorySummary,
+		private readonly onProviderError?: ProviderErrorLogHandler,
 	) {
 		this.entries = [...initialEntries];
 		this.memorySummary = initialMemorySummary;
@@ -160,7 +163,7 @@ export class AiWritingBuddySessionController {
 
 			entry.response = response;
 		} catch (error) {
-			if (!this.setProviderErrorResponse(entry, error, "AI Writing Buddy selection response failed")) {
+			if (!this.setProviderErrorResponse(entry, error, "AI Writing Buddy selection response failed", ERROR_DEBUG_LOG_OPERATIONS.selectionResponse)) {
 				return;
 			}
 		} finally {
@@ -233,7 +236,7 @@ export class AiWritingBuddySessionController {
 			entry.response = response;
 			completedChatResponseText = [response.commentText, response.text].filter(Boolean).join("\n\n").trim();
 		} catch (error) {
-			if (!this.setProviderErrorResponse(entry, error, "AI Writing Buddy chat response failed")) {
+			if (!this.setProviderErrorResponse(entry, error, "AI Writing Buddy chat response failed", ERROR_DEBUG_LOG_OPERATIONS.chatResponse)) {
 				return;
 			}
 		} finally {
@@ -274,12 +277,13 @@ export class AiWritingBuddySessionController {
 		return true;
 	}
 
-	private setProviderErrorResponse(entry: AiWritingBuddyEntry, error: unknown, logMessage: string): boolean {
+	private setProviderErrorResponse(entry: AiWritingBuddyEntry, error: unknown, logMessage: string, operation: ErrorDebugLogOperation): boolean {
 		if (this.wasEntryCancelled(entry.id)) {
 			return false;
 		}
 
 		console.error(logMessage, error);
+		this.onProviderError?.(error, operation);
 		entry.response = createPlaceholderResponse([INTERFACE_TEXT.responses.providerErrorHeading, "", formatProviderErrorMessage(error)].join("\n"));
 
 		return true;

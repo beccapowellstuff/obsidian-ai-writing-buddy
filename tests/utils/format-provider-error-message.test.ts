@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatProviderErrorMessage } from "../../src/utils/format-provider-error-message";
+import { formatProviderErrorMessage, getProviderErrorDetails } from "../../src/utils/format-provider-error-message";
 
 describe("formatProviderErrorMessage", () => {
 	it("formats provider timeout errors", () => {
@@ -37,6 +37,16 @@ describe("formatProviderErrorMessage", () => {
 				"Technical detail: AI provider request failed with status 503.",
 			].join("\n"),
 		);
+	});
+
+	it("returns classified provider error details for debug logging", () => {
+		const result = getProviderErrorDetails(new Error("AI provider request failed with status 503."));
+
+		expect(result).toMatchObject({
+			kind: "rejected-request",
+			technicalMessage: "AI provider request failed with status 503.",
+			httpStatus: 503,
+		});
 	});
 
 	it("formats empty provider responses", () => {

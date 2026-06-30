@@ -13,6 +13,7 @@ type SettingsButtonTaskOptions = {
 	logMessage: string;
 	fallbackErrorMessage: string;
 	formatFailureNotice: (message: string) => string;
+	onError?: (error: unknown) => void;
 };
 
 export async function runSettingsButtonTask(options: SettingsButtonTaskOptions): Promise<void> {
@@ -23,6 +24,7 @@ export async function runSettingsButtonTask(options: SettingsButtonTaskOptions):
 		await options.run();
 	} catch (error) {
 		console.error(options.logMessage, error);
+		options.onError?.(error);
 
 		const message = error instanceof Error ? error.message : options.fallbackErrorMessage;
 		new Notice(options.formatFailureNotice(message));

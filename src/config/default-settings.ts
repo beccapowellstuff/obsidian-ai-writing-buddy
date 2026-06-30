@@ -28,6 +28,7 @@ export type AiWritingBuddySettings = {
 	aiMemoryWriteCount: number;
 	aiMemoryCleanupEnabled: boolean;
 	aiMemoryCleanupWriteThreshold: number;
+	errorDebugLoggingEnabled: boolean;
 	openChatSystemPrompt: string;
 	selectionSystemPrompt: string;
 	personalityEnabled: boolean;
@@ -89,6 +90,7 @@ export const DEFAULT_AI_WRITING_BUDDY_SETTINGS: AiWritingBuddySettings = {
 	aiMemoryWriteCount: 0,
 	aiMemoryCleanupEnabled: true,
 	aiMemoryCleanupWriteThreshold: DEFAULT_AI_MEMORY_CLEANUP_WRITE_THRESHOLD,
+	errorDebugLoggingEnabled: false,
 	openChatSystemPrompt: DEFAULT_OPEN_CHAT_SYSTEM_PROMPT,
 	selectionSystemPrompt: DEFAULT_SELECTION_SYSTEM_PROMPT,
 	personalityEnabled: false,
