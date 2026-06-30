@@ -78,12 +78,7 @@ export class AiWritingBuddyView extends ItemView {
 		this.selectionEditService = new SelectionEditService(this.app);
 		this.ragService = new RagService(this.app, this.settings, ragIndexStore);
 		this.aiMemoryService = new AiMemoryService(this.app);
-		this.visibleMemoryUpdateService = new AiVisibleMemoryUpdateService(
-			this.aiMemoryService,
-			this.getAiResponseService,
-			this.settings,
-			this.onSaveSettings,
-		);
+		this.visibleMemoryUpdateService = new AiVisibleMemoryUpdateService(this.aiMemoryService, this.getAiResponseService, this.settings, this.onSaveSettings);
 
 		this.sessionController = new AiWritingBuddySessionController(
 			this.getAiResponseService,
@@ -138,6 +133,7 @@ export class AiWritingBuddyView extends ItemView {
 			() => {
 				this.sessionController.clearReplyToEntry();
 			},
+			() => this.settings.promptTemplates,
 		);
 	}
 
