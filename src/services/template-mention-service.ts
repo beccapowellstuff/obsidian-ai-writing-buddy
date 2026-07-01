@@ -92,7 +92,7 @@ export class TemplateMentionService {
 
 				const mentionToken = this.getTemplateMentionToken(template);
 
-				return mentionToken.includes(normalisedQuery) || template.id.toLowerCase().includes(normalisedQuery) || template.name.toLowerCase().includes(normalisedQuery);
+				return mentionToken.startsWith(normalisedQuery) || template.name.toLowerCase().startsWith(normalisedQuery);
 			});
 	}
 

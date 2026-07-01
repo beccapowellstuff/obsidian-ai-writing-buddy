@@ -1,6 +1,6 @@
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import type { PromptTemplate } from "../types/prompt-template";
-import { TemplateMentionService } from "../services/template-mention-service";
+import { TemplateMentionService, type TemplateMentionMatch } from "../services/template-mention-service";
 
 type SendChatHandler = (message: string) => void;
 type CancelReplyHandler = () => void;
@@ -39,12 +39,14 @@ export class AiWritingBuddyChatComposerRenderer {
 			cls: "ai-writing-buddy-template-suggestions",
 		});
 		templateSuggestionsEl.addClass("is-hidden");
+		templateSuggestionsEl.setAttribute("role", "listbox");
 
 		const inputEl = composerEl.createEl("textarea", {
 			cls: "ai-writing-buddy-chat-input",
 			attr: {
 				placeholder: INTERFACE_TEXT.chat.placeholder,
 				rows: "2",
+				"aria-autocomplete": "list",
 			},
 		});
 		inputEl.value = this.draftMessage;
@@ -54,8 +56,32 @@ export class AiWritingBuddyChatComposerRenderer {
 			text: INTERFACE_TEXT.chat.send,
 		});
 
+		let activeTemplateSuggestionIndex = 0;
+		let currentTemplateMention: TemplateMentionMatch | null = null;
+		let currentMatchingTemplates: PromptTemplate[] = [];
+
 		const updateSendButtonState = (): void => {
 			sendButtonEl.disabled = inputEl.value.trim().length === 0;
+		};
+
+		const hideTemplateSuggestions = (): void => {
+			templateSuggestionsEl.empty();
+			templateSuggestionsEl.addClass("is-hidden");
+			currentTemplateMention = null;
+			currentMatchingTemplates = [];
+			activeTemplateSuggestionIndex = 0;
+		};
+
+		const selectTemplateSuggestion = (mention: TemplateMentionMatch, template: PromptTemplate): void => {
+			const result = this.templateMentionService.insertTemplateMention(inputEl.value, mention, template);
+
+			inputEl.value = result.text;
+			this.draftMessage = result.text;
+			inputEl.setSelectionRange(result.cursorIndex, result.cursorIndex);
+
+			updateSendButtonState();
+			hideTemplateSuggestions();
+			inputEl.focus();
 		};
 
 		const renderTemplateSuggestions = (): void => {
@@ -64,44 +90,72 @@ export class AiWritingBuddyChatComposerRenderer {
 			const mention = this.templateMentionService.getActiveMention(inputEl.value, inputEl.selectionStart);
 
 			if (!mention) {
-				templateSuggestionsEl.addClass("is-hidden");
+				hideTemplateSuggestions();
 				return;
 			}
 
-			const matchingTemplates = this.templateMentionService.getMatchingTemplates(this.getTemplates(), mention.query).slice(0, 8);
+			currentTemplateMention = mention;
+			currentMatchingTemplates = this.templateMentionService.getMatchingTemplates(this.getTemplates(), mention.query).slice(0, 8);
 
-			if (matchingTemplates.length === 0) {
-				templateSuggestionsEl.addClass("is-hidden");
+			if (currentMatchingTemplates.length === 0) {
+				hideTemplateSuggestions();
 				return;
 			}
 
+			activeTemplateSuggestionIndex = Math.min(activeTemplateSuggestionIndex, currentMatchingTemplates.length - 1);
 			templateSuggestionsEl.removeClass("is-hidden");
 
-			for (const template of matchingTemplates) {
+			currentMatchingTemplates.forEach((template, index) => {
 				const templateButtonEl = templateSuggestionsEl.createEl("button", {
 					cls: "ai-writing-buddy-template-suggestion",
 					attr: {
 						type: "button",
+						role: "option",
+						"aria-selected": index === activeTemplateSuggestionIndex ? "true" : "false",
 					},
 				});
+
+				if (index === activeTemplateSuggestionIndex) {
+					templateButtonEl.addClass("is-active");
+				}
 
 				templateButtonEl.createSpan({
 					cls: "ai-writing-buddy-template-suggestion-name",
 					text: template.name,
 				});
 
-				templateButtonEl.addEventListener("click", () => {
-					const result = this.templateMentionService.insertTemplateMention(inputEl.value, mention, template);
+				templateButtonEl.addEventListener("mouseenter", () => {
+					if (activeTemplateSuggestionIndex === index) {
+						return;
+					}
 
-					inputEl.value = result.text;
-					this.draftMessage = result.text;
-					inputEl.setSelectionRange(result.cursorIndex, result.cursorIndex);
-
-					updateSendButtonState();
+					activeTemplateSuggestionIndex = index;
 					renderTemplateSuggestions();
-					inputEl.focus();
 				});
+
+				templateButtonEl.addEventListener("click", () => {
+					selectTemplateSuggestion(mention, template);
+				});
+			});
+		};
+
+		const isTemplateSuggestionsOpen = (): boolean => {
+			return currentTemplateMention !== null && currentMatchingTemplates.length > 0 && !templateSuggestionsEl.hasClass("is-hidden");
+		};
+
+		const selectActiveTemplateSuggestion = (): boolean => {
+			if (!isTemplateSuggestionsOpen() || !currentTemplateMention) {
+				return false;
 			}
+
+			const template = currentMatchingTemplates[activeTemplateSuggestionIndex];
+
+			if (!template) {
+				return false;
+			}
+
+			selectTemplateSuggestion(currentTemplateMention, template);
+			return true;
 		};
 
 		const sendMessage = (): void => {
@@ -124,6 +178,7 @@ export class AiWritingBuddyChatComposerRenderer {
 
 		inputEl.addEventListener("input", () => {
 			this.draftMessage = inputEl.value;
+			activeTemplateSuggestionIndex = 0;
 			updateSendButtonState();
 			renderTemplateSuggestions();
 		});
@@ -141,6 +196,34 @@ export class AiWritingBuddyChatComposerRenderer {
 		});
 
 		inputEl.addEventListener("keydown", (event) => {
+			if (isTemplateSuggestionsOpen()) {
+				if (event.key === "ArrowDown") {
+					event.preventDefault();
+					activeTemplateSuggestionIndex = (activeTemplateSuggestionIndex + 1) % currentMatchingTemplates.length;
+					renderTemplateSuggestions();
+					return;
+				}
+
+				if (event.key === "ArrowUp") {
+					event.preventDefault();
+					activeTemplateSuggestionIndex = (activeTemplateSuggestionIndex - 1 + currentMatchingTemplates.length) % currentMatchingTemplates.length;
+					renderTemplateSuggestions();
+					return;
+				}
+
+				if ((event.key === "Tab" && !event.shiftKey) || (event.key === "Enter" && !event.shiftKey)) {
+					event.preventDefault();
+					selectActiveTemplateSuggestion();
+					return;
+				}
+
+				if (event.key === "Escape") {
+					event.preventDefault();
+					hideTemplateSuggestions();
+					return;
+				}
+			}
+
 			if (event.key === "Enter" && !event.shiftKey) {
 				event.preventDefault();
 				sendMessage();

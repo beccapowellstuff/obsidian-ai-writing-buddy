@@ -39,7 +39,8 @@
 	text-align: left;
 }
 
-.ai-writing-buddy-template-suggestion:hover {
+.ai-writing-buddy-template-suggestion:hover,
+.ai-writing-buddy-template-suggestion.is-active {
 	background: var(--background-modifier-hover);
 }
 

@@ -54,7 +54,7 @@ describe("TemplateMentionService", () => {
 	it("matches templates by name", () => {
 		const templates = [makeTemplate("fix-spelling-and-grammar", "Fix spelling and grammar"), makeTemplate("summarise", "Summarise")];
 
-		const matches = service.getMatchingTemplates(templates, "spelling");
+		const matches = service.getMatchingTemplates(templates, "fix");
 
 		expect(matches.map((template) => template.id)).toEqual(["fix-spelling-and-grammar"]);
 	});
@@ -115,6 +115,22 @@ describe("TemplateMentionService", () => {
 			template: templates[0],
 			instruction: "compare the first and last paragraphs",
 		});
+	});
+
+	it("matches templates only from the start of the token, id, or name", () => {
+		const templates = [makeTemplate("critique", "Critique"), makeTemplate("humanise", "Humanise"), makeTemplate("make-clearer", "Make clearer")];
+
+		const matches = service.getMatchingTemplates(templates, "c");
+
+		expect(matches).toEqual([templates[0]]);
+	});
+
+	it("does not match suggestions by hidden template id prefixes", () => {
+		const templates = [makeTemplate("1-hidden-id", "Make Sexy"), makeTemplate("visible-number-template", "1st to 3rd POV")];
+
+		const matches = service.getMatchingTemplates(templates, "1");
+
+		expect(matches).toEqual([templates[1]]);
 	});
 
 	it("does not parse a normal chat message as a template command", () => {
