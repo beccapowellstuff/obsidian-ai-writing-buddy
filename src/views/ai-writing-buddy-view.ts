@@ -1,4 +1,6 @@
-import { ItemView, setIcon, setTooltip, WorkspaceLeaf } from "obsidian";
+import { ItemView, Notice, setIcon, setTooltip, WorkspaceLeaf } from "obsidian";
+import { WholeNoteTemplateSizeService } from "../services/whole-note-template-size-service";
+import { TemplateMentionService } from "../services/template-mention-service";
 import { AiWritingBuddySettings } from "../config/default-settings";
 import { INTERFACE_TEXT } from "../config/language/en-gb";
 import { PLUGIN_DISPLAY } from "../config/plugin-display";
@@ -49,6 +51,8 @@ export class AiWritingBuddyView extends ItemView {
 	private readonly entryRenderer: AiWritingBuddyEntryRenderer;
 	private readonly headerRenderer = new AiWritingBuddyHeaderRenderer();
 	private readonly chatComposerRenderer: AiWritingBuddyChatComposerRenderer;
+	private readonly templateMentionService = new TemplateMentionService();
+	private readonly wholeNoteTemplateSizeService = new WholeNoteTemplateSizeService();
 	private scrollButtonEl: HTMLButtonElement | null = null;
 
 	constructor(
@@ -128,13 +132,42 @@ export class AiWritingBuddyView extends ItemView {
 
 		this.chatComposerRenderer = new AiWritingBuddyChatComposerRenderer(
 			(message) => {
-				void this.sessionController.addChatEntry(message);
+				void this.handleChatComposerMessage(message);
 			},
 			() => {
 				this.sessionController.clearReplyToEntry();
 			},
 			() => this.settings.promptTemplates,
 		);
+	}
+
+	private async handleChatComposerMessage(message: string): Promise<void> {
+		const templateCommand = this.templateMentionService.parseTemplateCommand(message, this.settings.promptTemplates);
+
+		if (!templateCommand) {
+			await this.sessionController.addChatEntry(message);
+			return;
+		}
+
+		const activeFile = this.app.workspace.getActiveFile();
+
+		if (!activeFile || activeFile.extension !== "md") {
+			new Notice("Open a Markdown note before running a template command.");
+			return;
+		}
+
+		const noteContent = await this.app.vault.cachedRead(activeFile);
+
+		const sizeCheck = this.wholeNoteTemplateSizeService.checkWholeNoteTemplateSize(templateCommand.template, noteContent, templateCommand.instruction, this.settings.maxPromptCharacters);
+
+		if (!sizeCheck.fits) {
+			new Notice(
+				`This note is too large for one whole-note template request (${sizeCheck.estimatedCharacters.toLocaleString()} / ${sizeCheck.maxCharacters.toLocaleString()} characters). Chunked scanning will be added next.`,
+			);
+			return;
+		}
+
+		new Notice(`Whole-note template fits: ${templateCommand.template.name} on ${activeFile.basename}. AI execution is next.`);
 	}
 
 	getViewType(): string {

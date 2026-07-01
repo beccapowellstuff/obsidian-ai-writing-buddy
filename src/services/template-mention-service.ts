@@ -6,6 +6,11 @@ export type TemplateMentionMatch = {
 	endIndex: number;
 };
 
+export type TemplateMentionCommand = {
+	template: PromptTemplate;
+	instruction: string;
+};
+
 export class TemplateMentionService {
 	getTemplateMentionToken(template: PromptTemplate): string {
 		const nameToken = template.name
@@ -16,6 +21,44 @@ export class TemplateMentionService {
 			.replace(/^-+|-+$/g, "");
 
 		return nameToken || template.id;
+	}
+
+	parseTemplateCommand(message: string, templates: PromptTemplate[]): TemplateMentionCommand | null {
+		const trimmedMessage = message.trim();
+
+		if (!trimmedMessage.startsWith("@")) {
+			return null;
+		}
+
+		const match = /^@([^\s]+)(?:\s+([\s\S]*))?$/.exec(trimmedMessage);
+
+		if (!match) {
+			return null;
+		}
+
+		const token = match[1]?.toLowerCase();
+		const instruction = match[2]?.trim() ?? "";
+
+		if (!token) {
+			return null;
+		}
+
+		const template = templates
+			.filter((candidate) => candidate.scope === "selection")
+			.find((candidate) => {
+				const mentionToken = this.getTemplateMentionToken(candidate);
+
+				return mentionToken === token || candidate.id.toLowerCase() === token;
+			});
+
+		if (!template) {
+			return null;
+		}
+
+		return {
+			template,
+			instruction,
+		};
 	}
 
 	getActiveMention(text: string, cursorIndex: number): TemplateMentionMatch | null {

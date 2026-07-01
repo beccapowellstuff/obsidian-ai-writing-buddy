@@ -94,4 +94,34 @@ describe("TemplateMentionService", () => {
 			cursorIndex: "@review-opening-tone ".length,
 		});
 	});
+
+	it("parses a template command at the start of a message", () => {
+		const templates = [makeTemplate("critique", "Critique"), makeTemplate("summarise", "Summarise")];
+
+		const command = service.parseTemplateCommand("@critique focus on pacing", templates);
+
+		expect(command).toEqual({
+			template: templates[0],
+			instruction: "focus on pacing",
+		});
+	});
+
+	it("parses a template command using a readable custom template token", () => {
+		const templates = [makeTemplate("0b75373a-a476-49a9-bc55-aee2462e94b4", "Review Opening Tone")];
+
+		const command = service.parseTemplateCommand("@review-opening-tone compare the first and last paragraphs", templates);
+
+		expect(command).toEqual({
+			template: templates[0],
+			instruction: "compare the first and last paragraphs",
+		});
+	});
+
+	it("does not parse a normal chat message as a template command", () => {
+		const templates = [makeTemplate("critique", "Critique")];
+
+		const command = service.parseTemplateCommand("Can you critique this?", templates);
+
+		expect(command).toBeNull();
+	});
 });
