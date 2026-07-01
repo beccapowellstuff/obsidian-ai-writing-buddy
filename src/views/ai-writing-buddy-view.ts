@@ -167,7 +167,31 @@ export class AiWritingBuddyView extends ItemView {
 			return;
 		}
 
-		new Notice(`Whole-note template fits: ${templateCommand.template.name} on ${activeFile.basename}. AI execution is next.`);
+		const noteLines = noteContent.split("\n");
+		const lastLineIndex = Math.max(noteLines.length - 1, 0);
+		const lastLine = noteLines[lastLineIndex] ?? "";
+
+		await this.sessionController.addSelectionEntry({
+			instruction: templateCommand.instruction,
+			selectedText: noteContent,
+			sourcePath: activeFile.path,
+			selectionStart: {
+				line: 0,
+				ch: 0,
+			},
+			selectionEnd: {
+				line: lastLineIndex,
+				ch: lastLine.length,
+			},
+			createdAt: new Date().toISOString(),
+			templateId: templateCommand.template.id,
+			templateName: `${templateCommand.template.name} (whole note)`,
+			templatePrompt: templateCommand.template.prompt,
+			returnsReplacementTextOnly: false,
+			highlightChanges: false,
+			temperature: templateCommand.template.temperature,
+			disableSelectionOutputActions: true,
+		});
 	}
 
 	getViewType(): string {

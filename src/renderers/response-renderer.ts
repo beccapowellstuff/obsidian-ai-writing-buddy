@@ -85,7 +85,7 @@ export class AiWritingBuddyResponseRenderer {
 					this.onReply(entry.id);
 				});
 
-				if (entry.type === "selection" && hasProposedContent) {
+				if (entry.type === "selection" && hasProposedContent && entry.request.disableSelectionOutputActions !== true) {
 					this.createActionButton(outputActionsEl, "refresh-cw", INTERFACE_TEXT.responses.replaceSelection, async () => {
 						await this.selectionEditService.replaceSelection(entry.request, response.text);
 					});

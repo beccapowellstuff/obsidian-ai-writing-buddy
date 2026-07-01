@@ -14,4 +14,5 @@ export type AiWritingBuddyRequest = {
 	highlightChanges?: boolean;
 	promptPreview?: string;
 	temperature?: number;
+	disableSelectionOutputActions?: boolean;
 };
