@@ -48,10 +48,6 @@
 	font-weight: 600;
 }
 
-.ai-writing-buddy-template-suggestions.is-hidden {
-	display: none;
-}
-
 .ai-writing-buddy-chat-input {
 	flex: 1 1 auto;
 	min-height: 42px;
